@@ -353,14 +353,14 @@ export const TRAIN = [
   { id: 'zih', n: 'Zihin', a: ['zihin'], g: 'penalti', pos: ['DF', 'OS', 'KN', 'FV'] },
 ];
 
-// p: tek seferlik fiyat, wk: haftalık gider, e: etkiler
+// p: tek seferlik fiyat, yr: sezonluk anlaşma bedeli (sezon sonunda biter), e: etkiler
 export const SHOP = [
   { id: 'krampon', n: 'Profesyonel krampon', d: 'Maç anlarında küçük beceri artışı.', p: 12000 },
   { id: 'telefon', n: 'Yeni telefon', d: 'Takipçi artışı hızlanır.', p: 45000, e: { fol: .5 } },
   { id: 'araba', n: 'İkinci el araba', d: 'Yol yorgunluğu biter. Haftalık enerji +3.', p: 650000, e: { en: 3 } },
-  { id: 'daire', n: 'Kiralık daire', d: 'Kendi düzenin. Enerji +4, moral +4.', wk: 7500, e: { en: 4, mo: 4 } },
-  { id: 'diyet', n: 'Diyetisyen', d: 'Haftalık enerji +5.', wk: 9000, e: { en: 5 } },
-  { id: 'pt', n: 'Kişisel antrenör', d: 'Antrenman verimi +%20.', wk: 18000, e: { tr: .2 } },
+  { id: 'daire', n: 'Kiralık daire', d: 'Kendi düzenin. Enerji +4, moral +4.', yr: 260000, e: { en: 4, mo: 4 } },
+  { id: 'diyet', n: 'Diyetisyen', d: 'Haftalık enerji +5.', yr: 300000, e: { en: 5 } },
+  { id: 'pt', n: 'Kişisel antrenör', d: 'Antrenman verimi +%20.', yr: 600000, e: { tr: .2 } },
   { id: 'halisaha', n: 'Halı saha işletmesi', d: 'Haftalık ₺45.000 gelir.', p: 3000000, e: { inc: 45000 } },
   { id: 'ev', n: 'Ev satın al', d: 'Aile rahat eder. Enerji +3, moral +6.', p: 6000000, e: { en: 3, mo: 6 } },
   { id: 'spor', n: 'Spor araba', d: 'Göz alıcı. Moral +5, takipçi artışı.', p: 12000000, e: { mo: 5, fol: .5 } },
@@ -399,3 +399,53 @@ export const FILL = [
 export const CUPS = { EN: 'FA Cup', ES: 'Copa del Rey', DE: 'DFB-Pokal', IT: 'Coppa Italia', FR: 'Coupe de France', NL: 'KNVB Beker', PT: 'Taça de Portugal', SA: 'Kral Kupası' };
 export const TSTAT = { mutlu: 'Mutluyum', acik: 'Tekliflere açığım', istek: 'Transfer istiyorum', kiralik: 'Kiralık gitmek istiyorum' };
 export const STANCE = { kilit: 'Satılık değil', acik: 'Uygun teklife açık', liste: 'Satış listesinde', kiralik: 'Kiralık oyuncu' };
+
+// Yetenek ağacı. c: puan bedeli
+export const PERKS = [
+  { id: 'plase', n: 'Plase ustası', d: 'Şutların daha isabetli.', c: 2, i: 'target', no: 'KL' },
+  { id: 'frikik', n: 'Frikikçi', d: 'Frikikte isabet artar, baraj daralır.', c: 2, i: 'star', no: 'KL' },
+  { id: 'buz', n: 'Buz gibi', d: 'Penaltıda kaleci seni okuyamaz.', c: 1, i: 'lock', no: 'KL' },
+  { id: 'hava', n: 'Hava hâkimi', d: 'Kafa vuruşunda zamanlama payı genişler.', c: 1, i: 'up', no: 'KL' },
+  { id: 'bilek', n: 'Bilek', d: 'Çalımda savunmacılar daha geç kayar.', c: 2, i: 'bolt', no: 'KL' },
+  { id: 'gorus', n: 'Görüş', d: 'Pasların yerini kolay bulur, asist şansı artar.', c: 2, i: 'eye' },
+  { id: 'makas', n: 'Makas', d: 'Kayarak müdahalen daha uzun menzilli.', c: 2, i: 'shield', no: 'KL' },
+  { id: 'refleks', n: 'Refleks', d: 'Eldivenin daha hızlı.', c: 2, i: 'bolt', only: 'KL' },
+  { id: 'akciger', n: 'Demir akciğer', d: 'Maçlar %30 daha az yorar.', c: 2, i: 'heart' },
+  { id: 'celik', n: 'Çelik gibi', d: 'Sakatlık riski %40 azalır.', c: 2, i: 'plus' },
+  { id: 'sahne', n: 'Sahne ışığı', d: 'Takipçi kazancın %50 artar.', c: 1, i: 'phone' },
+  { id: 'kaptan', n: 'Kaptan ruhu', d: 'Hoca güveni daha hızlı artar.', c: 1, i: 'crown' },
+];
+
+// Arkadaşlarla aktiviteler
+export const HANG = [
+  { id: 'hali', n: 'Halı saha maçı', d: 'Ter at, top oyna.', i: 'ball', fx: { ark: 10, mo: 5, en: -10, teknik: 0.3 }, risk: .04, r: 'Üç maç üst üste. Bacaklar yandı ama değdi.' },
+  { id: 'konsol', n: 'Konsol gecesi', d: 'Evde turnuva.', i: 'phone', fx: { ark: 8, mo: 6, en: -2 }, r: 'Finalde uzatmalarda kaybettin. Rövanş istendi.' },
+  { id: 'mangal', n: 'Sapanca\'da mangal', d: 'Göl kenarı, uzun sofra.', i: 'heart', fx: { ark: 12, mo: 8, en: 4, para: -1500 }, r: 'Köz, çay, göl. Kafan boşaldı.' },
+  { id: 'kahve', n: 'Kahvehanede maç', d: 'Çay, tavla, derbi.', i: 'users', fx: { ark: 7, mo: 3 }, r: 'Tavlada mars oldun, derbi berabere bitti.' },
+  { id: 'gece', n: 'Gece hayatı', d: 'Sabaha kadar.', i: 'moon', fx: { ark: 14, mo: 10, en: -22, prof: -4 }, hoca: .3, r: 'Eve güneş doğarken döndün.' },
+];
+
+// Sosyal medya paylaşım türleri. f: takipçi çarpanı
+export const POSTS = [
+  { id: 'idman', n: 'Antrenman karesi', i: 'train', fx: { hoca: 1 }, f: 1, t: ['Bugün de eksiksiz. Hafta sonu hazırız.', 'Ter atmadan forma yok.'] },
+  { id: 'taraf', n: 'Taraftara mesaj', i: 'heart', fx: { taraf: 5 }, f: 1.3, t: ['Tribünde sizi duymak başka. Hafta sonu görüşürüz!', 'Bu forma sizin için terliyor.'] },
+  { id: 'aile', n: 'Aile ve memleket', i: 'home', fx: { aile: 5, mo: 2 }, f: 1, t: ['Anne yemeği gibisi yok.', 'Nereye gidersem gideyim, memleket burada.'] },
+  { id: 'luks', n: 'Lüks hayat', i: 'star', fx: { ego: 4, taraf: -3 }, f: 2.4, need: ['araba', 'spor', 'villa', 'ev'], t: ['Emeklerin karşılığı.', 'Yeni oyuncak.'] },
+  { id: 'spon', n: 'Sponsor paylaşımı', i: 'tag', fx: {}, f: .8, spon: 1, t: ['Yeni sezonda yanımda olanlar belli. #işbirliği'] },
+];
+export const FANS = ['tribun54', 'sakaryali_reis', 'kale_arkasi', 'gol_hasreti', 'mahallenin_sesi', 'forma_asigi', 'deplasman_yolcusu', 'eski_acik'];
+
+export const ACH = [
+  ['ilkgol', 'İlk gol', 'ball'], ['hat', 'Hat-trick', 'star'], ['g50', '50 gol', 'ball'], ['g100', '100 gol', 'ball'], ['g250', '250 gol', 'ball'],
+  ['pro', 'İlk profesyonel sözleşme', 'pen'], ['sl', 'Süper Lig oyuncusu', 'shield'], ['yurt', 'Yurt dışı macerası', 'globe'], ['milli', 'Milli forma', 'flag'],
+  ['kupa', 'Kupa kaldırdın', 'trophy'], ['avrupa', 'Avrupa şampiyonu', 'crown'], ['hayal', 'Hayalindeki forma', 'heart'], ['m1', '1 milyon takipçi', 'phone'],
+  ['ay', 'Ayın oyuncusu', 'star'], ['yil11', 'Yılın 11\'i', 'users'],
+];
+
+// Maç içi kararlar. p: konuşan kişi, i: ikon
+export const DEC = {
+  ht: { t: 'Devre arası', p: 'hoca', i: 'whistle', o: ['Takımı ateşle', 'Kendi oyununa odaklan', 'Riskli oyna'], s: ['Tutarsa takım gol bulabilir', 'Kalan anlar daha sakin akar', 'Fazladan pozisyon, fazladan sakatlık riski'] },
+  pen: { t: 'Penaltı!', p: 'takim', i: 'target', o: ['Ben atarım', 'Ustası atsın'], s: ['Penaltıyı sen kullanırsın', 'Takımın penaltıcısı atar'] },
+  ref: { t: 'Tartışmalı karar', p: 'fed', i: 'alert', o: ['İtiraz et', 'Oyuna dön'], s: ['Tribün sever, kart riski var', 'Hoca takdir eder'] },
+  knock: { t: 'Bir şey oldu', p: 'doktor', i: 'plus', o: ['Devam et', 'Değişiklik iste'], s: ['Sakatlık riski artar', 'Maç senin için biter'] },
+};
