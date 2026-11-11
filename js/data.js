@@ -444,7 +444,30 @@ export const SHOP = [
   { id: 'spor', n: tt('Spor araba'), d: tt('Göz alıcı. Moral +5, takipçi artışı.'), p: 12000000, e: { mo: 5, fol: .5 } },
   { id: 'kofte', n: tt('Islama köfte restoranı'), d: tt('Adapazarı\'nda şube. Haftalık ₺240.000 gelir.'), p: 15000000, e: { inc: 240000 } },
   { id: 'villa', n: tt('Sapanca\'da villa'), d: tt('Göl manzarası. Enerji +4, moral +8.'), p: 60000000, e: { en: 4, mo: 8 } },
+  // ikinci kademe: ilk kademedeki kalıcı her şey alınınca açılır (t2)
+  { id: 'muze', t2: 1, n: tt('Kişisel müze'), d: tt('Formaların, kupaların sergide. Takipçi artışı hızlanır.'), p: 60000000, e: { fol: .6 } },
+  { id: 'tekne', t2: 1, n: tt('Tekne'), d: tt('Maç sonrası açık deniz. Moral +6.'), p: 90000000, e: { mo: 6 } },
+  { id: 'akademi', t2: 1, n: tt('Futbol akademisi'), d: tt('Kendi adını taşıyan okul. Haftalık ₺600.000 gelir, çocuğunun yeteneği hızlı gelişir.'), p: 120000000, e: { inc: 600000 } },
+  { id: 'jet', t2: 1, n: tt('Özel uçak payı'), d: tt('Deplasman yorgunluğu biter. Haftalık enerji +6.'), p: 180000000, e: { en: 6 } },
+  { id: 'hisse', t2: 1, n: tt('Kulüp hissesi'), d: tt('Bir kulübe ortak oldun. Haftalık ₺2.200.000 gelir.'), p: 250000000, e: { inc: 2200000 } },
+  { id: 'yali', t2: 1, n: tt('Boğaz\'da yalı'), d: tt('Şehrin en iyi adresi. Enerji +3, moral +10.'), p: 400000000, e: { en: 3, mo: 10 } },
 ];
+// Kademeli yatırımlar: her seviye daha pahalı. e: seviye başına etki, max: en yüksek seviye, need: açılma koşulu (2 = ikinci kademe)
+export const UPG = [
+  { id: 'salon', n: tt('Ev spor salonu'), d: tt('Her seviye antrenman verimini %3 artırır.'), i: 'train', base: 800000, k: 1.7, max: 8, e: { tr: .03 } },
+  { id: 'ekip', n: tt('Kişisel ekip'), d: tt('Aşçı, fizyoterapist, analist. Her seviye enerji +1, sakatlık riski −%4.'), i: 'users', base: 1500000, k: 1.7, max: 6, e: { en: 1 } },
+  { id: 'marka', n: tt('Kendi markan'), d: tt('Her seviye takipçi artışını hızlandırır ve haftalık ₺60.000 kazandırır.'), i: 'tag', base: 5000000, k: 1.6, max: 10, need: 2, e: { fol: .15, inc: 60000 } },
+  { id: 'vakif', n: tt('Vakıf'), d: tt('Her bağış itibar, taraftar sevgisi ve basın ilişkisi kazandırır. Sınırı yok.'), i: 'heart', base: 4000000, k: 1.25, max: 999, need: 2 },
+];
+// Ücretli seanslar: haftada her biri bir kez, eylem hakkı harcamaz. c: haftalık ücretin katı, min: en düşük bedel
+export const SESS = [
+  { id: 'ozel', n: tt('Özel antrenman'), d: tt('Mevkinin iki ana özelliği gelişir.'), i: 'train', c: 1.6, min: 3000 },
+  { id: 'analiz', n: tt('Rakip analizi'), d: tt('Sıradaki maçta anlar kolaylaşır.'), i: 'eye', c: .6, min: 1200 },
+  { id: 'mental', n: tt('Mental koç'), d: tt('Moral toparlanır, zihin gelişir.'), i: 'smile', c: .8, min: 1500 },
+  { id: 'fizik', n: tt('Kurtarma seansı'), d: tt('Masaj ve buz banyosu: enerji +18.'), i: 'heart', c: .7, min: 1500 },
+];
+// Piyasadaki algın
+export const PTAG = { formsuz: tt('Formsuz'), duzenli: tt('Düzenli oyuncu'), yukselen: tt('Yükselen oyuncu'), genc: tt('Genç yetenek'), yildiz: tt('Ligin yıldızı') };
 
 export const AGENTS = [
   { n: 'Kemal Aksoy', d: tt('Mahallenin abisi. Az komisyon, az bağlantı.'), cut: .05, pw: .2 },

@@ -1,6 +1,6 @@
 // Toprak Saha — oyun çekirdeği: durum, lig simülasyonu, sezon, transfer, ekonomi
 import { tt, LC, NLOC, DSEP } from './i18n.js';
-import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR } from './data.js';
+import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR, UPG, SESS } from './data.js';
 
 export let S = null;
 export const WEEKS = 38;
@@ -74,7 +74,7 @@ export function load() {
     if (!S.cl || !S.el || S.cl.weeks.length < 13) { delete S.euro; initEuro(euroQual()); }
     if (!S.nt) ntInit();
     if (!S.cs) { S.cs = {}; for (const h of S.hist) { const id = Object.keys(CLUBS).find(k => CLUBS[k].n === h.c) || Object.keys(S.gen).find(k => S.gen[k].n === h.c); if (id) { const c = S.cs[id] || (S.cs[id] = { apps: 0, g: 0 }); c.apps += h.apps; c.g += h.g; } } }
-    S.fx ??= {}; S.sq ??= {}; S.cr ??= {}; S.xc ??= []; S.inv ??= {}; S.duel ??= {}; S.xl ??= {}; S.rel.basin ??= 50; S.kid ??= S.fl.cocuk ? { n: rname('TR').split(' ')[0] + ' ' + S.name.split(' ').slice(-1)[0], born: S.season - 2, tal: 0 } : null;
+    S.up ??= {}; S.fx ??= {}; S.sq ??= {}; S.cr ??= {}; S.xc ??= []; S.inv ??= {}; S.duel ??= {}; S.xl ??= {}; S.rel.basin ??= 50; S.kid ??= S.fl.cocuk ? { n: rname('TR').split(' ')[0] + ' ' + S.name.split(' ').slice(-1)[0], born: S.season - 2, tal: 0 } : null;
     if (S.fl.gurbet) S.gur ??= 'DE';
     if (!S.ko && !KW) initKo();
     if (!S.rv && !S.mgr) genRival(); if (!S.sg && !S.mgr) newGoals();
@@ -94,7 +94,7 @@ export const tier = () => LMAP[leagueOf(S.clubId)].tier;
 export const absWeek = () => (S.season - 1) * WEEKS + S.week;
 export const seasonLabel = () => `${S.year}/${String((S.year + 1) % 100).padStart(2, '0')}`;
 export const has = id => S.assets.includes(id);
-export const eff = k => SHOP.reduce((s, i) => s + ((has(i.id) && i.e && i.e[k]) || 0), 0);
+export const eff = k => SHOP.reduce((s, i) => s + ((has(i.id) && i.e && i.e[k]) || 0), 0) + UPG.reduce((s, u) => s + ((u.e && u.e[k]) || 0) * ((S.up || {})[u.id] || 0), 0);
 export const wref = () => Math.max(S.con.wage, 1500);
 export function addNews(s, ic = 'news') { S.news.unshift({ w: `${S.week}. hafta`, s, ic }); if (S.news.length > 24) S.news.length = 24; }
 export function tot() { const c = S.car, t = S.st; return { apps: c.apps + t.apps, g: c.g + t.g, a: c.a + t.a, rs: c.rs + t.rs }; }
@@ -148,7 +148,7 @@ export function fx(o) {
 // ---------- gelişim ----------
 const ageF = () => { const a = S.age; return a <= 17 ? 1.2 : a <= 20 ? 1.05 : a <= 23 ? .85 : a <= 26 ? .6 : a <= 29 ? .38 : a <= 32 ? .2 : .1; };
 const capF = v => clamp(1 - Math.pow(Math.max(0, v - 20) / (S.pot - 20), 2), 0, 1);
-export function grow(k, amt) { const g = amt * ageF() * capF(S.at[k]); S.at[k] = clamp(S.at[k] + g, 1, 99); return g; }
+export function grow(k, amt) { const g = amt * ageF() * capF(S.at[k]) * (S.dfocus ? (S.dfocus === k ? 1.5 : .85) : 1); S.at[k] = clamp(S.at[k] + g, 1, 99); return g; }   // dfocus: sezonluk gelişim odağı
 
 // ---------- dünya kurulumu ----------
 function genAmateur(prov) {
@@ -226,7 +226,7 @@ export function newCareer(o) {
   for (const id of [...XIDS, ...WIDS]) S.rt[id] ??= CLUBS[id].r;
   for (const lid in S.lg) initLeague(lid);
   S.co = {}; S.eps = ['en1', 'es1']; S.hon = {}; S.ivq = []; S.moves = []; S.adapt = 0; S.cs = {}; S.fx = {};
-  S.sq = {}; S.cr = {}; S.xc = []; S.inv = {}; S.duel = {}; S.xl = {}; S.kid = null; S.rel.basin = 50; S.gur = o.origin === 'gurbet' ? (NATN[o.gur] ? o.gur : 'DE') : null;
+  S.up = {}; S.sq = {}; S.cr = {}; S.xc = []; S.inv = {}; S.duel = {}; S.xl = {}; S.kid = null; S.rel.basin = 50; S.gur = o.origin === 'gurbet' ? (NATN[o.gur] ? o.gur : 'DE') : null;
   if (W) {
     S.hon = W.hon || {}; S.eps = W.eps || S.eps; S.fx = W.fx || {}; S.sq = W.sq || {}; S.xl = { ...(W.xl || {}) };
     for (const id in W.cs || {}) if (W.cs[id].apps >= 15) (S.xl[id] || (S.xl[id] = [])).push({ n: W.name, g: W.cs[id].g, apps: W.cs[id].apps, y: W.year });
@@ -360,7 +360,7 @@ export function act(id) {
 export function train(tid, mult) {
   S.used++; questHit('train');
   const Tn = TRAIN.find(t => t.id === tid);
-  const m = 0.28 * mult * (TRAITS[S.trait].tr || 1) * (1 + eff('tr')) * (Tn.a.length === 1 ? 1.5 : 1) * facF(facOf(S.clubId));
+  const m = 0.28 * mult * (TRAITS[S.trait].tr || 1) * (1 + eff('tr')) * (Tn.a.length === 1 ? 1.5 : 1) * facF(facOf(S.clubId)) * (mentor() ? 1.1 : 1);
   const gs = Tn.a.map(k => [k, grow(k, m)]);
   fx({ en: -10, hoca: 0.4, prof: 0.4 });
   let inj = 0;
@@ -415,6 +415,7 @@ export function endWeek(own, ownCup, ownEuro, ownX) {
   s.spon = s.spon.filter(x => x.until > absWeek());
   if (NATW.includes(s.week)) natApply(null);
   invStep();
+  if (s.kid && has('akademi')) s.kid.tal = clamp(s.kid.tal + .06, 0, 20);
   if ([7, 15, 26, 33].includes(s.week) && chance(.55)) crisisStep();
   if (s.week >= 19 && s.week <= 21) worldMoves(2, 1);
   if (s.mgr) { mgrTick(); feedWeek(); s.used = 0; s.week++; if (s.week <= WEEKS) assignRef(); return { over: s.week > WEEKS, inc }; }
@@ -498,6 +499,7 @@ export function seasonEnd() {
   if (!mg && s.age <= 21 && st.apps >= 10) aw.push({ t: tt('Yılın Genç Oyuncusu'), i: 'up', noms: [{ n: s.rival.n, c: null, v: s.rival.c }, { n: rname(L.c), c: pick(sorted[myL].slice(0, 8)), v: tt('Çıkış yılı') }, { n: s.name, c: s.clubId, v: tt`${st.apps} maç · ${avg.toFixed(2).replace('.', DSEP)} ort.`, me: true }], win: st.apps >= 18 && avg >= 7.2 ? 2 : ri(0, 1) });
   if (mg && s.mgr.role === 'coach') { const ot = sorted[myL].filter(x => x !== s.clubId).slice(0, 2); aw.push({ t: tt('Yılın Teknik Direktörü'), i: 'whistle', noms: [...ot.map(x => ({ n: coach(x).n, c: x, v: tt`${sorted[myL].indexOf(x) + 1}. sıra` })), { n: s.name, c: s.clubId, v: tt`${pos}. sıra`, me: true }], win: pos === 1 || pos <= s.mgr.obj - 4 ? 2 : 0 }); if (pos === 1 || pos <= s.mgr.obj - 4) tro.push('Yılın Teknik Direktörü'); }
   const xi = !mg && st.apps >= 20 && avg >= 7.3;
+  if (!mg && s.age <= 23 && st.apps >= 20 && avg >= 7.5 && s.pot < 97) { s.pot++; lines.push(tt('Çıkış sezonu: potansiyelin yükseldi')); }
   if (!mg) goalEnd(st, pos, lines);
   tro.forEach(t => s.tro.push(label + ' · ' + t));
   const champ = club(sorted[myL][0]).n;
@@ -625,7 +627,7 @@ export function wageFor(r, o) { if (r < (KW ? 44 : 30)) return 0; return nice(ba
 export function value() {
   const o = OVR(), a = S.age;
   const af = a <= 21 ? 1.5 : a <= 25 ? 1.25 : a <= 28 ? 1 : a <= 31 ? .6 : a <= 33 ? .3 : .12;
-  return nice(baseW(o) * 300 * valF() * af * (1 + (a <= 23 ? Math.max(0, S.pot - o) / 60 : 0)));
+  return nice(baseW(o) * 300 * valF() * af * (1 + (a <= 23 ? Math.max(0, S.pot - o) / 60 : 0)) * (S.clubId ? clamp(1 + (profile().lvl - o) / 40, .8, 1.35) : 1));
 }
 // Kulübün satış tutumu
 export function stance() {
@@ -651,16 +653,25 @@ function watchStep() {
   const s = S, o = OVR(), pw = s.agent ? s.agent.pw : 0;
   const f = s.lastR.length ? s.lastR.reduce((a, b) => a + b, 0) / s.lastR.length : 6.3;
   const open = s.tstat === 'acik' ? 1.5 : s.tstat === 'istek' ? 3 : 0;
-  for (const w of s.watch) w.lv = clamp(w.lv + (f - 6.6) * 6 + open + pw * 1.5 + rnd(-3, 3), 0, 100);
-  s.watch = s.watch.filter(w => w.lv > 3 && w.id !== s.clubId && s.rt[w.id] >= o - 10 && s.rt[w.id] <= o + 7);
-  if (s.watch.length < 4 && chance(clamp(0.05 + (f - 6.5) * 0.07 + pw * 0.05 + (open ? 0.05 : 0), .01, .35))) {
-    const cur = s.rt[s.clubId], pool = [];
+  const P = profile(), cur = s.rt[s.clubId];
+  // formdayken alt seviye kulüplerin ilgisi söner; menajer ilgiyi canlı tutar
+  // seviyenin çok üstündeki kulüp kolay ikna olmaz: ilgisi yavaş büyür, uzun süre form ister
+  for (const w of s.watch) { const up = (f - 6.6) * 6 + open + pw * 3; w.lv = clamp(w.lv + (up > 0 ? up * clamp(1 - (s.rt[w.id] - o - 3) / 12, .25, 1) : up) + rnd(-3, 3) - (P.form > 0 && s.rt[w.id] < cur - 4 ? 6 : 0), 0, 100); }
+  s.watch = s.watch.filter(w => w.lv > 3 && w.id !== s.clubId && s.rt[w.id] >= P.lo - 3 && s.rt[w.id] <= P.hi + 3);
+  if (s.watch.length < 4 && chance(clamp(0.05 + (f - 6.5) * 0.07 + pw * 0.06 + (open ? 0.05 : 0) + (P.rank ? .06 : 0) + (P.tag === 'genc' ? .05 : 0), .01, .4))) {
+    let pool = []; const far = [], myC = LMAP[leagueOf(s.clubId)].c;
     for (const lid in s.lg) {
-      if (LMAP[lid].c !== 'TR' && s.rep < 40) continue;
-      for (const id of s.lg[lid].t) { const r = s.rt[id]; if (id !== s.clubId && r >= o - 8 && r <= o + 5 && !banned(id) && !s.watch.some(w => w.id === id)) { pool.push(id); if (r > cur) pool.push(id); } }
+      const home = LMAP[lid].c === myC; if (!home && LMAP[lid].c !== 'TR' && !P.abroad) continue;
+      for (const id of s.lg[lid].t) {
+        const r = s.rt[id]; if (id === s.clubId || r < P.lo || r > P.hi || banned(id) || s.watch.some(w => w.id === id)) continue;
+        if (r < cur - 2 && P.form >= 1) continue;          // iyi oynarken senden zayıf kulüp kapını çalmaz
+        const L = home ? pool : far; L.push(id); if (r > cur) L.push(id);
+      }
     }
+    if (!pool.length || (far.length && chance(.3))) pool = far;   // önce kendi ülkenin kulüpleri duyar; yurt dışı daha seyrek
     if (pool.length) { const id = pick(pool); s.watch.push({ id, lv: ri(14, 32) }); addNews(tt`${club(id).n} scoutları seni izlemeye başladı.`, 'eye'); addFeed('basin', tt('Transfer Hattı'), say('rumor', { c: club(id).n, me: s.name }), 'haber'); }
   }
+  if (s.agent && s.week % 4 === 2) agentStep(P);
   // hayal takımı: seviyen yaklaşınca kendiliğinden radarına girersin
   const dr = s.dream;
   if (dr && dr !== s.clubId && !s.watch.some(w => w.id === dr) && o >= s.rt[dr] - 7 && (LMAP[leagueOf(dr)].c === 'TR' || s.rep >= 40) && chance(.15)) {
@@ -670,7 +681,7 @@ function watchStep() {
 }
 
 export function makeOffer(id, x = {}) {
-  const r = S.rt[id], o = OVR(), d = o - r;
+  const r = S.rt[id], o = OVR(), d = o + (profile().lvl - o) * .5 - r;   // rol sözü algına göre; sahada yerini yine gücün belirler
   const wage = nice(wageFor(r, o) * (1 + (S.agent ? S.agent.pw * 0.25 : 0)));
   return { id, r, role: d >= 2 ? '11' : d >= -4 ? 'rot' : 'genc', wage, len: ri(1, 3) + (S.age < 24 ? 1 : 0), sign: nice(wage * ri(3, 10)), goalB: nice(wage * 0.15), st: 'ok', ...x };
 }
@@ -684,12 +695,24 @@ export function renewal() {
 // Teklifler izleyen kulüplerden gelir. Sözleşmen sürüyorsa kulübün bonservis bedelini onaylaması gerekir.
 export function genOffers(kind) {
   const s = S, o = OVR(), out = [], free = kind === 'serbest' || s.con.until < s.season;
-  const th = free ? 25 : kind === 'kis' ? 62 : 55;
+  const P = profile(), th = (free ? 25 : kind === 'kis' ? 62 : 55) - (s.agent ? s.agent.pw * 8 : 0);
   for (const w of [...s.watch].sort((a, b) => b.lv - a.lv)) {
     if (out.length >= 3 || w.lv < th || w.id === s.clubId || banned(w.id)) continue;
     const of = makeOffer(w.id);
     if (!free) { of.fee = nice(value() * rnd(.75, 1.35)); of.ask = askPrice(); of.st = of.fee >= of.ask || of.fee >= (s.con.rel || Infinity) ? 'ok' : 'red'; }
     out.push(of);
+  }
+  if (s.agent && !s.loan && P.form >= 1) {   // menajerin masaya getirdikleri: bağlantısı ne kadar güçlüyse o kadar çok ve o kadar iyi kulüp
+    const cur = s.rt[s.clubId], want = 1 + Math.round(s.agent.pw * 1.2), okP = clamp(.18 + s.agent.pw * .32 + P.form / 16, .1, .75), pool = [];
+    for (const lid in s.lg) { if (LMAP[lid].c !== 'TR' && !P.abroad) continue; for (const id of s.lg[lid].t) { const r = s.rt[id]; if (id !== s.clubId && !banned(id) && !out.some(x => x.id === id) && r >= Math.max(cur + 1, P.lvl - 4) && r <= P.hi) pool.push(id); } }
+    const myC = LMAP[leagueOf(s.clubId)].c, hm = shuffle(pool.filter(id => LMAP[leagueOf(id)].c === myC)), fr = shuffle(pool.filter(id => LMAP[leagueOf(id)].c !== myC));
+    for (const id of [...hm.slice(0, 4), ...fr.slice(0, 3)]) {   // önce kendi ülkendeki kapılar
+      if (out.length >= want || out.length >= 3) break;
+      if (!chance(okP)) continue;   // her görüşme teklifle bitmez
+      const of = makeOffer(id, { via: 1 });
+      if (!free) { of.fee = nice(value() * rnd(.8, 1.3)); of.ask = askPrice(); of.st = of.fee >= of.ask || of.fee >= (s.con.rel || Infinity) ? 'ok' : 'red'; }
+      out.push(of);
+    }
   }
   if (!free && !s.loan && s.con.until > s.season && (s.tstat === 'kiralik' || role() === 'yok' || s.bench >= 2)) {
     const cur = s.rt[s.clubId], cc = LMAP[leagueOf(s.clubId)].c, pool = [];
@@ -875,14 +898,14 @@ export function buildMatch(fxt, rl) {
   tl.sort((a, b) => a.min - b.min || (a.t === 'txt' ? -1 : 1));
   return { fxt, nat, cup: !!fxt.cup, ko: (!!fxt.cup && !fxt.lg && fxt.leg !== 1) || !!fxt.kof, agg: fxt.agg || [0, 0], awayEu: !!fxt.eu && !fxt.home && !fxt.final, eu: fxt.eu || null, role: rl, usR, oppR, tl, usG: 0, oppG: 0, pg: 0, pa: 0, rt: 6 + clamp((fit - 50) / 120, -.25, .3), yel: 0, red: false, mom: 0, ok: 0,
     tac, tac0: tac, fit, tasks, drain: T.st * WX[wx][3], wx, mark: mk, gk, lu, lo, scn, lh, cnt: { pas: 0, orta: 0, calim: 0, sav: 0, kurt: 0, bad: 0, on: 0 },
-    big: perk('buyuk') && (derby || !!fxt.eu || !!fxt.final || !!fxt.po), adapt: !nat && S.adapt > 0,
+    big: perk('buyuk') && (derby || !!fxt.eu || !!fxt.final || !!fxt.po), adapt: !nat && S.adapt > 0, prep: S.fl.prep === absWeek(),
     derby, stam, stam0: stam, mode: 'n', calls: 2, crowd: !nat && fxt.home ? 1 : 0, ref, bias: ref ? clamp(refBias(ref, S.clubId) - refBias(ref, fxt.opp) * .5 + ref.me, -1.2, 1.2) : 0 };
 }
 
 export function simMoment(k, M, v) {
   const base = { sut: .2, kafa: .17, frikik: .08, penalti: .76, pas: .62, calim: .45, savunma: .58, kurtaris: .74, vole: .15, rovesata: .07, orta: .48, korner: .45, duvar: .7, penkurtar: .26, kosu: .42, ribaund: .26, markaj: .6, cikis: .7 }[k];
   const shot = k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'vole' || k === 'rovesata' || k === 'ribaund';
-  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (M.big ? .04 : 0) - (M.adapt ? .03 : 0) - (M.awayEu ? .02 : 0) - ((M.lh || 1) - 1) * .2 - (v && MVAR[v] ? MVAR[v].dif : 0) - (M.wx && WX[M.wx][4].includes(k) ? .03 : 0) - (S.diff === 'gercek' ? .03 : 0) + (S.diff === 'kolay' ? .04 : S.diff === 'zor' ? -.04 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0), .05, shot ? .42 : .92));
+  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (M.prep ? .03 : 0) + (M.big ? .04 : 0) - (M.adapt ? .03 : 0) - (M.awayEu ? .02 : 0) - ((M.lh || 1) - 1) * .2 - (v && MVAR[v] ? MVAR[v].dif : 0) - (M.wx && WX[M.wx][4].includes(k) ? .03 : 0) - (S.diff === 'gercek' ? .03 : 0) + (S.diff === 'kolay' ? .04 : S.diff === 'zor' ? -.04 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0), .05, shot ? .42 : .92));
   switch (k) {
     case 'pas': return ok ? { out: 'ok', adv: chance(.5) } : { out: pick(['kesildi', 'bos']) };
     case 'orta': case 'korner': return ok ? { out: 'ok', adv: true } : { out: pick(['kesildi', 'bos']) };
@@ -1020,7 +1043,7 @@ export function postMatch(M) {
   const spent = M.stam0 > M.stam ? clamp((M.stam0 - M.stam) / 45, .6, 1.6) : 1;   // maçta harcanan efor
   s.en = clamp(s.en - (M.cup ? 12 : M.role === '11' ? 18 : 9) * spent * (perk('akciger') ? .7 : 1), 0, 100);
   if (M.fxt.press) { if (win && rt >= 7) { fx({ taraf: 6 }); lines.push(tt('Sözünü tuttun. Taraftar +6')); } else { fx({ taraf: -5 }); lines.push(tt('İddialı konuştun, olmadı. Taraftar −5')); } }
-  if (chance((0.015 + tired) * (M.role === '11' ? 1 : .5) * (M.risk || 1) * (perk('celik') ? .6 : 1) * (s.fl.kronik ? 1.8 : 1) * (s.diff === 'gercek' ? 1.5 : 1))) {
+  if (chance((0.015 + tired) * (M.role === '11' ? 1 : .5) * (M.risk || 1) * (perk('celik') ? .6 : 1) * (1 - .04 * ((s.up || {}).ekip || 0)) * (s.fl.kronik ? 1.8 : 1) * (s.diff === 'gercek' ? 1.5 : 1))) {
     const r = Math.random();
     if (r < .7) { s.inj = ri(1, 3); lines.push(tt`Maçta sakatlandın: ${s.inj} hafta yoksun.`); }
     else if (r < .92) { s.inj = ri(4, 8); lines.push(tt`Kas yırtığı: ${s.inj} hafta yoksun.`); s.q.push({ id: 'kas', at: absWeek() + 1 }); }
@@ -1705,8 +1728,8 @@ export function moveInfo(o) {
 }
 // Seviyene uyan kulüpler: ayda bir yenilenen kısa liste
 export function market() {
-  const o = OVR(), key = S.season + ':' + Math.floor((S.week - 1) / 4), all = [];
-  for (const lid in S.lg) { if (LMAP[lid].c !== 'TR' && S.rep < 40) continue; for (const id of S.lg[lid].t) { const r = S.rt[id]; if (id !== S.clubId && r >= o - 6 && r <= o + 4) all.push(id); } }
+  const P = profile(), key = S.season + ':' + Math.floor((S.week - 1) / 4), all = [];
+  for (const lid in S.lg) { if (LMAP[lid].c !== 'TR' && !P.abroad) continue; for (const id of S.lg[lid].t) { const r = S.rt[id]; if (id !== S.clubId && r >= P.lo + 1 && r <= P.hi) all.push(id); } }
   return all.sort((a, b) => hsh(a + key) - hsh(b + key)).slice(0, 6).sort((a, b) => S.rt[b] - S.rt[a]);
 }
 export const canPropose = () => (S.cd.propose || 0) <= absWeek() && (!!S.agent || S.net.length > 0);
@@ -1950,7 +1973,9 @@ function ivCtx(fxt, M) {
     watch: S.watch.length > 0, co: co.n, tac: TACT[co.st].n.toLocaleLowerCase(LC), ref: curRef().n, rival: S.rival.n };
 }
 // Duruma uyan, yakın zamanda sorulmamış n soru seçer
+export const ivDue = () => absWeek() >= (S.ivn || 0);   // mikrofonlar her hafta uzanmaz
 export function ivPick(kind, fxt, M, n = 2) {
+  if (kind !== 'imza') S.ivn = absWeek() + ri(4, 6);
   const c = ivCtx(fxt, M), seen = S.ivq || (S.ivq = []), ok = IVQ.filter(q => q.k === kind && (!q.if || q.if(c)));
   const w = {}; ok.forEach(q => { w[q.id] = (q.w || 1) * (q.if ? 2.5 : 1) * (seen.includes(q.id) ? .04 : 1); });
   const out = [];
@@ -2329,4 +2354,73 @@ export function momVar(M, e, k) {
   for (const id in MVAR) { const V = MVAR[id]; if (V.k.includes(k) && (!V.from || e.min >= V.from)) w[id] = id === 'sondk' ? 4 : hot.includes(id) ? 3 : 1; }
   e.vk = k; e.v = Object.keys(w).length && chance(hot.some(x => w[x]) ? .72 : .5) ? wpick(w) : null;
   return e.v;
+}
+
+// ---------- piyasa profili: kulüpler seni gücünle değil, gördükleriyle tartar ----------
+// lvl: algılanan seviye (güç + form + gol krallığı + genç yetenek primi + itibar). lo-hi: seni isteyebilecek kulüplerin güç aralığı
+export function profile() {
+  const s = S, o = OVR(), st = s.st, lid = leagueOf(s.clubId), avg = st.apps >= 4 ? st.rs / st.apps : (s.lastAvg || 6.5);
+  const rank = scorers(lid).findIndex(x => x.me) + 1, top = st.lg >= 4 && rank > 0 && rank <= 3 ? (rank === 1 ? 4 : 2) : 0;
+  const young = s.age <= 21 ? clamp((s.pot - o) * .3, 0, 6) : 0;
+  const bench = s.week >= 10 && st.apps < s.week * .25;   // forma giymeyenin piyasası düşer
+  const form = bench ? -3 : clamp((avg - 6.8) * 5, -5, 5) * clamp((st.apps || (s.week < 4 ? 8 : 2)) / 8, .3, 1);
+  const lvl = o + form + top + young + s.rep / 25;
+  const tag = form <= -3 ? 'formsuz' : s.age <= 21 && young >= 3 && avg >= 6.9 ? 'genc' : top >= 4 || avg >= 7.6 ? 'yildiz' : form >= 2 ? 'yukselen' : 'duzenli';
+  return { lvl, avg, rank: top ? rank : 0, young, form, tag, lo: lvl - 7, hi: Math.min(lvl + 4, o + 8 + (young >= 3 ? 3 : 0)) + (s.agent ? s.agent.pw * 3 : 0),   // algı ne olursa olsun gücünden çok uzağa sıçrayamazsın
+    bench, abroad: s.rep >= 40 || (tag === 'genc' && s.rep >= 20) || (top >= 4 && LMAP[lid].tier === 1) };
+}
+// Menajerin ayda bir kapı çalar: ulaşabildiği en iyi kulüplerden birini radarına sokar
+function agentStep(P) {
+  const s = S, a = s.agent; if (!chance(clamp(a.pw * .55 + .08, .1, .8)) || P.form < -1) return;
+  const cur = s.rt[s.clubId], pool = [];
+  for (const lid in s.lg) { if (LMAP[lid].c !== 'TR' && !P.abroad) continue; for (const id of s.lg[lid].t) { const r = s.rt[id]; if (id !== s.clubId && !banned(id) && r >= Math.max(cur + 1, P.lvl - 3) && r <= P.hi + 2) pool.push(id); } }
+  if (!pool.length) return;
+  const id = pick(pool), w = s.watch.find(x => x.id === id), up = ri(12, 22) + Math.round(a.pw * 8);
+  if (w) w.lv = clamp(w.lv + up, 0, 100); else s.watch.push({ id, lv: clamp(18 + up, 0, 100) });
+  addNews(tt`Menajerin ${a.n}, ${club(id).n} ile görüştü. Kulüp seni yakından izleyecek.`, 'pen');
+  addFeed('basin', tt('Transfer Hattı'), tt`${club(id).n}, ${s.name} için menajeriyle temasta.`, 'haber');
+}
+
+// ---------- mağaza kademeleri ve kademeli yatırımlar ----------
+export const shopTier = () => (SHOP.filter(i => i.p && !i.t2).every(i => has(i.id)) ? 2 : 1);
+export const upLvl = id => (S.up || {})[id] || 0;
+export const upCost = id => { const u = UPG.find(x => x.id === id); return nice(u.base * Math.pow(u.k, upLvl(id))); };
+export const upOpen = u => !u.need || shopTier() >= u.need;
+export function buyUp(id) {
+  const u = UPG.find(x => x.id === id), c = upCost(id); if (!u || !upOpen(u) || upLvl(id) >= u.max || S.money < c) return null;
+  S.money -= c; (S.up || (S.up = {}))[id] = upLvl(id) + 1;
+  return id === 'vakif' ? fx({ rep: 1.5, taraf: 5, basin: 6, aile: 3 }) : [];
+}
+
+// ---------- ücretli seanslar ----------
+export const sessCost = x => nice(Math.max(x.min, wref() * x.c));
+export const sessUsed = id => S.ssw === absWeek() && (S.ssu || []).includes(id);
+export function session(id) {
+  const x = SESS.find(y => y.id === id), c = sessCost(x); if (!x || sessUsed(id) || S.money < c || (id === 'ozel' && S.inj > 0)) return null;
+  if (S.ssw !== absWeek()) { S.ssw = absWeek(); S.ssu = []; }
+  S.ssu.push(id); S.money -= c;
+  const keys = Object.keys(POS[S.pos].w).slice(0, 2);
+  switch (id) {
+    case 'ozel': { const g = keys.map(k => `${ATTR[k]} +${grow(k, .22).toFixed(2).replace('.', DSEP)}`); return [tt('Özel hocayla bire bir çalıştın.'), [...g, ...fx({ en: -5 })]]; }
+    case 'analiz': S.fl.prep = absWeek(); return [tt('Rakibin son üç maçını izledin. Kim nereye koşuyor, artık biliyorsun.'), [tt('Sıradaki maç: anlar kolaylaşır')]];
+    case 'mental': grow('zihin', .12); return [tt('Kafandaki gürültü azaldı.'), fx({ mo: 8 })];
+    case 'fizik': return [tt('Buz banyosu, masaj, erken uyku.'), fx({ en: 18 })];
+  }
+  return null;
+}
+
+// ---------- gelişim: odak, akıl hocası, döküm ----------
+export const mentor = () => (S.mates || []).find(m => (m.r === MROLE[0] || m.r === MROLE[2]) && m.b >= 60) || null;
+export function setFocus(k) { S.dfocus = k && k in S.at ? k : null; }
+export function devInfo() {
+  const s = S, m = mentor();
+  return { age: ageF(), fac: facF(facOf(s.clubId)), gear: 1 + eff('tr'), mentor: m, trait: TRAITS[s.trait].tr || 1, focus: s.dfocus || null, pot: s.pot,
+    total: ageF() * facF(facOf(s.clubId)) * (1 + eff('tr')) * (m ? 1.1 : 1) * (TRAITS[s.trait].tr || 1) };
+}
+
+// Kulübün ligdeki yeri: maç kartında rakibin kaçıncı olduğunu göstermek için
+export function standing(id) {
+  const lid = leagueOf(id); if (!lid) return null;
+  const tb = table(lid), i = tb.findIndex(r => r.id === id);
+  return i < 0 ? null : { pos: i + 1, pts: tb[i].pts, p: tb[i].p, n: tb.length, lid, lname: LMAP[lid].name };
 }
