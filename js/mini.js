@@ -610,3 +610,66 @@ export class Mini {
     g.save(); g.translate(W / 2, 234); g.scale(s, s); g.globalAlpha = a; head(g, txt, 0, 0, txt.length > 11 ? 38 : 56, '#fff'); g.restore();
   }
 }
+
+// ---------- canlı 2B maç görünümü: anlar arasında topun sahada dolaşması ----------
+// Biz soldan sağa oynarız. Diziliş 4-4-2; me: oyuncunun dizilişteki sırası.
+const FORM = [[.05, .5], [.2, .14], [.2, .38], [.2, .62], [.2, .86], [.42, .12], [.42, .38], [.42, .62], [.42, .88], [.64, .34], [.64, .66]];
+export const PSLOT = { KL: 0, DF: 2, OS: 6, KN: 8, FV: 9 };
+export class Pitch {
+  constructor(cv, { cu = '#ff6a2b', co = '#5a6470', me = -1, flip = false } = {}) {
+    this.cv = cv; this.g = cv.getContext('2d'); this.w = 360; this.h = 150;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = this.w * dpr; cv.height = this.h * dpr; this.g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.cu = cu; this.co = co; this.me = me; this.flip = flip; this.on = true; this.t = 0; this.last = performance.now();
+    this.us = FORM.map(([x, y]) => ({ x, y, hx: x, hy: y })); this.op = FORM.map(([x, y]) => ({ x: 1 - x, y, hx: 1 - x, hy: y }));
+    this.b = { x: .5, y: .5, tx: .5, ty: .5, sp: 1.2 }; this.pos = true; this.next = .6; this.push = 0; this.flash = 0; this.fu = true; this.ring = 0; this.lock = 0; this.trail = [];
+    const loop = () => { if (!this.on) return; const n = performance.now(), dt = Math.min(.05, (n - this.last) / 1000); if (dt > .012) { this.last = n; this.step(dt); this.draw(); } };
+    this.raf = () => { loop(); if (this.on) requestAnimationFrame(this.raf); }; requestAnimationFrame(this.raf);
+    this.iv = setInterval(loop, 60);   // sekme arka plandayken de aksın
+  }
+  stop() { this.on = false; clearInterval(this.iv); }
+  // top bizde mi: hat ileri ya da geri kayar
+  poss(us) { this.pos = us; this.push = us ? .1 : -.1; this.next = 0; }
+  // atak: top rakip (ya da bizim) ceza sahasına doğru taşınır
+  attack(us) { this.pos = us; this.push = us ? .2 : -.2; const p = (us ? this.us : this.op)[9 + (Math.random() < .5 ? 0 : 1)]; this.b.tx = p.x; this.b.ty = p.y; this.b.sp = 1.5; this.next = .5; }
+  goal(us) { this.b.tx = us ? 1.01 : -.01; this.b.ty = .5 + (Math.random() - .5) * .12; this.b.sp = 3.2; this.lock = 1.5; this.flash = 1.5; this.fu = us; }
+  // an sana geliyor: top oyuncunun ayağına
+  focus() { if (this.me < 0) return; const p = this.us[this.me]; this.pos = true; this.b.tx = p.x; this.b.ty = p.y; this.b.sp = 2; this.ring = 2.2; this.lock = 1.6; }
+  step(dt) {
+    this.t += dt; const b = this.b;
+    if (this.lock > 0) { this.lock -= dt; if (this.lock <= 0 && (b.tx > 1 || b.tx < 0)) { b.x = b.tx = .5; b.y = b.ty = .5; this.push = 0; this.pos = !this.fu; this.next = .7; } }
+    else if ((this.next -= dt) <= 0) {   // paslaşma: topa sahip takımın bir oyuncusuna
+      if (Math.random() < .16) { this.pos = !this.pos; this.push = this.pos ? .08 : -.08; }
+      const T = this.pos ? this.us : this.op, p = T[1 + Math.floor(Math.random() * 10)];
+      b.tx = p.x; b.ty = p.y; b.sp = .9 + Math.random() * .8; this.next = .55 + Math.random() * .7;
+    }
+    const dx = b.tx - b.x, dy = b.ty - b.y, d = Math.hypot(dx, dy), v = b.sp * dt;
+    if (d > v) { b.x += dx / d * v; b.y += dy / d * v; } else { b.x = b.tx; b.y = b.ty; }
+    this.trail.push([b.x, b.y]); if (this.trail.length > 7) this.trail.shift();
+    const mv = (T, sign) => T.forEach((p, i) => {
+      const k = i === 0 ? .03 : .22, tx = clamp(p.hx + (b.x - .5) * k + this.push * sign * (i ? 1 : .2), .02, .98), ty = p.hy + (b.y - p.hy) * (i ? .16 : .3) + Math.sin(this.t * 1.3 + i * 2.1) * .012;
+      p.x += (tx - p.x) * Math.min(1, dt * 2.6); p.y += (ty - p.y) * Math.min(1, dt * 2.6);
+    });
+    mv(this.us, 1); mv(this.op, 1);
+    if (this.flash > 0) this.flash -= dt; if (this.ring > 0) this.ring -= dt;
+  }
+  draw() {
+    const g = this.g, W = this.w, H = this.h, fl = this.flip, X = x => 8 + (fl ? 1 - x : x) * (W - 16), Y = y => 6 + y * (H - 12);   // deplasmanda saha aynalanır: skor tabelasıyla aynı yön
+    for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#1d6b3a' : '#1a6235'; g.fillRect(i * W / 8, 0, W / 8 + 1, H); }
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.2;
+    g.strokeRect(8, Y(0), W - 16, Y(1) - Y(0)); g.beginPath(); g.moveTo(X(.5), Y(0)); g.lineTo(X(.5), Y(1)); g.stroke();
+    g.beginPath(); g.arc(X(.5), Y(.5), 17, 0, 6.3); g.stroke();
+    g.strokeRect(8, Y(.24), 42, Y(.76) - Y(.24)); g.strokeRect(W - 50, Y(.24), 42, Y(.76) - Y(.24));
+    g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(4, Y(.42), 4, Y(.58) - Y(.42)); g.fillRect(W - 8, Y(.42), 4, Y(.58) - Y(.42));
+    if (this.flash > 0) { g.fillStyle = this.fu ? `rgba(47,191,113,${Math.min(.5, this.flash * .5)})` : `rgba(255,77,77,${Math.min(.5, this.flash * .5)})`; g.fillRect(this.fu !== fl ? W / 2 : 0, 0, W / 2, H); }
+    const dot = (p, c, hi) => {
+      g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(X(p.x), Y(p.y) + 4, 4.5, 2, 0, 0, 6.3); g.fill();
+      g.fillStyle = c; g.beginPath(); g.arc(X(p.x), Y(p.y), hi ? 5.2 : 4.3, 0, 6.3); g.fill();
+      g.strokeStyle = hi ? '#ffd23f' : 'rgba(0,0,0,.55)'; g.lineWidth = hi ? 2 : 1; g.stroke();
+    };
+    this.op.forEach(p => dot(p, this.co)); this.us.forEach((p, i) => dot(p, this.cu, i === this.me));
+    if (this.ring > 0 && this.me >= 0) { const p = this.us[this.me], r = 8 + (2.2 - this.ring) % .7 * 16; g.strokeStyle = `rgba(255,210,63,${.9 - ((2.2 - this.ring) % .7) / .7 * .8})`; g.lineWidth = 2; g.beginPath(); g.arc(X(p.x), Y(p.y), r, 0, 6.3); g.stroke(); }
+    this.trail.forEach(([x, y], i) => { g.fillStyle = `rgba(255,255,255,${i / 28})`; g.beginPath(); g.arc(X(x), Y(y), 2, 0, 6.3); g.fill(); });
+    g.fillStyle = '#fff'; g.strokeStyle = '#111'; g.lineWidth = 1; g.beginPath(); g.arc(X(this.b.x), Y(this.b.y), 3, 0, 6.3); g.fill(); g.stroke();
+  }
+}

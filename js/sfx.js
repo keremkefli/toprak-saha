@@ -74,6 +74,7 @@ export const sfx = {
   bad() { tone(300, .28, { type: 'sawtooth', vol: .08, to: 170 }); },
   sign() { noise(.25, { f: 3000, to: 1500, q: 2, vol: .1 }); [659, 784, 1047].forEach((f, i) => tone(f, .2, { type: 'triangle', vol: .12, at: .2 + i * .09 })); },
   trophy() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, .24, { type: 'triangle', vol: .15, at: i * .13 })); noise(2.6, { f: 900, q: .5, vol: .4, a: .3 }); },
+  anthem() { [[262, 330, 392], [294, 370, 440], [330, 415, 494], [392, 494, 587]].forEach((ch, i) => ch.forEach(f => tone(f, i === 3 ? 1.2 : .44, { type: 'triangle', vol: .085, at: i * .42, a: .05 }))); noise(2.4, { f: 700, q: .5, vol: .11, a: .5 }); },
   ambOn() {
     const c = ac(); if (!c || amb) return;
     const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();

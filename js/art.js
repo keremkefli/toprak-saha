@@ -157,3 +157,19 @@ export function ring(v, icon, cls = '') {
     <circle cx="26" cy="26" r="${r}" class="rb"/><circle cx="26" cy="26" r="${r}" class="rf" stroke-dasharray="${(C * f).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 26 26)"/>
     <g transform="translate(16 16) scale(.833)" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${P[icon] || P.ball}"/></g></svg>`;
 }
+
+// Avrupa kupası amblemleri (özgün çizim). cl: yıldız halkası, el: kupa ve dalga
+const starP = (cx, cy, R, rot = -90) => { let d = ''; for (let i = 0; i < 10; i++) { const a = (rot + i * 36) * Math.PI / 180, q = i % 2 ? R * .42 : R; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * q).toFixed(1) + ' ' + (cy + Math.sin(a) * q).toFixed(1); } return d + 'z'; };
+export function euLogo(k, s = 40) {
+  if (k === 'cl') {
+    let ring = '';
+    for (let i = 0; i < 8; i++) { const a = (i * 45 - 90) * Math.PI / 180; ring += `<path d="${starP(50 + Math.cos(a) * 31, 50 + Math.sin(a) * 31, 6.5, i * 45 - 90)}" fill="#fff"/>`; }
+    return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gcl" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#3f74ff"/><stop offset="1" stop-color="#061045"/></radialGradient></defs>
+      <circle cx="50" cy="50" r="48" fill="url(#gcl)" stroke="#a9c1ff" stroke-width="2"/><circle cx="50" cy="50" r="21.5" fill="none" stroke="#a9c1ff" stroke-width="1.2" opacity=".65"/>${ring}<path d="${starP(50, 51, 16)}" fill="#fff"/></svg>`;
+  }
+  return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gel" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#ff9a3d"/><stop offset="1" stop-color="#8f2c00"/></radialGradient></defs>
+    <circle cx="50" cy="50" r="48" fill="url(#gel)" stroke="#ffd2a6" stroke-width="2"/>
+    <path d="M16 60a36 36 0 0 0 68 0M22 70a32 32 0 0 0 56 0" fill="none" stroke="#ffd2a6" stroke-width="2.2" stroke-linecap="round" opacity=".75"/>
+    <path d="M35 24h30v9c0 13-6 22-15 22s-15-9-15-22z" fill="#fff"/><path d="M35 28c-11-1-11 15 3 17M65 28c11-1 11 15-3 17" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+    <path d="M46.5 54h7v9h-7zM37 70l3-7h20l3 7z" fill="#fff"/><path d="${starP(50, 37, 6)}" fill="#c2410c"/></svg>`;
+}

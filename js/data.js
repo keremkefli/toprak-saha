@@ -286,6 +286,40 @@ for (const L of LEAGUES) {
   });
 }
 
+// Liglerimizin dışındaki Avrupa kulüpleri: yalnızca Şampiyonlar Ligi ve Avrupa Ligi'nde görünürler
+export const XIDS = T(`
+  Celtic|73|GW|İskoçya
+  Rangers|72|BW|İskoçya
+  Club Brugge|75|BK|Belçika
+  Anderlecht|72|PW|Belçika
+  Union SG|73|YB|Belçika
+  Genk|71|BW|Belçika
+  RB Salzburg|72|RW|Avusturya
+  Sturm Graz|70|KW|Avusturya
+  Shakhtar Donetsk|73|OK|Ukrayna
+  Dinamo Kiev|71|WB|Ukrayna
+  Olympiakos|74|RW|Yunanistan
+  PAOK|72|KW|Yunanistan
+  Panathinaikos|71|GW|Yunanistan
+  Kızılyıldız|72|RW|Sırbistan
+  Partizan|69|KW|Sırbistan
+  Kopenhag|72|WB|Danimarka
+  Midtjylland|71|KR|Danimarka
+  Young Boys|71|YK|İsviçre
+  Basel|71|RB|İsviçre
+  Dinamo Zagreb|72|BW|Hırvatistan
+  Slavia Prag|74|RW|Çekya
+  Sparta Prag|73|MW|Çekya
+  Viktoria Plzen|71|RB|Çekya
+  Ferencvaros|71|GW|Macaristan
+  Bodo/Glimt|73|YK|Norveç
+  Malmö|70|SW|İsveç
+  Karabağ|71|KW|Azerbaycan
+  Ludogorets|69|GW|Bulgaristan
+  Legia Varşova|70|GW|Polonya
+  Maccabi Tel Aviv|70|YB|İsrail
+`).map((t, i) => { const [n, r, c, x] = t.split('|'), id = 'x_' + i; CLUBS[id] = { n, r: +r, c1: PAL[c[0]], c2: PAL[c[1]], x }; return id; });
+
 // İl bazlı amatör ligler. l: elle yazılmış 3 kademe, d: ilçelerden üretilir.
 export const PROV = {
   'Sakarya': { l: [
@@ -323,10 +357,10 @@ export const ATTR = { sut: 'Şut', pas: 'Pas', teknik: 'Teknik', hiz: 'Hız', gu
 // w: genel güç ağırlıkları, m: maç anı ağırlıkları, b: başlangıç bonusu
 export const POS = {
   KL: { n: 'Kaleci', w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 85, pas: 15 }, b: { kaleci: 24, zihin: 3 } },
-  DF: { n: 'Defans', w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 55, kafa: 12, pas: 23, orta: 10 }, b: { savunma: 9, guc: 5, kafa: 4 } },
-  OS: { n: 'Orta Saha', w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 32, sut: 15, calim: 12, savunma: 16, frikik: 7, orta: 8, korner: 8, vole: 2 }, b: { pas: 8, teknik: 5, zihin: 3 } },
-  KN: { n: 'Kanat', w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 30, pas: 16, sut: 22, kafa: 4, orta: 22, vole: 6 }, b: { hiz: 8, teknik: 6, pas: 2 } },
-  FV: { n: 'Forvet', w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 40, kafa: 13, calim: 16, pas: 12, penalti: 6, vole: 9, rovesata: 4 }, b: { sut: 8, kafa: 4, teknik: 3 } },
+  DF: { n: 'Defans', w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 53, kafa: 12, pas: 22, orta: 13 }, b: { savunma: 9, guc: 5, kafa: 4 } },
+  OS: { n: 'Orta Saha', w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 30, sut: 15, calim: 12, savunma: 15, frikik: 7, orta: 11, korner: 8, vole: 2 }, b: { pas: 8, teknik: 5, zihin: 3 } },
+  KN: { n: 'Kanat', w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 28, pas: 15, sut: 21, kafa: 4, orta: 24, vole: 6, korner: 6 }, b: { hiz: 8, teknik: 6, pas: 2 } },
+  FV: { n: 'Forvet', w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 38, kafa: 13, calim: 15, pas: 11, penalti: 6, vole: 9, rovesata: 4, orta: 7 }, b: { sut: 8, kafa: 4, teknik: 3 } },
 };
 
 export const ORIGINS = {
@@ -351,6 +385,7 @@ export const TRAIN = [
   { id: 'sav', n: 'Savunma', a: ['savunma', 'kafa'], g: 'savunma', pos: ['DF', 'OS', 'KN', 'FV'] },
   { id: 'kal', n: 'Kaleci Çalışması', a: ['kaleci', 'zihin'], g: 'kurtaris', pos: ['KL'] },
   { id: 'zih', n: 'Zihin', a: ['zihin'], g: 'penalti', pos: ['DF', 'OS', 'KN', 'FV'] },
+  { id: 'ort', n: 'Orta ve Duran Top', a: ['pas', 'teknik'], g: 'orta', pos: ['DF', 'OS', 'KN', 'FV'] },
 ];
 
 // p: tek seferlik fiyat, yr: sezonluk anlaşma bedeli (sezon sonunda biter), e: etkiler
@@ -445,8 +480,9 @@ export const FANS = ['tribun54', 'sakaryali_reis', 'kale_arkasi', 'gol_hasreti',
 export const ACH = [
   ['ilkgol', 'İlk gol', 'ball'], ['hat', 'Hat-trick', 'star'], ['g50', '50 gol', 'ball'], ['g100', '100 gol', 'ball'], ['g250', '250 gol', 'ball'],
   ['pro', 'İlk profesyonel sözleşme', 'pen'], ['sl', 'Süper Lig oyuncusu', 'shield'], ['yurt', 'Yurt dışı macerası', 'globe'], ['milli', 'Milli forma', 'flag'],
-  ['kupa', 'Kupa kaldırdın', 'trophy'], ['avrupa', 'Avrupa şampiyonu', 'crown'], ['hayal', 'Hayalindeki forma', 'heart'], ['m1', '1 milyon takipçi', 'phone'],
+  ['kupa', 'Kupa kaldırdın', 'trophy'], ['avrupa', 'Şampiyonlar Ligi şampiyonu', 'crown'], ['al', 'Avrupa Ligi şampiyonu', 'trophy'], ['hayal', 'Hayalindeki forma', 'heart'], ['m1', '1 milyon takipçi', 'phone'],
   ['ay', 'Ayın oyuncusu', 'star'], ['yil11', 'Yılın 11\'i', 'users'],
+  ['milk', 'Milli takımla kupa', 'flag'], ['efsane', 'Kulüp efsanesi', 'crown'],
 ];
 
 // Maç içi kararlar. p: konuşan kişi, i: ikon
@@ -491,3 +527,34 @@ export const DERBY = [['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Trabzonspor'
   ['Real Madrid', 'Barcelona', 'Atlético Madrid'], ['Manchester United', 'Manchester City', 'Liverpool'], ['Arsenal', 'Tottenham', 'Chelsea'], ['Inter', 'Milan', 'Juventus'], ['Roma', 'Lazio'], ['Bayern München', 'Borussia Dortmund'],
   ['Paris Saint-Germain', 'Marseille'], ['Ajax', 'Feyenoord', 'PSV'], ['Benfica', 'Porto', 'Sporting CP'], ['Al-Hilal', 'Al-Nassr', 'Al-Ittihad']];
 export const DIFF = { kolay: ['Kolay', .85], normal: ['Normal', 1], zor: ['Zor', 1.15] };
+
+// Hoca taktikleri. m: maç anı ağırlık çarpanları, add: mevkide olmayan ana eklenen ağırlık,
+// lu/lo: takımın attığı/yediği gol çarpanı, st: enerji tüketimi, fit: yakışan mevkiler, key: aranan özellik
+export const TACT = {
+  hucum: { n: 'Hücum futbolu', d: 'Önde oyna, çok pozisyon bul. Arkada boşluk kalır.', i: 'bolt', m: { sut: 1.35, vole: 1.3, calim: 1.1, savunma: .75 }, lu: 1.15, lo: 1.12, st: 1.05, fit: ['FV', 'KN'], bad: ['DF'], key: 'sut' },
+  kontra: { n: 'Kontra atak', d: 'Geride bekle, topu kapınca hızlı çık.', i: 'right', m: { calim: 1.6, sut: 1.15, pas: .75, savunma: 1.2 }, lu: .95, lo: .85, st: 1, fit: ['KN', 'FV'], bad: [], key: 'hiz' },
+  top: { n: 'Topa sahip olma', d: 'Kısa pas, sabır. Top kaybı affedilmez.', i: 'swap', m: { pas: 1.8, calim: .9, kafa: .7, orta: .7 }, lu: 1.05, lo: .9, st: .95, fit: ['OS'], bad: [], key: 'pas' },
+  kanat: { n: 'Kanat oyunu', d: 'Çizgiye in, ortala. Ceza sahası kalabalık.', i: 'up', m: { orta: 2.3, korner: 1.6, kafa: 1.9, pas: .8 }, add: { orta: 12, kafa: 8 }, lu: 1.05, lo: 1, st: 1.05, fit: ['KN', 'FV', 'DF'], bad: [], key: 'kafa' },
+  pres: { n: 'Yüksek pres', d: 'Her topa bas. Çok yorar, çok top kazandırır.', i: 'alert', m: { savunma: 1.7, calim: 1.1, pas: .9 }, add: { savunma: 12 }, lu: 1.08, lo: .95, st: 1.3, fit: ['OS', 'DF'], bad: [], key: 'guc' },
+  otobus: { n: 'Kapalı savunma', d: 'Önce gol yeme. Pozisyon az, hata pahalı.', i: 'shield', m: { savunma: 1.9, kafa: 1.2, sut: .7, calim: .8 }, add: { savunma: 14 }, lu: .8, lo: .75, st: .9, fit: ['DF', 'KL'], bad: ['FV', 'KN'], key: 'savunma' },
+};
+
+// İkinci kademe yetenekler: ilk kademe tamamlanınca açılır
+export const PERKS2 = [
+  { id: 'buyuk', n: 'Büyük maç oyuncusu', d: 'Derbi, final ve Avrupa gecelerinde anlar kolaylaşır.', c: 3, i: 'trophy' },
+  { id: 'nefes', n: 'İkinci nefes', d: 'Devre arasında enerjin iki kat dolar.', c: 2, i: 'bolt' },
+  { id: 'lider', n: 'Soyunma odası lideri', d: 'Takım kimyası yükselir, asist şansın artar.', c: 3, i: 'users' },
+  { id: 'ikon', n: 'Marka yüzü', d: 'Sponsor gelirlerin %30 artar.', c: 3, i: 'tag' },
+  { id: 'genclik', n: 'Bitmeyen gençlik', d: 'Yaşa bağlı düşüş %40 yavaşlar.', c: 3, i: 'heart' },
+  { id: 'taktik', n: 'Hocanın adamı', d: 'Her taktiğe uyarsın; hoca görevleri iki kat güven kazandırır.', c: 2, i: 'whistle' },
+];
+
+// Kulüpsüz geçen ay: iki hafta için bir seçim
+export const FREE = [
+  { id: 'birey', n: 'Bireysel antrenman', s: 'Mevkinin iki ana özelliği gelişir', i: 'train' },
+  { id: 'mahalle', n: 'Mahalle turnuvası', s: 'Teknik ve arkadaşlık artar', i: 'ball' },
+  { id: 'kamp', n: 'Kondisyon kampı', s: 'Hız ve güç artar · ₺1.500', i: 'bolt', cost: 1500 },
+  { id: 'is', n: 'Sanayide çalış', s: 'Cebine para girer, ailen rahatlar', i: 'briefcase' },
+  { id: 'okul', n: 'Derslere ağırlık ver', s: 'Eğitim ve aile artar', i: 'book' },
+  { id: 'tanidik', n: 'Bir tanıdık bul', s: 'Şehrin kıdemlisi sıradaki denemede kapı aralar', i: 'users' },
+];
