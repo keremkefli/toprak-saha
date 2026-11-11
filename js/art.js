@@ -1,4 +1,5 @@
 // Toprak Saha — çizim seti: ikonlar, oyuncu portresi, karakterler, armalar, grafikler (hepsi SVG, dosya gerektirmez)
+import { tt, LC } from './i18n.js';
 
 const P = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
@@ -67,12 +68,23 @@ const HAIR = [
   () => '',
   c => `<path d="M30 37C29 24 39 17 50 17s21 7 20 20c-2-7-8-10-20-10s-18 3-20 10z" fill="${c}" opacity=".45"/><path d="M43 30 45 8c3-3 7-3 10 0l2 22c-4-3-10-3-14 0z" fill="${c}"/>`,
   c => `<circle cx="50" cy="9" r="7.5" fill="${c}"/><path d="M28.5 42C25 22 38 12 50 12s25 10 21.5 30c-2-9-7-15-21.5-15S30.5 33 28.5 42z" fill="${c}"/>`,
+  // 8-11 uzun saçlar: [ön katman, arka katman]. Arka katman gövdeden önce çizilir, omuzların arkasında kalır.
+  [c => `<path d="M28.5 41C26 22 38 12 50 12s24 10 21.5 29c-3-9-9-13-21.5-13S31.5 32 28.5 41z" fill="${c}"/><path d="M66.5 19.5l5.5 3.5-3 4.5-4.5-3.5z" fill="#f2f2f2"/>`,
+    c => `<path d="M67 19c11 2 17 13 15 28-1 13-5 24-10 32l-6-3c4-9 6-19 5-29-1-8-4-15-8-20z" fill="${c}"/>`],
+  [c => `<path d="M28 44C24 22 37 11 50 11s26 11 22 33c-2-10-6-16-11-18-6 3-16 3-22 0-5 2-9 8-11 18z" fill="${c}"/>`,
+    c => `<path d="M24 46C21 21 35 8 50 8s29 13 26 38c0 15 2 28 5 42H19c3-14 5-27 5-42z" fill="${c}"/>`],
+  [c => `<path d="M28.5 40C27 23 38 12 50 12s23 11 21.5 28c-6-5-13-7-21.5-7s-15.5 2-21.5 7z" fill="${c}"/>`,
+    c => `<path d="M25 44C22 21 36 9 50 9s28 12 25 35c0 9 1 17 4 23-5 3-9 4-13 4H34c-4 0-8-1-13-4 3-6 4-14 4-23z" fill="${c}"/>`],
+  [c => `<g fill="${c}"><ellipse cx="50" cy="24" rx="20" ry="10"/><circle cx="33" cy="25" r="9"/><circle cx="45" cy="16" r="10"/><circle cx="58" cy="17" r="10"/><circle cx="68" cy="27" r="8.5"/></g>`,
+    c => `<g fill="${c}"><circle cx="27" cy="38" r="9"/><circle cx="73" cy="38" r="9"/><circle cx="24" cy="52" r="9"/><circle cx="76" cy="52" r="9"/><circle cx="25" cy="66" r="9"/><circle cx="75" cy="66" r="9"/><circle cx="29" cy="78" r="8"/><circle cx="71" cy="78" r="8"/><rect x="26" y="30" width="48" height="46"/></g>`],
 ];
 export const HAIRS = HAIR.length;
+export const HAIRK = [4, 7, 8, 9, 10, 11];   // kadın kariyerinde üretilen portrelerin saçları
 
 export function avatar(look = {}, c1 = '#3a3f47', c2 = '#f2f2f2', x = {}) {
-  const sk = SKIN[look.skin ?? 1], hc = HAIRC[look.hc ?? 0], hair = HAIR[look.hair ?? 0] || HAIR[0], bd = x.beard ? 2 : look.beard || 0;
-  return `<svg class="av" viewBox="0 0 100 110" aria-hidden="true">
+  const sk = SKIN[look.skin ?? 1], hc = HAIRC[look.hc ?? 0], hr = HAIR[look.hair ?? 0] || HAIR[0], hair = Array.isArray(hr) ? hr[0] : hr, back = Array.isArray(hr) ? hr[1](hc) : '', bd = x.beard ? 2 : look.beard || 0;
+  return tt`<svg class="av" viewBox="0 0 100 110" aria-hidden="true">
+    ${back}
     <path d="M8 110C8 88 24 79 40 77h20c16 2 32 11 32 33z" fill="${c1}"/>
     <path d="M24 110 35 80l9-3-12 33z" fill="${c2}" opacity=".9"/>
     <path d="M39 77 50 90l11-13" fill="none" stroke="${c2}" stroke-width="4" stroke-linejoin="round"/>
@@ -83,7 +95,7 @@ export function avatar(look = {}, c1 = '#3a3f47', c2 = '#f2f2f2', x = {}) {
     ${bd ? `<path d="M30 46c1 16 9 23 20 23s19-7 20-23c-3 8-6 11-10 12-6-3-14-3-20 0-4-1-7-4-10-12z" fill="${hc}" opacity="${bd === 1 ? .3 : .9}"/>` : ''}
     ${hair(hc)}
     ${look.band ? '<path d="M29.6 33q20.4-9.5 40.8 0v5.5q-20.4-9.5-40.8 0z" fill="#f2f2f2"/>' : ''}
-    ${x.num ? `<text x="64" y="104" text-anchor="middle" font-family="'Big Shoulders Display','Arial Narrow',sans-serif" font-weight="900" font-size="17" fill="${c2}" stroke="rgba(0,0,0,.35)" stroke-width="1.5" paint-order="stroke">${x.num}</text>` : ''}
+    ${x.num ? tt`<text x="64" y="104" text-anchor="middle" font-family="'Big Shoulders Display','Arial Narrow',sans-serif" font-weight="900" font-size="17" fill="${c2}" stroke="rgba(0,0,0,.35)" stroke-width="1.5" paint-order="stroke">${x.num}</text>` : ''}
     <path d="M38 37.5q4-2.5 8 0M54 37.5q4-2.5 8 0" stroke="#000" opacity=".55" stroke-width="2.2" fill="none" stroke-linecap="round"/>
     ${x.glasses ? '<path d="M34 40h13v8H34zM53 40h13v8H53z" fill="#101010"/><path d="M47 43h6" stroke="#101010" stroke-width="2"/>' : '<circle cx="42" cy="43.5" r="2.3" fill="#191512"/><circle cx="58" cy="43.5" r="2.3" fill="#191512"/>'}
     <path d="M50 46v6l-2.5 1.5" stroke="#000" opacity=".25" stroke-width="1.8" fill="none" stroke-linecap="round"/>
@@ -93,35 +105,37 @@ export function avatar(look = {}, c1 = '#3a3f47', c2 = '#f2f2f2', x = {}) {
 
 // Olay kartlarında konuşan kişiler
 export const PERS = {
-  hoca: { n: 'Hocan', l: { skin: 1, hair: 1, hc: 3 }, c1: '#23272e', c2: '#ff6a2b', beard: 1 },
-  anne: { n: 'Annen', l: { skin: 1, hair: 4, hc: 1 }, c1: '#7b3f5c', c2: '#f2d9c4' },
-  baba: { n: 'Baban', l: { skin: 2, hair: 0, hc: 3 }, c1: '#3c4a3e', c2: '#d9d2c2', beard: 1 },
-  ark: { n: 'Arkadaşın', l: { skin: 2, hair: 2, hc: 0 }, c1: '#2f5f8f', c2: '#f2f2f2' },
-  takim: { n: 'Takım arkadaşın', l: { skin: 3, hair: 1, hc: 0 }, club: 1 },
-  baskan: { n: 'Başkan', l: { skin: 1, hair: 5, hc: 3 }, c1: '#1f1f24', c2: '#c9a227' },
-  menajer: { n: 'Menajer', l: { skin: 1, hair: 2, hc: 1 }, c1: '#2a2f45', c2: '#f2f2f2', glasses: 1 },
-  basin: { n: 'Muhabir', l: { skin: 2, hair: 0, hc: 1 }, c1: '#5b6470', c2: '#f2f2f2' },
+  hoca: { n: tt('Hocan'), l: { skin: 1, hair: 1, hc: 3 }, c1: '#23272e', c2: '#ff6a2b', beard: 1 },
+  anne: { n: tt('Annen'), l: { skin: 1, hair: 4, hc: 1 }, c1: '#7b3f5c', c2: '#f2d9c4' },
+  baba: { n: tt('Baban'), l: { skin: 2, hair: 0, hc: 3 }, c1: '#3c4a3e', c2: '#d9d2c2', beard: 1 },
+  ark: { n: tt('Arkadaşın'), l: { skin: 2, hair: 2, hc: 0 }, c1: '#2f5f8f', c2: '#f2f2f2' },
+  takim: { n: tt('Takım arkadaşın'), l: { skin: 3, hair: 1, hc: 0 }, club: 1 },
+  baskan: { n: tt('Başkan'), l: { skin: 1, hair: 5, hc: 3 }, c1: '#1f1f24', c2: '#c9a227' },
+  menajer: { n: tt('Menajer'), l: { skin: 1, hair: 2, hc: 1 }, c1: '#2a2f45', c2: '#f2f2f2', glasses: 1 },
+  basin: { n: tt('Muhabir'), l: { skin: 2, hair: 0, hc: 1 }, c1: '#5b6470', c2: '#f2f2f2' },
   scout: { n: 'Scout', l: { skin: 0, hair: 5, hc: 3 }, c1: '#3b4b3a', c2: '#d9d2c2', glasses: 1 },
-  doktor: { n: 'Doktor', l: { skin: 0, hair: 4, hc: 0 }, c1: '#eef3f5', c2: '#4aa3df' },
-  par: { n: 'Sevgilin', l: { skin: 1, hair: 4, hc: 2 }, c1: '#c24d6a', c2: '#f2f2f2' },
-  golge: { n: 'Tanımadığın biri', l: { skin: 2, hair: 0, hc: 0 }, c1: '#111', c2: '#3a3a3a', glasses: 1, beard: 1 },
-  taraftar: { n: 'Taraftar', l: { skin: 2, hair: 3, hc: 0 }, club: 1 },
-  fed: { n: 'Federasyon', l: { skin: 0, hair: 0, hc: 3 }, c1: '#1c2b4a', c2: '#f2f2f2' },
-  sponsor: { n: 'Marka temsilcisi', l: { skin: 3, hair: 1, hc: 0 }, c1: '#ece9e2', c2: '#161616' },
-  asker: { n: 'Askerlik şubesi', l: { skin: 1, hair: 1, hc: 0 }, c1: '#4b5a3a', c2: '#2f3a24' },
-  rakip: { n: 'Rakibin', l: { skin: 0, hair: 2, hc: 2 }, c1: '#8a1f2b', c2: '#f2f2f2' },
+  doktor: { n: tt('Doktor'), l: { skin: 0, hair: 4, hc: 0 }, c1: '#eef3f5', c2: '#4aa3df' },
+  par: { n: tt('Sevgilin'), l: { skin: 1, hair: 4, hc: 2 }, c1: '#c24d6a', c2: '#f2f2f2' },
+  golge: { n: tt('Tanımadığın biri'), l: { skin: 2, hair: 0, hc: 0 }, c1: '#111', c2: '#3a3a3a', glasses: 1, beard: 1 },
+  taraftar: { n: tt('Taraftar'), l: { skin: 2, hair: 3, hc: 0 }, club: 1 },
+  fed: { n: tt('Federasyon'), l: { skin: 0, hair: 0, hc: 3 }, c1: '#1c2b4a', c2: '#f2f2f2' },
+  sponsor: { n: tt('Marka temsilcisi'), l: { skin: 3, hair: 1, hc: 0 }, c1: '#ece9e2', c2: '#161616' },
+  asker: { n: tt('Askerlik şubesi'), l: { skin: 1, hair: 1, hc: 0 }, c1: '#4b5a3a', c2: '#2f3a24' },
+  rakip: { n: tt('Rakibin'), l: { skin: 0, hair: 2, hc: 2 }, c1: '#8a1f2b', c2: '#f2f2f2' },
 };
-export function persona(k, club) {
-  const p = PERS[k] || PERS.ark;
-  return avatar(p.l, p.club && club ? club.c1 : p.c1 || '#444', p.club && club ? club.c2 : p.c2 || '#fff', p);
+// Kadın kariyerinde (kw) takım arkadaşı, rakip ve sevgili portreleri değişir
+const PERSK = { takim: { hair: 9 }, rakip: { hair: 8 }, par: { hair: 0, beard: 1 } };
+export function persona(k, club, kw) {
+  const p = PERS[k] || PERS.ark, o = kw ? PERSK[k] : null;
+  return avatar(o ? { ...p.l, hair: o.hair } : p.l, p.club && club ? club.c1 : p.c1 || '#444', p.club && club ? club.c2 : p.c2 || '#fff', o ? { ...p, beard: o.beard || 0 } : p);
 }
 
 // ---------- arma ----------
 function hsh(s) { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }
 function initials(n) {
   const w = n.replace(/[0-9.]/g, '').trim().split(/[\s-]+/).filter(x => x.length > 1 && !['FK', 'SK', 'SF', 'SC', 'CP', 'FC', 'Al'].includes(x));
-  if (!w.length) return n.slice(0, 2).toLocaleUpperCase('tr');
-  return (w.length === 1 ? w[0].slice(0, 2) : w[0][0] + w[1][0]).toLocaleUpperCase('tr');
+  if (!w.length) return n.slice(0, 2).toLocaleUpperCase(LC);
+  return (w.length === 1 ? w[0].slice(0, 2) : w[0][0] + w[1][0]).toLocaleUpperCase(LC);
 }
 const SHAPE = ['M20 2 36 7v13c0 9-7 15-16 18C11 35 4 29 4 20V7z', 'M20 3a17 17 0 1 0 0 34 17 17 0 0 0 0-34z', 'M20 2 35 9v15L20 38 5 24V9z'];
 const PAT = [
@@ -133,10 +147,10 @@ const PAT = [
 ];
 export function crestSvg(n, c1, c2, s = 36) {
   const h = hsh(n), sh = h % 3, d = SHAPE[sh], esc = initials(n).replace(/[&<>"]/g, '');
-  return `<svg class="crest" width="${s}" height="${s}" viewBox="0 0 40 40" aria-hidden="true"><defs><clipPath id="cs${sh}"><path d="${d}"/></clipPath></defs>
+  return tt`<svg class="crest" width="${s}" height="${s}" viewBox="0 0 40 40" aria-hidden="true"><defs><clipPath id="cs${sh}"><path d="${d}"/></clipPath></defs>
     <path d="${d}" fill="${c1}"/><g clip-path="url(#cs${sh})">${PAT[(h >>> 3) % PAT.length](c2)}</g>
     <path d="${d}" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.4"/>
-    ${s >= 28 ? `<text x="20" y="24.5" text-anchor="middle" font-family="'Big Shoulders Display','Arial Narrow',sans-serif" font-weight="900" font-size="13" fill="#fff" stroke="rgba(0,0,0,.8)" stroke-width="2.6" paint-order="stroke">${esc}</text>` : ''}</svg>`;
+    ${s >= 28 ? tt`<text x="20" y="24.5" text-anchor="middle" font-family="'Big Shoulders Display','Arial Narrow',sans-serif" font-weight="900" font-size="13" fill="#fff" stroke="rgba(0,0,0,.8)" stroke-width="2.6" paint-order="stroke">${esc}</text>` : ''}</svg>`;
 }
 
 // ---------- grafikler ----------
@@ -146,11 +160,11 @@ export function radar(vals, s = 190) {
   const pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [c + Math.cos(a) * r, c + Math.sin(a) * r]; };
   const ring = f => vals.map((_, i) => pt(i, R * f).map(x => x.toFixed(1)).join(',')).join(' ');
   const poly = vals.map((v, i) => pt(i, R * Math.max(.06, v.v / 99)).map(x => x.toFixed(1)).join(',')).join(' ');
-  return `<svg class="radar" viewBox="0 0 ${s} ${s}" aria-hidden="true">
+  return tt`<svg class="radar" viewBox="0 0 ${s} ${s}" aria-hidden="true">
     ${[1, .66, .33].map(f => `<polygon points="${ring(f)}" fill="none" stroke="currentColor" opacity=".16"/>`).join('')}
     ${vals.map((_, i) => { const [x, y] = pt(i, R); return `<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="currentColor" opacity=".12"/>`; }).join('')}
     <polygon points="${poly}" class="rp"/>
-    ${vals.map((v, i) => { const [x, y] = pt(i, R + 15); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" class="rl">${v.l}</text>`; }).join('')}
+    ${vals.map((v, i) => { const [x, y] = pt(i, R + 15); return tt`<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" class="rl">${v.l}</text>`; }).join('')}
   </svg>`;
 }
 
@@ -168,7 +182,7 @@ export function euLogo(k, s = 40) {
   if (k === 'cl') {
     let ring = '';
     for (let i = 0; i < 8; i++) { const a = (i * 45 - 90) * Math.PI / 180; ring += `<path d="${starP(50 + Math.cos(a) * 31, 50 + Math.sin(a) * 31, 6.5, i * 45 - 90)}" fill="#fff"/>`; }
-    return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gcl" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#3f74ff"/><stop offset="1" stop-color="#061045"/></radialGradient></defs>
+    return tt`<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gcl" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#3f74ff"/><stop offset="1" stop-color="#061045"/></radialGradient></defs>
       <circle cx="50" cy="50" r="48" fill="url(#gcl)" stroke="#a9c1ff" stroke-width="2"/><circle cx="50" cy="50" r="21.5" fill="none" stroke="#a9c1ff" stroke-width="1.2" opacity=".65"/>${ring}<path d="${starP(50, 51, 16)}" fill="#fff"/></svg>`;
   }
   if (k === 'ko') return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gko" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#34d07f"/><stop offset="1" stop-color="#06402a"/></radialGradient></defs>

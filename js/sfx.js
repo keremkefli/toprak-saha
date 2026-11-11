@@ -1,4 +1,6 @@
 // Toprak Saha — ses efektleri. Hepsi Web Audio ile üretilir, ses dosyası yoktur.
+import { tt, lang } from './i18n.js';
+
 const has = typeof window !== 'undefined';
 const KEY = 'toprak-saha-ses';
 let ctx = null, master = null, nb = null, amb = null, on = true;
@@ -60,10 +62,10 @@ try { spk = has && localStorage.getItem(SKEY) === '1'; } catch (e) { /* yok */ }
 export const spiker = {
   get ok() { return has && 'speechSynthesis' in window; },
   get on() { return spk; },
-  toggle() { spk = !spk; try { localStorage.setItem(SKEY, spk ? '1' : '0'); } catch (e) { /* yok */ } if (!spk && this.ok) window.speechSynthesis.cancel(); else this.say('Spiker açık. İyi seyirler.'); return spk; },
+  toggle() { spk = !spk; try { localStorage.setItem(SKEY, spk ? '1' : '0'); } catch (e) { /* yok */ } if (!spk && this.ok) window.speechSynthesis.cancel(); else this.say(tt('Spiker açık. İyi seyirler.')); return spk; },
   say(t, hot) {
     if (!spk || !on || !this.ok) return;
-    try { const u = new SpeechSynthesisUtterance(String(t).replace(/[|·]/g, ',')); u.lang = 'tr-TR'; u.rate = hot ? 1.15 : 1.05; u.pitch = hot ? 1.25 : 1; u.volume = .9; if (hot) window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch (e) { /* desteklenmiyor */ }
+    try { const u = new SpeechSynthesisUtterance(String(t).replace(/[|·]/g, ',')); u.lang = lang === 'en' ? 'en-US' : 'tr-TR'; u.rate = hot ? 1.15 : 1.05; u.pitch = hot ? 1.25 : 1; u.volume = .9; if (hot) window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch (e) { /* desteklenmiyor */ }
   },
   stop() { if (this.ok) try { window.speechSynthesis.cancel(); } catch (e) { /* yok */ } },
 };

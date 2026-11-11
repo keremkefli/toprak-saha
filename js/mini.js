@@ -1,6 +1,7 @@
 // Toprak Saha — maç anı mini oyunları (canvas)
 // Oyun arayüzü: update(dt), after(dt), draw(g), down/move/up(x,y). Sonuç m.finish({out,...}).
 // Parametreler: skill 0-1, speed 0-1, oppQ 0-1 (rakip kalitesi), hard ~1 (yorgunluk/moral çarpanı), cu/co forma renkleri
+import { tt } from './i18n.js';
 import { sfx } from './sfx.js';
 
 const W = 360, H = 460;
@@ -11,28 +12,28 @@ const hyp = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 function randn() { let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); }
 
 const OUT = {
-  gol: ['GOL!', 1], kurtaris: ['KALECİ ÇIKARDI', 0], direk: ['DİREK!', 0], aut: ['DIŞARI', 0], baraj: ['BARAJDA', 0], blok: ['SAVUNMADA', 0], gec: ['GEÇ KALDIN', 0], iska: ['ISKA', 0],
-  ok: ['PAS YERİNDE', 1], kesildi: ['ARAYA GİRDİLER', 0], bos: ['PAS BOŞA', 0],
-  gecti: ['GEÇTİN!', 1], kaptirdi: ['TOPU KAPTIRDIN', 0],
-  kapildi: ['TOPU KAPTIN', 1], gecildi: ['RAKİP GEÇTİ', 0], faul: ['FAUL', 0],
-  kurtardi: ['KURTARDIN!', 1], yedi: ['GOL OLDU', 0],
+  gol: [tt('GOL!'), 1], kurtaris: [tt('KALECİ ÇIKARDI'), 0], direk: [tt('DİREK!'), 0], aut: [tt('DIŞARI'), 0], baraj: [tt('BARAJDA'), 0], blok: [tt('SAVUNMADA'), 0], gec: [tt('GEÇ KALDIN'), 0], iska: [tt('ISKA'), 0],
+  ok: [tt('PAS YERİNDE'), 1], kesildi: [tt('ARAYA GİRDİLER'), 0], bos: [tt('PAS BOŞA'), 0],
+  gecti: [tt('GEÇTİN!'), 1], kaptirdi: [tt('TOPU KAPTIRDIN'), 0],
+  kapildi: [tt('TOPU KAPTIN'), 1], gecildi: [tt('RAKİP GEÇTİ'), 0], faul: [tt('FAUL'), 0],
+  kurtardi: [tt('KURTARDIN!'), 1], yedi: [tt('GOL OLDU'), 0],
 };
 // [başlık, ipucu 1, ipucu 2, hareket animasyonu]
 export const INTRO = {
-  sut: ['ŞUT', 'Kaleye doğru kaydır. Hızlı kaydır: sert.', 'Sol alttaki topta vuruş noktasını seç.', 'swipe'],
-  kafa: ['KAFA', 'Top başına geldiği an kaydır.', 'Halka kapanınca vur.', 'swipe'],
-  vole: ['VOLE', 'Top yere inmeden kaydır.', 'Halka kapanınca vur. Sert gider.', 'swipe'],
-  rovesata: ['RÖVEŞATA', 'Tam anında kaydır.', 'Zor ama tutarsa stat yıkılır.', 'swipe'],
-  orta: ['ORTA', 'Koşan arkadaşının varacağı yere dokun.', 'Kaleciye yakın atma.', 'tap'],
-  korner: ['KORNER', 'Ceza sahasında bir nokta seç.', 'Koşuyu önceden gör.', 'tap'],
-  frikik: ['FRİKİK', 'Topun yanına vur: falso alır.', 'Uçarken parmağını kaydır: top döner.', 'swipe'],
-  penalti: ['PENALTI', 'Köşene doğru kaydır.', '', 'swipe'],
-  pas: ['PAS', 'Koşan arkadaşının önüne dokun.', 'Araya girmesinler.', 'tap'],
-  calim: ['ÇALIM', 'Soldaki analogla koş.', 'Kırmızı hattan çık. ÇALIM: ani sıçrama.', 'drag'],
-  savunma: ['SAVUNMA', 'Soldaki analogla önünü kes.', 'Halka yeşilken KAY tuşuna bas.', 'drag'],
-  kurtaris: ['KURTARIŞ', 'Eldiveni topa yetiştir.', '', 'drag'],
-  duvar: ['FRİKİK', 'Top barajı aşınca eldiveni yetiştir.', 'Kurduğun baraj vuruşun yönünü belirler.', 'drag'],
-  penkurtar: ['PENALTI', 'Vuruş anını bekle, köşeyi tahmin et.', 'Erken oynarsan boş köşe kalır.', 'drag'],
+  sut: [tt('ŞUT'), tt('Kaleye doğru kaydır. Hızlı kaydır: sert.'), tt('Sol alttaki topta vuruş noktasını seç.'), 'swipe'],
+  kafa: [tt('KAFA'), tt('Top başına geldiği an kaydır.'), tt('Halka kapanınca vur.'), 'swipe'],
+  vole: [tt('VOLE'), tt('Top yere inmeden kaydır.'), tt('Halka kapanınca vur. Sert gider.'), 'swipe'],
+  rovesata: [tt('RÖVEŞATA'), tt('Tam anında kaydır.'), tt('Zor ama tutarsa stat yıkılır.'), 'swipe'],
+  orta: [tt('ORTA'), tt('Koşan arkadaşının varacağı yere dokun.'), tt('Kaleciye yakın atma.'), 'tap'],
+  korner: [tt('KORNER'), tt('Ceza sahasında bir nokta seç.'), tt('Koşuyu önceden gör.'), 'tap'],
+  frikik: [tt('FRİKİK'), tt('Topun yanına vur: falso alır.'), tt('Uçarken parmağını kaydır: top döner.'), 'swipe'],
+  penalti: [tt('PENALTI'), tt('Köşene doğru kaydır.'), '', 'swipe'],
+  pas: [tt('PAS'), tt('Koşan arkadaşının önüne dokun.'), tt('Araya girmesinler.'), 'tap'],
+  calim: [tt('ÇALIM'), tt('Soldaki analogla koş.'), tt('Kırmızı hattan çık. ÇALIM: ani sıçrama.'), 'drag'],
+  savunma: [tt('SAVUNMA'), tt('Soldaki analogla önünü kes.'), tt('Halka yeşilken KAY tuşuna bas.'), 'drag'],
+  kurtaris: [tt('KURTARIŞ'), tt('Eldiveni topa yetiştir.'), '', 'drag'],
+  duvar: [tt('FRİKİK'), tt('Top barajı aşınca eldiveni yetiştir.'), tt('Kurduğun baraj vuruşun yönünü belirler.'), 'drag'],
+  penkurtar: [tt('PENALTI'), tt('Vuruş anını bekle, köşeyi tahmin et.'), tt('Erken oynarsan boş köşe kalır.'), 'drag'],
 };
 
 // ---------- çizim ----------
@@ -132,7 +133,7 @@ function shotGame(m, o) {
   const far = () => clamp((org().y - gb) / 208, .5, 1.2);            // kaleye uzaklık (1 = başlangıç mesafesi)
   const rush = () => (run ? clamp((428 - ball.y) / 110, 0, 1) : 0);   // kalecinin açı kapatması
   const spOf = (L, dur) => clamp((L / Math.max(.04, dur) - 300) / 1000, 0, 1);
-  const kind = spN => (spN < .35 && hit.y > .55 ? 'AŞIRTMA' : spN < .4 ? 'PLASE' : spN > .7 ? 'SERT ŞUT' : 'ŞUT');
+  const kind = spN => (spN < .35 && hit.y > .55 ? 'AŞIRTMA' : spN < .4 ? 'PLASE' : spN > .7 ? tt('SERT ŞUT') : tt('ŞUT'));
 
   function aim(dx, dy, spN) {
     const q = org(), hy = cr ? AIR.hN : hit.y;
@@ -234,7 +235,7 @@ function shotGame(m, o) {
           const spN = spOf(L, t - sw.t0), a = aim(dx, dy, spN), q = org(), col = a.hN > 1 ? '#ff4d4d' : '#5dff9e';
           g.setLineDash([6, 7]); g.strokeStyle = col; g.lineWidth = 2.5; g.beginPath(); g.moveTo(q.x, q.y); g.quadraticCurveTo((q.x + a.tx) / 2 - (cr ? 0 : hit.x * 96), (q.y + a.ty) / 2, a.tx, a.ty); g.stroke(); g.setLineDash([]);
           g.beginPath(); g.arc(a.tx, a.ty, Math.max(7, sigma0), 0, 7); g.strokeStyle = col; g.lineWidth = 2; g.stroke();
-          head(g, kind(spN), q.x, q.y - 34, 15, col);
+          head(g, tt(kind(spN)), q.x, q.y - 34, 15, col);
         }
       }
       if (cr) {
@@ -249,7 +250,7 @@ function shotGame(m, o) {
         const b = posAt(Math.min(1, sh.p));
         g.beginPath(); g.ellipse(b.x, b.sy, b.r * 1.1, b.r * .4, 0, 0, 7); g.fillStyle = 'rgba(0,0,0,.3)'; g.fill();
         trailD(g, trail); ballD(g, b.x, b.y, b.r);
-        if (sh.pen == null && sh.p < .8) text(g, '◄ falso ►', 180, 440, 13, 'rgba(255,255,255,.75)');
+        if (sh.pen == null && sh.p < .8) text(g, tt('◄ falso ►'), 180, 440, 13, 'rgba(255,255,255,.75)');
       } else if (phase === 'end' && bp) ballD(g, bp.x, bp.y, bp.r);
       else {
         if (!cr) { g.beginPath(); g.ellipse(ball.x, ball.y + 11, 13, 4.5, 0, 0, 7); g.fillStyle = 'rgba(0,0,0,.3)'; g.fill(); }
@@ -257,12 +258,12 @@ function shotGame(m, o) {
       }
       if (!cr && (phase === 'aim')) {   // vuruş noktası göstergesi
         g.fillStyle = 'rgba(10,8,7,.6)'; rr(g, HW.x - 40, HW.y - 52, 80, 92, 8); g.fill();
-        text(g, 'VURUŞ', HW.x, HW.y - 41, 10, 'rgba(255,255,255,.7)', 700);
+        text(g, tt('VURUŞ'), HW.x, HW.y - 41, 10, 'rgba(255,255,255,.7)', 700);
         ballD(g, HW.x, HW.y, HW.r);
         g.strokeStyle = 'rgba(0,0,0,.25)'; g.lineWidth = 1; g.beginPath(); g.moveTo(HW.x - HW.r, HW.y); g.lineTo(HW.x + HW.r, HW.y); g.moveTo(HW.x, HW.y - HW.r); g.lineTo(HW.x, HW.y + HW.r); g.stroke();
         g.beginPath(); g.arc(HW.x + hit.x * HW.r * .8, HW.y + hit.y * HW.r * .8, 7, 0, 7); g.fillStyle = '#ff4d4d'; g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke();
       }
-      if (phase === 'aim') { timer(g, tl / tl0); if (!sw && !hold && t > 1.4 && !run) text(g, 'Kaleye doğru kaydır', 180, 330, 14); }
+      if (phase === 'aim') { timer(g, tl / tl0); if (!sw && !hold && t > 1.4 && !run) text(g, tt('Kaleye doğru kaydır'), 180, 330, 14); }
     },
   };
 }
@@ -300,7 +301,7 @@ function passGame(m, o) {
     draw(g) {
       pitch(g);
       g.fillStyle = 'rgba(255,210,63,.12)'; g.fillRect(8, 8, W - 16, 150);
-      head(g, 'İLERİ BÖLGE', 180, 26, 15, 'rgba(255,255,255,.55)');
+      head(g, tt('İLERİ BÖLGE'), 180, 26, 15, 'rgba(255,255,255,.55)');
       if (hold && !ball) { g.setLineDash([6, 7]); g.strokeStyle = '#5dff9e'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(me.x, me.y); g.lineTo(hold.x, hold.y); g.stroke(); g.setLineDash([]); g.beginPath(); g.arc(hold.x, hold.y, 9, 0, 7); g.stroke(); }
       for (const a of mates) {
         const s = Math.sign(a.vx); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 2; g.beginPath();
@@ -350,7 +351,7 @@ function dribGame(m, o) {
     draw(g) {
       pitch(g);
       g.fillStyle = 'rgba(255,210,63,.2)'; g.fillRect(8, 8, W - 16, 50);
-      head(g, 'CEZA SAHASI', 180, 33, 18, 'rgba(255,255,255,.8)');
+      head(g, tt('CEZA SAHASI'), 180, 33, 18, 'rgba(255,255,255,.8)');
       for (const d of defs) {
         if (d.st === 'wind') { g.save(); g.translate(d.x, d.y); g.rotate(Math.atan2(d.dy, d.dx)); g.fillStyle = 'rgba(255,77,77,.3)'; g.fillRect(0, -tr, dashV * .34, tr * 2); g.restore(); g.beginPath(); g.arc(d.x, d.y, 15 + Math.sin(t * 40) * 3, 0, 7); g.strokeStyle = '#ff4d4d'; g.lineWidth = 3; g.stroke(); head(g, '!', d.x, d.y - 24, 22, '#ff4d4d'); man(g, d.x, d.y, o.co); }
         else if (d.st === 'dash') { g.save(); g.translate(d.x, d.y); g.rotate(Math.atan2(d.dy, d.dx)); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(-34, -6, 26, 12); g.restore(); man(g, d.x, d.y, o.co, false, 1.25, .8); }
@@ -401,9 +402,9 @@ function defGame(m, o) {
     draw(g) {
       pitch(g);
       g.fillStyle = 'rgba(255,77,77,.22)'; g.fillRect(8, 420, W - 16, 32);
-      head(g, 'KALEN', 180, 437, 16, 'rgba(255,255,255,.8)');
+      head(g, tt('KALEN'), 180, 437, 16, 'rgba(255,255,255,.8)');
       const b = ballP(), d = hyp(me, b), reach = slideV * slideT, ok = d < reach * .62 && me.y > at.y;
-      if (me.st === 'run') { g.beginPath(); g.arc(me.x, me.y, reach * .62, 0, 7); g.strokeStyle = ok ? 'rgba(93,255,158,.8)' : 'rgba(255,255,255,.22)'; g.lineWidth = ok ? 3 : 2; g.setLineDash([5, 6]); g.stroke(); g.setLineDash([]); if (ok) head(g, 'KAY!', me.x, me.y + 34, 16, '#5dff9e'); }
+      if (me.st === 'run') { g.beginPath(); g.arc(me.x, me.y, reach * .62, 0, 7); g.strokeStyle = ok ? 'rgba(93,255,158,.8)' : 'rgba(255,255,255,.22)'; g.lineWidth = ok ? 3 : 2; g.setLineDash([5, 6]); g.stroke(); g.setLineDash([]); if (ok) head(g, tt('KAY!'), me.x, me.y + 34, 16, '#5dff9e'); }
       man(g, at.x, at.y, o.co); ballD(g, b.x, b.y, 5.5);
       trailD(g, trail);
       if (me.st === 'slide') { g.save(); g.translate(me.x, me.y); g.rotate(Math.atan2(me.dy, me.dx)); g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(-36, -6, 28, 12); g.restore(); man(g, me.x, me.y, o.cu, true, 1.25, .8); }
@@ -495,7 +496,7 @@ function keepGame(m, o) {
       figure(g, 150 + (phase === 'wait' ? Math.sin(t * 9) * 2 : 8), 430, o.co, 1.05);
       if (phase === 'end' && bp) ballD(g, bp.x, bp.y, bp.r);
       else { trailD(g, trail); ballD(g, lerp(180, tx, fly), lerp(396, ty, fly) - Math.sin(fly * Math.PI) * 14, 13 - 7 * fly); }
-      if (phase === 'wait') head(g, 'HAZIR OL', 180, 300, 22, 'rgba(255,255,255,.85)');
+      if (phase === 'wait') head(g, tt('HAZIR OL'), 180, 300, 22, 'rgba(255,255,255,.85)');
     },
   };
 }
@@ -507,7 +508,7 @@ export const GAMES = {
   orta: (m, o) => crossGame(m, { ...o, variant: 'orta' }), korner: (m, o) => crossGame(m, { ...o, variant: 'korner' }),
   pas: passGame, calim: dribGame, savunma: defGame, kurtaris: keepGame, duvar: keepGame, penkurtar: (m, o) => keepGame(m, { ...o, pen: 1 }),
 };
-const PADS = { calim: 'ÇALIM', savunma: 'KAY' };   // analog + eylem tuşu kullanan oyunlar
+const PADS = { calim: tt('ÇALIM'), savunma: tt('KAY') };   // analog + eylem tuşu kullanan oyunlar
 
 export class Mini {
   constructor(cv) {
@@ -602,7 +603,7 @@ export class Mini {
       g.beginPath(); g.arc(bx, by, 12, 0, 7); g.fillStyle = '#ffd23f'; g.fill();
     }
     g.setLineDash([]);
-    if (Math.sin(k * 5) > -.3) text(g, 'BAŞLAMAK İÇİN DOKUN', cx, 410, 13, '#ffd23f', 700);
+    if (Math.sin(k * 5) > -.3) text(g, tt('BAŞLAMAK İÇİN DOKUN'), cx, 410, 13, '#ffd23f', 700);
   }
   banner(a) {
     const g = this.g, [txt, good] = OUT[this.res.out] || ['', 0], s = 1.5 - a * .5;
