@@ -61,6 +61,9 @@ p.mut.sm { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .tbtns { display: grid; gap: 10px; margin-top: 14px; position: relative; }
 .meta { color: var(--mu); font-size: 13px; display: flex; gap: 6px; align-items: center; position: relative; }
 .title .snd { position: absolute; top: 18px; right: 4px; }
+.title .tlang { position: absolute; top: 20px; left: 4px; display: flex; gap: 4px; }
+.tlang button { min-width: 40px; padding: 9px 8px; font: 800 14px/1 var(--fh); letter-spacing: .08em; color: var(--mu); background: var(--p2); border-radius: 4px; }
+.tlang button.on { background: var(--or); color: var(--on); }
 .title.end { justify-content: flex-start; gap: 14px; padding-top: 28px; }
 .rank { font: 900 22px/1 var(--fh); color: var(--ye); letter-spacing: .06em; text-transform: uppercase; margin-top: 6px; }
 
@@ -499,3 +502,15 @@ em.pen { font: 800 11px/1 var(--fh); font-style: normal; color: var(--rd); margi
 .seg.s3 button { font-size: 12.5px; padding: 9px 2px; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- kariyer türü (erkek / kadın) ---------- */
+.ktg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ktc { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 10px; border-radius: 6px; background: var(--p1); border: 1.5px solid var(--ln); text-align: left; min-width: 0; }
+.ktc > span:last-child { display: grid; gap: 3px; min-width: 0; }
+.ktc b { font: 800 19px/1 var(--fh); letter-spacing: .03em; text-transform: uppercase; }
+.ktc small { color: var(--mu); font-size: 12.5px; line-height: 1.25; }
+.ktc.on { border-color: var(--or); background: color-mix(in srgb, var(--or) 12%, var(--p1)); }
+/* Kadınlar Şampiyonlar Ligi: 5-12 play-off bölgesi; üç sütunlu katılım tablosu */
+.tb.lg.eu tr.q2 { border-left-color: color-mix(in srgb, var(--eu) 45%, transparent); }
+.leg i.q2 { background: color-mix(in srgb, var(--eu) 45%, transparent); }
+.eur.k3 { grid-template-columns: 1fr 50px 50px 50px; }
