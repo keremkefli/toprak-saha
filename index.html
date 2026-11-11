@@ -8,12 +8,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Toprak Saha">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div id="app" data-scr="title"></div>
   <div id="modal" hidden></div>
-  <div id="mini" hidden><div class="mh"></div><canvas></canvas></div>
+  <div id="mini" hidden><div class="mh"></div><canvas></canvas><div class="pad" hidden><div class="stick"><i></i></div><button class="pbtn" type="button"></button></div></div>
   <div id="toast" role="status"></div>
   <script type="module" src="js/ui.js"></script>
 </body>
