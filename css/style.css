@@ -2,7 +2,7 @@
 :root {
   --bg: #0f0d0b; --p1: #191613; --p2: #231e19; --ln: #362e26;
   --tx: #f5efe4; --mu: #a79b8e; --or: #ff6a2b; --ye: #ffd23f; --gr: #2fbf71; --rd: #ff4d4d; --bl: #58a6ff;
-  --c1: #ff6a2b; --c2: #14110e;
+  --c1: #ff6a2b; --c2: #14110e; --on: #14110e;
   --fh: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --fb: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
@@ -54,7 +54,7 @@ p.mut.sm { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 /* ---------- başlık ekranı ---------- */
 .title { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 48px 6px; position: relative; overflow: hidden; }
 .t-lines { position: absolute; inset: 0 -14px; pointer-events: none;
-  background: radial-gradient(circle at 50% 104%, transparent 0 128px, rgba(245, 239, 228, .2) 129px 132px, transparent 133px), linear-gradient(to top, transparent 0 3.5%, rgba(245, 239, 228, .2) 3.5% 3.9%, transparent 3.9%), repeating-linear-gradient(115deg, rgba(255, 106, 43, .07) 0 22px, transparent 22px 44px); }
+  background: radial-gradient(circle at 50% 104%, transparent 0 128px, rgba(245, 239, 228, .2) 129px 132px, transparent 133px), linear-gradient(to top, transparent 0 3.5%, rgba(245, 239, 228, .2) 3.5% 3.9%, transparent 3.9%), repeating-linear-gradient(115deg, color-mix(in srgb, var(--or) 7%, transparent) 0 22px, transparent 22px 44px); }
 .brand { font: 800 15px/1 var(--fh); letter-spacing: .34em; color: var(--or); position: relative; }
 .title h1 { font-size: 112px; line-height: .8; letter-spacing: -.01em; position: relative; }
 .title h1 span { color: var(--or); }
@@ -130,7 +130,7 @@ main { display: grid; gap: 12px; }
 
 /* ---------- maç kartı ---------- */
 .vsc { background: var(--p1); border: 1px solid var(--ln); border-radius: 6px; padding: 12px 14px; display: grid; gap: 10px; position: relative; overflow: hidden; }
-.vsc::before { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(255, 106, 43, .1), transparent 40% 60%, rgba(255, 255, 255, .05)); pointer-events: none; }
+.vsc::before { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, color-mix(in srgb, var(--or) 10%, transparent), transparent 40% 60%, rgba(255, 255, 255, .05)); pointer-events: none; }
 .vsc.cup { border-color: #6b5a1c; }
 .vsc.off { grid-template-columns: auto 1fr; align-items: center; color: var(--mu); }
 .vsc.off b { font: 800 20px/1 var(--fh); text-transform: uppercase; color: var(--tx); display: block; }
@@ -174,7 +174,7 @@ main { display: grid; gap: 12px; }
 /* ---------- kariyer ---------- */
 .rad { display: grid; grid-template-columns: 1fr 112px; gap: 8px; align-items: center; }
 .radar { width: 100%; color: var(--tx); }
-.radar .rp { fill: rgba(255, 106, 43, .32); stroke: var(--or); stroke-width: 2; stroke-linejoin: round; }
+.radar .rp { fill: color-mix(in srgb, var(--or) 32%, transparent); stroke: var(--or); stroke-width: 2; stroke-linejoin: round; }
 .radar .rl { fill: var(--mu); font: 800 11px var(--fh); letter-spacing: .06em; }
 .ats { display: grid; gap: 4px; }
 .at { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--mu); border-bottom: 1px solid var(--ln); padding-bottom: 2px; }
@@ -203,12 +203,12 @@ main { display: grid; gap: 12px; }
 .tb.lg td:first-child, .tb.lg th:first-child { padding-left: 12px; width: 30px; color: var(--mu); }
 .tb.lg td:last-child, .tb.lg th:last-child { padding-right: 12px; }
 .tb.lg tr { border-left: 3px solid transparent; }
-.tb.lg tr.up { border-left-color: var(--gr); } .tb.lg tr.down { border-left-color: var(--rd); }
-.tb.lg tr.me { background: rgba(255, 106, 43, .16); }
+.tb.lg tr.up { border-left-color: var(--gr); } .tb.lg tr.down { border-left-color: var(--rd); } .tb.lg tr.po { border-left-color: var(--bl); } .tb.lg tr.out { border-left-color: var(--ye); }
+.tb.lg tr.me { background: color-mix(in srgb, var(--or) 16%, transparent); }
 .tb.lg tr.me .tn { color: var(--or); font-weight: 600; }
 .tn { text-align: left !important; display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 190px; }
 .leg { padding: 6px 14px 0; }
-.leg i { width: 9px; height: 9px; display: inline-block; } .leg i.up { background: var(--gr); } .leg i.down { background: var(--rd); margin-left: 8px; }
+.leg i { width: 9px; height: 9px; display: inline-block; } .leg { flex-wrap: wrap; } .leg i.up { background: var(--gr); } .leg i.down { background: var(--rd); margin-left: 8px; } .leg i.po { background: var(--bl); margin-left: 8px; } .leg i.out { background: var(--ye); margin-left: 8px; }
 .res { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; font-size: 13.5px; align-items: center; color: var(--mu); }
 .res span:last-child { text-align: right; } .res .w { color: var(--tx); font-weight: 600; }
 .res b { font: 900 18px/1 var(--fh); color: var(--tx); } .res.me { color: var(--or); } .res.me .w { color: var(--or); }
@@ -287,7 +287,10 @@ main { display: grid; gap: 12px; }
 .fl { display: grid; grid-template-columns: 30px 18px 1fr; gap: 8px; align-items: center; padding: 10px 12px; background: var(--p1); font-size: 14px; animation: pop .2s ease-out; border-left: 3px solid transparent; }
 .fl b { color: var(--mu); font-variant-numeric: tabular-nums; }
 .fl .ic { color: var(--mu); }
-.fl.g { background: #123321; border-left-color: var(--gr); font-weight: 600; font-size: 15.5px; } .fl.g .ic { color: var(--gr); }
+.fl.g { background: #123321; border-left-color: var(--gr); font-weight: 600; font-size: 15.5px; animation: pop .2s ease-out, gblink .3s steps(1) 6; }
+@keyframes gblink { 50% { background: var(--gr); color: #07130c; } }
+.fl.var { border-left-color: var(--bl); color: #bcd9ff; animation: vblink .6s steps(1) infinite; } .fl.var .ic { color: var(--bl); }
+@keyframes vblink { 50% { background: #16283d; } } .fl.g .ic { color: var(--gr); }
 .fl.b { background: #331616; border-left-color: var(--rd); } .fl.b .ic { color: var(--rd); }
 .fl.m { border-left-color: var(--ye); } .fl.m .ic { color: var(--ye); }
 
@@ -337,5 +340,51 @@ main { display: grid; gap: 12px; }
 .ach { display: grid; justify-items: center; gap: 4px; padding: 9px 4px; text-align: center; background: var(--p2); border-radius: 4px; color: #5d5349; }
 .ach small { color: inherit; line-height: 1.15; font-size: 11.5px; }
 .ach.on { color: var(--ye); background: #2f2912; } .ach.on small { color: var(--tx); }
+
+/* ---------- tema: vurgu üstündeki yazı rengi ---------- */
+.tagk, .cta, .chip.on, .seg button.on, .pickc.on .pic, .scr small, #mini .mh, .pbtn { color: var(--on); }
+.tagk.ye, .rolep, .form i.hi, .form i.lo { color: #14110e; }
+.cta.ghost { color: var(--tx); }
+.thm { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.thm button { display: flex; align-items: center; gap: 8px; padding: 9px 10px; background: var(--p2); border: 1.5px solid var(--ln); border-radius: 4px; font-size: 13.5px; font-weight: 600; }
+.thm button.on { border-color: var(--or); }
+.thm i { width: 18px; height: 18px; border-radius: 50%; flex: none; }
+
+/* ---------- analog kontrol ---------- */
+.pad { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 440px; padding: 4px 22px 0; }
+.stick { width: 128px; height: 128px; border-radius: 50%; background: var(--p2); border: 2px solid var(--ln); position: relative; touch-action: none; }
+.stick::before { content: ''; position: absolute; inset: 22px; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, .14); }
+.stick i { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px; border-radius: 50%; background: var(--or); box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .22); pointer-events: none; }
+.pbtn { width: 108px; height: 108px; border-radius: 50%; background: var(--or); font: 900 24px/1 var(--fh); letter-spacing: .04em; text-align: center; touch-action: none; box-shadow: inset 0 -7px 0 rgba(0, 0, 0, .22); }
+.pbtn:active { transform: scale(.94); }
+#mini.haspad canvas { max-width: min(460px, calc((100dvh - 232px) * 360 / 460)); }
+
+/* ---------- maç içi kontrol ---------- */
+.mctl { display: grid; gap: 8px; background: var(--p1); border: 1px solid var(--ln); border-radius: 6px; padding: 10px; position: sticky; top: 8px; z-index: 3; }
+.stam { display: grid; grid-template-columns: auto 1fr 30px; gap: 8px; align-items: center; color: var(--gr); }
+.stam b { font: 900 19px/1 var(--fh); color: var(--tx); text-align: right; }
+.stam .bar { height: 9px; } .stam .bar.low i { background: var(--rd); }
+.mbt { display: flex; gap: 8px; flex-wrap: wrap; }
+.mbt .chip { display: inline-flex; gap: 5px; align-items: center; }
+
+/* ---------- oyuncu yaratma ek alanları ---------- */
+.fld.two { grid-template-columns: 96px 1fr; gap: 10px; }
+.fld.two label { display: grid; gap: 8px; }
+.fld.two span { font: 800 14px/1 var(--fh); letter-spacing: .14em; text-transform: uppercase; color: var(--mu); }
+.mk-ctl .chips { gap: 6px; } .mk-ctl .chip { padding: 8px 10px; font-size: 13.5px; }
+.ovr .no { background: var(--or); color: var(--on); }
+
+/* ---------- hayat bölümleri, kişiler, görev ---------- */
+.hvw { display: grid; gap: 12px; }
+.hvw[data-hv="cev"] > :is(.hv-para, .hv-ayar), .hvw[data-hv="para"] > :is(.hv-cev, .hv-ayar), .hvw[data-hv="ayar"] > :is(.hv-cev, .hv-para) { display: none; }
+.ppl { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--ln); }
+.ppl > div:nth-child(2) { display: grid; gap: 3px; min-width: 0; }
+.ppl b { font: 800 17px/1.05 var(--fh); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pbs { display: grid; gap: 5px; }
+.pbs .mini-b { font-size: 13px; padding: 6px 9px; text-align: center; }
+.quest { display: grid; grid-template-columns: auto 1fr auto; gap: 9px; align-items: center; padding: 9px 12px; background: var(--p1); border: 1px dashed var(--ln); border-radius: 6px; font-size: 13.5px; color: var(--mu); }
+.quest b { font: 900 18px/1 var(--fh); color: var(--tx); }
+.quest.ok { border-style: solid; border-color: var(--gr); color: var(--gr); }
+.vs-h > span:first-child { display: flex; gap: 6px; flex-wrap: wrap; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
