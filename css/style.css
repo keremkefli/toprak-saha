@@ -410,23 +410,23 @@ tr[data-a="club"] { cursor: pointer; }
 .seg.s3 button { font-size: 13.5px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- Avrupa kupaları: Şampiyonlar Ligi mavi, Avrupa Ligi turuncu ---------- */
-.eu-cl { --eu: #4f7dff; --eu2: #061045; --eu3: #a9c1ff; } .eu-el { --eu: #ff8a2b; --eu2: #4a1800; --eu3: #ffd2a6; }
+.eu-cl { --eu: #4f7dff; --eu2: #061045; --eu3: #a9c1ff; } .eu-el { --eu: #ff8a2b; --eu2: #4a1800; --eu3: #ffd2a6; } .eu-ko { --eu: #2fc878; --eu2: #05301f; --eu3: #b6f2d2; }
 .eul { flex: none; display: block; }
 .eut { display: inline-flex; align-items: center; gap: 7px; font: 900 15px/1 var(--fh); letter-spacing: .08em; text-transform: uppercase; color: var(--eu3); }
-.vsc.eu-cl, .vsc.eu-el { border-color: var(--eu); background: radial-gradient(circle at 12% 0, color-mix(in srgb, var(--eu) 34%, transparent), transparent 62%), linear-gradient(160deg, var(--eu2), var(--p1) 74%); }
-.vsc.eu-cl::before, .vsc.eu-el::before { background: radial-gradient(#fff 1px, transparent 1.4px) 0 0 / 22px 22px; opacity: .1; }
-.vsc.eu-cl .mid b, .vsc.eu-el .mid b { color: var(--eu); } .vsc.eu-cl .pw i, .vsc.eu-el .pw i { background: var(--eu); }
-.cupn.eu-cl, .cupn.eu-el { color: var(--eu3); }
+.vsc.eu-cl, .vsc.eu-el, .vsc.eu-ko { border-color: var(--eu); background: radial-gradient(circle at 12% 0, color-mix(in srgb, var(--eu) 34%, transparent), transparent 62%), linear-gradient(160deg, var(--eu2), var(--p1) 74%); }
+.vsc.eu-cl::before, .vsc.eu-el::before, .vsc.eu-ko::before { background: radial-gradient(#fff 1px, transparent 1.4px) 0 0 / 22px 22px; opacity: .1; }
+.vsc[class*='eu-'] .mid b { color: var(--eu); } .vsc[class*='eu-'] .pw i { background: var(--eu); }
+.cupn.eu-cl, .cupn.eu-el, .cupn.eu-ko { color: var(--eu3); }
 .m-h { gap: 8px; } .m-h .chip { flex: none; white-space: nowrap; } .m-h .eut { font-size: 14px; letter-spacing: .05em; min-width: 0; } .vs-h .eut { min-width: 0; }
-.seg .sg-cl.on { background: #3f74ff; color: #fff; } .seg .sg-el.on { background: #ff8a2b; color: #14110e; }
+.seg .sg-cl.on { background: #3f74ff; color: #fff; } .seg .sg-el.on { background: #ff8a2b; color: #14110e; } .seg .sg-ko.on { background: #2fc878; color: #05301f; }
 .euh { grid-template-columns: auto 1fr; align-items: center; border-color: var(--eu); background: radial-gradient(#fff 1px, transparent 1.4px) 0 0 / 20px 20px, linear-gradient(135deg, var(--eu2), color-mix(in srgb, var(--eu) 45%, var(--eu2))); background-blend-mode: soft-light, normal; }
 .euh h3 { font-size: 34px; color: #fff; } .euh small { color: var(--eu3); }
 .tb.lg.eu tr.q { border-left-color: var(--eu); } .tb.lg.eu tr.me { background: color-mix(in srgb, var(--eu) 22%, transparent); } .tb.lg.eu tr.me .tn { color: var(--eu3); }
 .leg i.q { background: var(--eu); }
 .zn { display: inline-block; min-width: 20px; padding: 2px 3px 1px; text-align: center; border-radius: 3px; }
-.zn.z-cl, .leg i.z-cl, .eur i.z-cl { background: #3f74ff; color: #fff; } .zn.z-clq, .leg i.z-clq, .eur i.z-clq { background: #1c2f6e; color: #a9c1ff; box-shadow: inset 0 0 0 1px #3f74ff; } .zn.z-el, .leg i.z-el, .eur i.z-el { background: #ff8a2b; color: #14110e; }
+.zn.z-cl, .leg i.z-cl, .eur i.z-cl { background: #3f74ff; color: #fff; } .zn.z-clq, .leg i.z-clq, .eur i.z-clq { background: #1c2f6e; color: #a9c1ff; box-shadow: inset 0 0 0 1px #3f74ff; } .zn.z-el, .leg i.z-el, .eur i.z-el { background: #ff8a2b; color: #14110e; } .zn.z-ko, .leg i.z-ko, .eur i.z-ko { background: #2fc878; color: #05301f; }
 .leg.eu i { margin: 0 4px 0 8px; } .leg.eu i:first-child { margin-left: 0; }
-.eur { display: grid; grid-template-columns: 1fr 64px 64px 64px; gap: 5px; align-items: center; font-size: 13.5px; }
+.eur { display: grid; grid-template-columns: 1fr 50px 50px 50px 50px; gap: 5px; align-items: center; font-size: 13.5px; }
 .eur i { font: 800 14px/1 var(--fh); font-style: normal; text-align: center; padding: 5px 2px 4px; border-radius: 3px; } .eur i.z-no { color: var(--mu); }
 .eur.hd { font: 800 12px/1 var(--fh); letter-spacing: .08em; text-transform: uppercase; color: var(--mu); } .eur.hd i { font-size: 11px; letter-spacing: .02em; }
 .note { color: var(--mu); font-size: 13px; }
@@ -434,8 +434,9 @@ tr[data-a="club"] { cursor: pointer; }
 .eub { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 4px; background: linear-gradient(100deg, var(--eu2), color-mix(in srgb, var(--eu) 40%, var(--eu2))); color: #fff; font: 800 15px/1 var(--fh); letter-spacing: .06em; text-transform: uppercase; }
 .art.euA { --tone: var(--eu2); display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; padding: 0 16px; background: radial-gradient(#fff 1px, transparent 1.4px) 0 0 / 20px 20px, linear-gradient(135deg, var(--eu2), color-mix(in srgb, var(--eu) 55%, var(--eu2))); background-blend-mode: soft-light, normal; }
 #app[data-scr="match"]:has(.match.eu-cl) { background: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1.5px) 0 0 / 18px 18px, linear-gradient(180deg, #071250, var(--bg) 62%); }
+#app[data-scr="match"]:has(.match.eu-ko) { background: radial-gradient(rgba(255, 255, 255, .06) 1px, transparent 1.5px) 0 0 / 18px 18px, linear-gradient(180deg, #05301f, var(--bg) 62%); }
 #app[data-scr="match"]:has(.match.eu-el) { background: radial-gradient(rgba(255, 255, 255, .06) 1px, transparent 1.5px) 0 0 / 18px 18px, linear-gradient(180deg, #4a1800, var(--bg) 62%); }
-.match.eu-cl .sb, .match.eu-el .sb { border-color: var(--eu); } .match.eu-cl .scr small, .match.eu-el .scr small { background: var(--eu); color: #fff; }
+.match[class*='eu-'] .sb { border-color: var(--eu); } .match[class*='eu-'] .scr small { background: var(--eu); color: #fff; }
 
 /* ---------- maçta taktik ve görevler ---------- */
 .tacs { display: grid; grid-template-columns: auto auto 1fr; gap: 8px; align-items: center; padding: 8px 10px; background: var(--p1); border: 1px solid var(--ln); border-radius: 6px; color: var(--or); }
@@ -486,5 +487,15 @@ tr[data-a="club"] { cursor: pointer; }
 .tcx.on { border-color: var(--or); background: color-mix(in srgb, var(--or) 16%, var(--p2)); } .tcx.on .ic { color: var(--or); }
 .act.wide { grid-column: 1 / -1; } .act.wide .efx i { white-space: normal; text-align: left; line-height: 1.2; }
 .tcx b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+
+/* ---------- mevki rakibi, sezon hedefi, kadro, giriş ekranı ekleri ---------- */
+.coachs.rvs { border-left-color: var(--ye); } .coachs.rvs .ic { color: var(--ye); }
+.sgc { gap: 7px; }
+.sqd { display: grid; gap: 4px; } .sqd div { display: grid; grid-template-columns: 30px 1fr; gap: 8px; font-size: 13.5px; align-items: baseline; }
+.sqd i { font: 900 14px/1 var(--fh); font-style: normal; color: var(--or); } .sqd em { font: 800 11px/1 var(--fh); font-style: normal; color: var(--ye); }
+em.pen { font: 800 11px/1 var(--fh); font-style: normal; color: var(--rd); margin-left: 5px; }
+.chb { font-size: 19px; padding: 12px; position: relative; } .tlinks { display: flex; justify-content: center; gap: 18px; position: relative; }
+.sheet textarea { width: 100%; background: var(--p2); border: 1px solid var(--ln); border-radius: 4px; padding: 10px; color: var(--tx); font: 13px/1.3 ui-monospace, Menlo, monospace; resize: vertical; }
+.seg.s3 button { font-size: 12.5px; padding: 9px 2px; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
