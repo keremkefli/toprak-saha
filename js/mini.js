@@ -21,11 +21,15 @@ const OUT = {
 const INTRO = {
   sut: ['ŞUT', 'Kaleye doğru kaydır. Hızlı kaydır: sert.', 'Sol alttaki topta vuruş noktasını seç.', 'swipe'],
   kafa: ['KAFA', 'Top başına geldiği an kaydır.', 'Halka kapanınca vur.', 'swipe'],
+  vole: ['VOLE', 'Top yere inmeden kaydır.', 'Halka kapanınca vur. Sert gider.', 'swipe'],
+  rovesata: ['RÖVEŞATA', 'Tam anında kaydır.', 'Zor ama tutarsa stat yıkılır.', 'swipe'],
+  orta: ['ORTA', 'Koşan arkadaşının varacağı yere dokun.', 'Kaleciye yakın atma.', 'tap'],
+  korner: ['KORNER', 'Ceza sahasında bir nokta seç.', 'Koşuyu önceden gör.', 'tap'],
   frikik: ['FRİKİK', 'Topun yanına vur: falso alır.', 'Uçarken parmağını kaydır: top döner.', 'swipe'],
   penalti: ['PENALTI', 'Köşene doğru kaydır.', '', 'swipe'],
   pas: ['PAS', 'Koşan arkadaşının önüne dokun.', 'Araya girmesinler.', 'tap'],
-  calim: ['ÇALIM', 'Oyuncun parmağını takip eder.', 'Kayarak girenlerden kaç.', 'drag'],
-  savunma: ['SAVUNMA', 'Sürükle: önünü kes.', 'Halka yeşilken bırak: kayarak gir.', 'drag'],
+  calim: ['ÇALIM', 'Soldaki analogla koş.', 'Kırmızı hattan çık. ÇALIM: ani sıçrama.', 'drag'],
+  savunma: ['SAVUNMA', 'Soldaki analogla önünü kes.', 'Halka yeşilken KAY tuşuna bas.', 'drag'],
   kurtaris: ['KURTARIŞ', 'Eldiveni topa yetiştir.', '', 'drag'],
 };
 
@@ -109,15 +113,17 @@ function figure(g, x, y, col, s = 1) {
 function shotGame(m, o) {
   const { gx, gy, gw, gh } = GOAL, gb = gy + gh, v = o.variant, pk = o.pk || {}, crowd = mkCrowd(o), trail = [];
   const run = v === 'sut';
+  // havadan gelen toplar: win zamanlama payı, hy vuruş yüksekliği, sg isabet çarpanı, hN topun gideceği yükseklik
+  const AIR = { kafa: { win: pk.hava ? .34 : .24, hy: 318, sg: 1.5, hN: .1, rd: 0 }, vole: { win: .2, hy: 352, sg: 1.55, hN: .02, rd: .02 }, rovesata: { win: .13, hy: 330, sg: 2.1, hN: .4, rd: .08 } }[v];
   const ball = { x: 180 + (run ? rnd(-46, 46) : 0), y: run ? 428 : 392 };
   const hit = { x: 0, y: .25 };                 // vuruş noktası: y -1 topun üstü (yerden) … +1 topun altı (havadan), x yan (falso)
   const HW = { x: 46, y: 412, r: 30 };          // vuruş noktası göstergesi
-  let phase = v === 'kafa' ? 'cross' : 'aim', t = 0, tl = run ? 4.6 : 7, kx = 180, sw = null, sh = null, net = null, bp = null, bv = null, hold = false, lastX = null;
+  let phase = AIR ? 'cross' : 'aim', t = 0, tl = run ? 4.6 : 7, kx = 180, sw = null, sh = null, net = null, bp = null, bv = null, hold = false, lastX = null;
   const tl0 = tl, ks = (1.1 + o.oppQ * 1.1) * o.hard, kAmp = v === 'penalti' ? 8 : 56;
   const defs = [];
   if (run && !o.bonus && o.oppQ > .4) defs.push({ x: rnd(100, 260), y: 258, vx: (Math.random() < .5 ? -1 : 1) * (44 + o.oppQ * 46) * o.hard });
   const wall = v === 'frikik' ? { x: 180 + rnd(-38, 38) - (pk.frikik ? 32 : 40), w: pk.frikik ? 64 : 80, y: 270 } : null;
-  const cr = v === 'kafa' ? { x0: Math.random() < .5 ? -10 : 370, T: rnd(1.2, 1.6) / o.hard, hx: 180, hy: 318, win: pk.hava ? .34 : .24 } : null;
+  const cr = AIR ? { x0: Math.random() < .5 ? -10 : 370, T: rnd(1.2, 1.6) / o.hard, hx: 180, hy: AIR.hy, win: AIR.win } : null;
   if (cr) { ball.x = cr.x0; ball.y = 250; }
   const sigma0 = (20 - o.skill * 14) * o.hard * (v === 'frikik' ? (pk.frikik ? 1.05 : 1.45) : v === 'penalti' ? .6 : 1) * (pk.plase ? .8 : 1);
   const org = () => (cr ? { x: cr.hx, y: cr.hy } : ball);
@@ -127,7 +133,7 @@ function shotGame(m, o) {
   const kind = spN => (spN < .35 && hit.y > .55 ? 'AŞIRTMA' : spN < .4 ? 'PLASE' : spN > .7 ? 'SERT ŞUT' : 'ŞUT');
 
   function aim(dx, dy, spN) {
-    const q = org(), hy = cr ? .1 : hit.y;
+    const q = org(), hy = cr ? AIR.hN : hit.y;
     const hN = clamp(.1 + (hy + 1) / 2 * .78 + spN * (hy > .3 ? .2 : .06), .04, 1.3);   // 1'in üstü: üstten dışarı
     const ty = gb - 4 - hN * (gh - 4);
     return { tx: clamp(q.x + dx / Math.max(20, -dy) * (q.y - ty), 8, 352), ty, hN };
@@ -150,11 +156,11 @@ function shotGame(m, o) {
     let q = 1;
     if (cr) { q = 1 - Math.abs(t - cr.T) / cr.win; if (q <= 0) return end('iska', { x: ball.x, y: ball.y, r: 10 }); }
     const a = aim(dx, dy, spN), kd = kind(spN);
-    const sg = sigma0 * (.75 + spN * .75) * (.7 + far() * .5) * (kd === 'PLASE' ? .75 : 1) * (cr ? 1.5 + (1 - q) * 1.6 : 1);
+    const sg = sigma0 * (.75 + spN * .75) * (.7 + far() * .5) * (kd === 'PLASE' ? .75 : 1) * (cr ? AIR.sg + (1 - q) * 1.6 : 1);
     const tx = a.tx + randn() * sg, ty = a.ty + randn() * sg * .5;
     const side = tx < 150 ? -1 : tx > 210 ? 1 : 0;
     sh = { from: { x: ball.x, y: ball.y }, tx, ty, T: Math.max(cr ? .46 : .3, (.8 - .36 * spN) * clamp(far(), .6, 1.1) * (v === 'frikik' ? 1.2 : 1)), curve: cr ? 0 : -hit.x * 60, p: 0, el: 0, slowed: false, shift: 0,
-      rd: v === 'penalti' ? .04 : cr ? .1 + (1 - o.oppQ) * .12 : .16 + (1 - o.oppQ) * .18, vk: (165 + o.oppQ * 150) * (o.bonus ? .75 : 1) * (cr ? 1.1 : 1), chip: kd === 'AŞIRTMA', rush: rush(),
+      rd: v === 'penalti' ? .04 : cr ? .1 + AIR.rd + (1 - o.oppQ) * .12 : .16 + (1 - o.oppQ) * .18, vk: (165 + o.oppQ * 150) * (o.bonus ? .75 : 1) * (cr ? 1.1 : 1), chip: kd === 'AŞIRTMA', rush: rush(),
       pen: v === 'penalti' ? 180 + (Math.random() < o.oppQ * .15 * (pk.buz ? .3 : 1) ? side : [-1, 0, 1][Math.floor(Math.random() * 3)]) * 64 : null };
     phase = 'fly'; lastX = null; sfx.kick(); m.shake(3);
   }
@@ -231,7 +237,8 @@ function shotGame(m, o) {
       }
       if (cr) {
         if (phase === 'cross') { const u = clamp(t / cr.T, 0, 1); g.beginPath(); g.arc(cr.hx, cr.hy - 8, 12 + (1 - u) * 46, 0, 7); g.strokeStyle = Math.abs(t - cr.T) < cr.win / 2 ? '#5dff9e' : 'rgba(255,255,255,.7)'; g.lineWidth = 3; g.stroke(); }
-        figure(g, cr.hx, cr.hy + 44 - (phase === 'fly' ? 6 : 0), o.cu, 1.05);
+        if (v === 'rovesata' && phase !== 'cross') { g.save(); g.translate(cr.hx, cr.hy + 14); g.rotate(Math.PI * .95); figure(g, 0, 22, o.cu, 1.05); g.restore(); }   // havada ters
+        else figure(g, cr.hx, cr.hy + 44 - (phase === 'fly' ? 6 : 0), o.cu, 1.05);
       } else {
         if (run && phase === 'aim') figure(g, ball.x + 34, ball.y + 62 - (1 - tl / tl0) * 40, o.co, 1);   // arkadan yetişen savunmacı
         figure(g, ball.x - 26, ball.y + 34, o.cu, 1.05);
@@ -305,38 +312,36 @@ function passGame(m, o) {
   };
 }
 
-// ---------- çalım: savunmacılar işaret verip kayarak girer ----------
+// ---------- çalım: analogla koş; savunmacılar işaret verip kayar; ÇALIM tuşu ani sıçrama ----------
 function dribGame(m, o) {
-  const me = { x: 180, y: 425, vx: 0, vy: 0 }, sp = 128 + o.speed * 52, tr = 14 - o.skill * 3, trail = [];
+  const me = { x: 180, y: 425, vx: 0, vy: 0, fx: 0, fy: -1 }, sp = 128 + o.speed * 52, tr = 14 - o.skill * 3, trail = [];
   const defs = [330, 235, 140].map(y => { const x = rnd(70, 290); return { x, y, hx: x, hy: y, st: 'jog', tm: 0, cd: rnd(.8, 1.3), dx: 0, dy: 0 }; });
   const wind = .48 - o.oppQ * .16 + o.skill * .08 + ((o.pk || {}).bilek ? .09 : 0), dashV = (290 + o.oppQ * 90) * o.hard, lr = 70 + o.oppQ * 18, jog = sp * (.42 + o.oppQ * .2) * o.hard, lead = .08 + o.oppQ * .1;
-  let tl = 9, t = 0;
+  let tl = 9, t = 0, dash = 0, dcd = 0;
   const lose = () => { m.burst(me.x, me.y, 10, ['#fff', o.co], 120); m.shake(7); sfx.save(); sfx.ooh(); m.finish({ out: 'kaptirdi' }); };
   return {
     _s: { me, defs },
+    act() { if (dcd > 0) return; dash = .16; dcd = 1.1; sfx.swoosh(); m.burst(me.x, me.y + 6, 6, ['#fff'], 60); },
     update(dt) {
-      t += dt; tl -= dt; if (tl <= 0) return lose();
-      const ox = me.x, oy = me.y;
-      if (m.hasP) { const dx = m.px - me.x, dy = m.py - me.y, L = Math.hypot(dx, dy); if (L > 3) { const s = Math.min(sp * dt, L); me.x += dx / L * s; me.y += dy / L * s; } }
-      me.x = clamp(me.x, 14, 346); me.y = clamp(me.y, 40, 446);
-      me.vx = (me.x - ox) / dt; me.vy = (me.y - oy) / dt;
+      t += dt; tl -= dt; if (tl <= 0) return lose(); dcd -= dt;
+      const L = Math.hypot(m.sx, m.sy);
+      if (L > .15) { me.fx = m.sx / L; me.fy = m.sy / L; }
+      const wx = dash > 0 ? me.fx * sp * 2.3 : m.sx * sp, wy = dash > 0 ? me.fy * sp * 2.3 : m.sy * sp, a = Math.min(1, 14 * dt);
+      if (dash > 0) dash -= dt;
+      me.vx += (wx - me.vx) * a; me.vy += (wy - me.vy) * a;   // yumuşak hızlanma
+      me.x = clamp(me.x + me.vx * dt, 14, 346); me.y = clamp(me.y + me.vy * dt, 40, 446);
       if (Math.abs(me.vx) + Math.abs(me.vy) > 20) pushTrail(trail, me.x, me.y + 4, 9, 7);
       for (const d of defs) {
         const dist = hyp(me, d), act = me.y > d.y - 30 && Math.abs(me.y - d.y) < 150;
         d.cd -= dt;
         if (d.st === 'jog') {
-          const tx = act ? me.x : d.hx, ty = act ? me.y - 18 : d.hy, dx = tx - d.x, dy = ty - d.y, L = Math.hypot(dx, dy);
-          if (L > 3 && !(act && dist < 34)) { const s = Math.min((act ? jog : jog * .6) * dt, L); d.x += dx / L * s; d.y += dy / L * s; }
+          const tx = act ? me.x : d.hx, ty = act ? me.y - 18 : d.hy, dx = tx - d.x, dy = ty - d.y, D = Math.hypot(dx, dy);
+          if (D > 3 && !(act && dist < 34)) { const s = Math.min((act ? jog : jog * .6) * dt, D); d.x += dx / D * s; d.y += dy / D * s; }
           if (dist < tr - 3) return lose();
           if (act && dist < lr && d.cd <= 0) { const px = me.x + me.vx * (wind + lead) - d.x, py = me.y + me.vy * (wind + lead) - d.y, L2 = Math.hypot(px, py) || 1; d.dx = px / L2; d.dy = py / L2; d.st = 'wind'; d.tm = wind; }
-        } else if (d.st === 'wind') {
-          d.tm -= dt;
-          if (d.tm <= 0) { d.st = 'dash'; d.tm = .34; sfx.swoosh(); }
-        } else if (d.st === 'dash') {
-          d.x += d.dx * dashV * dt; d.y += d.dy * dashV * dt; d.tm -= dt;
-          if (dist < tr) return lose();
-          if (d.tm <= 0) { d.st = 'down'; d.tm = .95; }
-        } else { d.tm -= dt; if (d.tm <= 0) { d.st = 'jog'; d.cd = .5; } }
+        } else if (d.st === 'wind') { d.tm -= dt; if (d.tm <= 0) { d.st = 'dash'; d.tm = .34; sfx.swoosh(); } }
+        else if (d.st === 'dash') { d.x += d.dx * dashV * dt; d.y += d.dy * dashV * dt; d.tm -= dt; if (dist < tr) return lose(); if (d.tm <= 0) { d.st = 'down'; d.tm = .95; } }
+        else { d.tm -= dt; if (d.tm <= 0) { d.st = 'jog'; d.cd = .5; } }
       }
       if (me.y < 58) { m.burst(me.x, me.y, 16, ['#fff', '#ffd23f', o.cu], 150); sfx.up(); m.finish({ out: 'gecti' }); }
     },
@@ -350,15 +355,17 @@ function dribGame(m, o) {
         else if (d.st === 'down') { g.globalAlpha = .55; man(g, d.x, d.y, o.co, false, 1.3, .6); g.globalAlpha = 1; }
         else man(g, d.x, d.y, o.co);
       }
-      trailD(g, trail); man(g, me.x, me.y, o.cu, true); ballD(g, me.x + 9, me.y - 9, 5);
+      trailD(g, trail);
+      g.beginPath(); g.moveTo(me.x + me.fx * 26, me.y + me.fy * 26); g.lineTo(me.x + me.fx * 17 - me.fy * 6, me.y + me.fy * 17 + me.fx * 6); g.lineTo(me.x + me.fx * 17 + me.fy * 6, me.y + me.fy * 17 - me.fx * 6); g.closePath(); g.fillStyle = dcd > 0 ? 'rgba(255,255,255,.35)' : '#ffd23f'; g.fill();   // yön oku: sarıysa ÇALIM hazır
+      man(g, me.x, me.y, o.cu, true, dash > 0 ? 1.2 : 1, dash > 0 ? .85 : 1); ballD(g, me.x + me.fx * 11, me.y + me.fy * 11, 5);
       timer(g, tl / 9);
     },
   };
 }
 
-// ---------- savunma: pozisyon al, bırakınca kayarak gir ----------
+// ---------- savunma: analogla önünü kes, KAY tuşuyla kayarak gir ----------
 function defGame(m, o) {
-  const pk = o.pk || {}, at = { x: rnd(90, 270), y: 45, vx: 0 }, me = { x: 180, y: 318, st: 'run', tm: 0, dx: 0, dy: -1 }, trail = [];
+  const pk = o.pk || {}, at = { x: rnd(90, 270), y: 45, vx: 0 }, me = { x: 180, y: 318, vx: 0, vy: 0, st: 'run', tm: 0, dx: 0, dy: -1 }, trail = [];
   const sa = (92 + o.oppQ * 42) * o.hard, sp = 118 + o.speed * 48, rc = 11 + o.skill * 6, turn = 3.5 + o.oppQ * 3;
   const slideV = 330, slideT = pk.makas ? .36 : .3, react = .215 - o.oppQ * .13;
   let zt = rnd(0, 6), seen = 0;
@@ -366,14 +373,16 @@ function defGame(m, o) {
   const done = (out, ok) => { m.burst(at.x, at.y, 12, ok ? ['#fff', '#5dff9e'] : ['#ffd23f', '#ff4d4d'], 130); m.shake(ok ? 6 : 8); if (ok) { sfx.save(); sfx.up(); } else sfx.whistle(1); m.finish({ out }); };
   return {
     _s: { me, at, ballP },
+    act() {   // topa doğru kay
+      if (me.st !== 'run') return;
+      const b = ballP(), px = b.x + at.vx * .12 - me.x, py = b.y + sa * .11 - me.y, L = Math.hypot(px, py) || 1;
+      me.dx = px / L; me.dy = py / L; me.st = 'slide'; me.tm = slideT; seen = 0; sfx.swoosh();
+    },
     update(dt) {
       zt += dt;
-      if (me.st === 'run') {
-        if (m.hasP) { const dx = m.px - me.x, dy = m.py - me.y, L = Math.hypot(dx, dy); if (L > 3) { const s = Math.min(sp * dt, L); me.x += dx / L * s; me.y += dy / L * s; } }
-      } else if (me.st === 'slide') {
-        me.x += me.dx * slideV * dt; me.y += me.dy * slideV * dt; me.tm -= dt; seen += dt; pushTrail(trail, me.x, me.y, 10, 7);
-        if (me.tm <= 0) { me.st = 'down'; me.tm = .8; }
-      } else { me.tm -= dt; if (me.tm <= 0) me.st = 'run'; }
+      if (me.st === 'run') { const a = Math.min(1, 14 * dt); me.vx += (m.sx * sp - me.vx) * a; me.vy += (m.sy * sp - me.vy) * a; me.x += me.vx * dt; me.y += me.vy * dt; }
+      else if (me.st === 'slide') { me.x += me.dx * slideV * dt; me.y += me.dy * slideV * dt; me.tm -= dt; seen += dt; pushTrail(trail, me.x, me.y, 10, 7); if (me.tm <= 0) { me.st = 'down'; me.tm = .8; me.vx = me.vy = 0; } }
+      else { me.tm -= dt; if (me.tm <= 0) me.st = 'run'; }
       me.x = clamp(me.x, 14, 346); me.y = clamp(me.y, 30, 446);
       const dx = at.x - me.x, dy = me.y - at.y, near = dy > -10 && dy < 120 && Math.abs(dx) < 90;
       let want = Math.sin(zt * 1.7) * sa * .45;
@@ -387,24 +396,61 @@ function defGame(m, o) {
       } else if (me.st === 'run' && hyp(me, at) < 13) at.vx += (dx >= 0 ? 1 : -1) * 260 * dt * 8;   // omuz omuza: yana iter
       if (at.y > 428) { sfx.ooh(); m.finish({ out: 'gecildi' }); }
     },
-    up() {
-      if (me.st !== 'run') return;
-      const b = ballP(), px = b.x + at.vx * .12 - me.x, py = b.y + sa * .11 - me.y, L = Math.hypot(px, py) || 1;
-      me.dx = px / L; me.dy = py / L; me.st = 'slide'; me.tm = slideT; seen = 0; sfx.swoosh();
-    },
     draw(g) {
       pitch(g);
       g.fillStyle = 'rgba(255,77,77,.22)'; g.fillRect(8, 420, W - 16, 32);
       head(g, 'KALEN', 180, 437, 16, 'rgba(255,255,255,.8)');
-      const b = ballP(), d = hyp(me, b), reach = slideV * slideT;
-      if (me.st === 'run') {   // kayma menzili: yeşilse şimdi gir
-        g.beginPath(); g.arc(me.x, me.y, reach * .62, 0, 7); g.strokeStyle = d < reach * .62 && me.y > at.y ? 'rgba(93,255,158,.75)' : 'rgba(255,255,255,.22)'; g.lineWidth = 2; g.setLineDash([5, 6]); g.stroke(); g.setLineDash([]);
-      }
+      const b = ballP(), d = hyp(me, b), reach = slideV * slideT, ok = d < reach * .62 && me.y > at.y;
+      if (me.st === 'run') { g.beginPath(); g.arc(me.x, me.y, reach * .62, 0, 7); g.strokeStyle = ok ? 'rgba(93,255,158,.8)' : 'rgba(255,255,255,.22)'; g.lineWidth = ok ? 3 : 2; g.setLineDash([5, 6]); g.stroke(); g.setLineDash([]); if (ok) head(g, 'KAY!', me.x, me.y + 34, 16, '#5dff9e'); }
       man(g, at.x, at.y, o.co); ballD(g, b.x, b.y, 5.5);
       trailD(g, trail);
       if (me.st === 'slide') { g.save(); g.translate(me.x, me.y); g.rotate(Math.atan2(me.dy, me.dx)); g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(-36, -6, 28, 12); g.restore(); man(g, me.x, me.y, o.cu, true, 1.25, .8); }
       else if (me.st === 'down') { g.globalAlpha = .6; man(g, me.x, me.y, o.cu, true, 1.3, .6); g.globalAlpha = 1; }
       else man(g, me.x, me.y, o.cu, true);
+    },
+  };
+}
+
+// ---------- orta / korner: koşuyu oku, topu varacağı yere bırak ----------
+function crossGame(m, o) {
+  const pk = o.pk || {}, corner = o.variant === 'korner', side = Math.random() < .5 ? -1 : 1;
+  const me = corner ? { x: side < 0 ? 18 : 342, y: 44 } : { x: side < 0 ? 38 : 322, y: 320 };
+  const keeper = { x: 180, y: 56 };
+  const mates = [0, 1, 2].map(i => { const x = 105 + i * 75 + rnd(-14, 14), y = rnd(225, 290); return { x, y, tx: clamp(x + rnd(-70, 70), 80, 280), ty: rnd(84, 160), sp: rnd(72, 104), d: rnd(0, .7) }; });
+  const defs = mates.map(a => ({ x: a.x + rnd(-22, 22), y: a.y - rnd(16, 30), a, sp: a.sp * (.86 + o.oppQ * .28) }));   // adam adama markaj
+  const flyT = .9 - o.skill * .15, rr = 21 + o.skill * 8 + (pk.gorus ? 5 : 0), sg = (15 - o.skill * 9) * o.hard;
+  let ball = null, tl = 6, t = 0, hold = null;
+  const end = (out, x) => { if (out === 'ok') { m.burst(ball.to.x, ball.to.y, 14, ['#fff', '#5dff9e'], 130); sfx.up(); } else { m.shake(4); sfx.ooh(); } m.finish({ out, ...x }); };
+  return {
+    _s: { me, mates, defs, keeper, flyT },
+    update(dt) {
+      t += dt;
+      for (const a of mates) if (t > a.d) { const dx = a.tx - a.x, dy = a.ty - a.y, L = Math.hypot(dx, dy); if (L > 2) { const s = Math.min(a.sp * dt, L); a.x += dx / L * s; a.y += dy / L * s; } }
+      for (const d of defs) { const dx = d.a.x - d.x, dy = d.a.y - 13 - d.y, L = Math.hypot(dx, dy); if (L > 2) { const s = Math.min(d.sp * dt, L); d.x += dx / L * s; d.y += dy / L * s; } }
+      if (!ball) { tl -= dt; if (tl <= 0) { ball = { to: me }; end('kesildi'); } return; }
+      ball.p += dt / flyT;
+      if (ball.p >= 1) {
+        const P = ball.to, dm = Math.min(...mates.map(a => hyp(a, P))), dd = Math.min(...defs.map(d => hyp(d, P)));
+        if (hyp(P, keeper) < 36) return end('kesildi');
+        if (dm < rr && dm < dd + 5) return end('ok', { adv: true });
+        end(dd < rr ? 'kesildi' : 'bos');
+      }
+    },
+    down(x, y) { if (!ball) hold = { x, y }; },
+    move(x, y) { if (hold) { hold.x = x; hold.y = y; } },
+    up() { if (!hold || ball) return; const h = hold; hold = null; if (h.y > 300) return; ball = { p: 0, to: { x: clamp(h.x + randn() * sg, 20, 340), y: clamp(h.y + randn() * sg, 30, 300) } }; sfx.kick(); },
+    draw(g) {
+      pitch(g);
+      g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 2; g.strokeRect(60, 8, 240, 200); g.strokeRect(120, 8, 120, 70);
+      g.fillStyle = '#f4f4f4'; g.fillRect(140, 4, 80, 6);
+      g.beginPath(); g.arc(keeper.x, keeper.y, 36, 0, 7); g.fillStyle = 'rgba(255,77,77,.14)'; g.fill();
+      for (const a of mates) { g.setLineDash([4, 6]); g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 2; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(a.tx, a.ty); g.stroke(); g.setLineDash([]); g.beginPath(); g.arc(a.tx, a.ty, 4, 0, 7); g.fillStyle = 'rgba(255,255,255,.5)'; g.fill(); }
+      for (const d of defs) man(g, d.x, d.y, o.co);
+      for (const a of mates) man(g, a.x, a.y, o.cu, true);
+      man(g, keeper.x, keeper.y, '#ffd23f'); man(g, me.x, me.y, o.cu, true);
+      if (hold && !ball) { g.beginPath(); g.arc(hold.x, hold.y, rr, 0, 7); g.strokeStyle = hold.y > 300 ? '#ff4d4d' : '#5dff9e'; g.lineWidth = 2.5; g.stroke(); }
+      if (ball && ball.p != null) { const p = Math.min(1, ball.p), x = lerp(me.x, ball.to.x, p), y = lerp(me.y, ball.to.y, p), h = Math.sin(p * Math.PI); g.beginPath(); g.ellipse(x, y, 6, 3, 0, 0, 7); g.fillStyle = 'rgba(0,0,0,.3)'; g.fill(); ballD(g, x, y - h * 34, 6 + h * 5); g.beginPath(); g.arc(ball.to.x, ball.to.y, rr, 0, 7); g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1.5; g.stroke(); }
+      else if (!ball) { ballD(g, me.x + (side < 0 ? 12 : -12), me.y - 8); timer(g, tl / 6); }
     },
   };
 }
@@ -454,8 +500,11 @@ function keepGame(m, o) {
 export const GAMES = {
   sut: (m, o) => shotGame(m, { ...o, variant: 'sut' }), kafa: (m, o) => shotGame(m, { ...o, variant: 'kafa' }),
   frikik: (m, o) => shotGame(m, { ...o, variant: 'frikik' }), penalti: (m, o) => shotGame(m, { ...o, variant: 'penalti' }),
+  vole: (m, o) => shotGame(m, { ...o, variant: 'vole' }), rovesata: (m, o) => shotGame(m, { ...o, variant: 'rovesata' }),
+  orta: (m, o) => crossGame(m, { ...o, variant: 'orta' }), korner: (m, o) => crossGame(m, { ...o, variant: 'korner' }),
   pas: passGame, calim: dribGame, savunma: defGame, kurtaris: keepGame,
 };
+const PADS = { calim: 'ÇALIM', savunma: 'KAY' };   // analog + eylem tuşu kullanan oyunlar
 
 export class Mini {
   constructor(cv) {
@@ -463,7 +512,23 @@ export class Mini {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = W * dpr; cv.height = H * dpr; this.g.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.px = W / 2; this.py = H / 2; this.hasP = false; this.game = null; this.res = null; this.started = false;
-    this.p = []; this.sh = 0; this.slow = 1; this.slowT = 0; this.fl = 0; this.it = 0;
+    this.p = []; this.sh = 0; this.slow = 1; this.slowT = 0; this.fl = 0; this.it = 0; this.sx = 0; this.sy = 0;
+    // analog çubuk ve eylem tuşu: parmak sahayı kapatmasın diye sahanın altında durur
+    this.pad = cv.parentElement.querySelector('.pad');
+    if (this.pad) {
+      const st = this.pad.querySelector('.stick'), nub = st.firstElementChild, btn = this.pad.querySelector('.pbtn'); let sid = null;
+      const begin = () => { if (this.game && !this.started) { this.started = true; sfx.whistle(1); } };
+      const mv = e => { const r = st.getBoundingClientRect(), R = r.width / 2, k = R * .6; let x = (e.clientX - r.left - R) / k, y = (e.clientY - r.top - R) / k; const L = Math.hypot(x, y); if (L > 1) { x /= L; y /= L; } this.sx = x; this.sy = y; nub.style.transform = `translate(${x * k}px,${y * k}px)`; };
+      st.addEventListener('pointerdown', e => { e.preventDefault(); sid = e.pointerId; try { st.setPointerCapture(sid); } catch (x) { /* sentetik */ } begin(); mv(e); });
+      st.addEventListener('pointermove', e => { if (e.pointerId === sid) mv(e); });
+      const end = e => { if (e.pointerId !== sid) return; sid = null; this.sx = this.sy = 0; nub.style.transform = ''; };
+      st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+      btn.addEventListener('pointerdown', e => { e.preventDefault(); if (!this.started) return begin(); if (this.game && !this.res && this.game.act) this.game.act(); });
+      const keys = {}, K = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1], a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] };
+      const kb = () => { let x = 0, y = 0; for (const k in keys) if (keys[k]) { x += K[k][0]; y += K[k][1]; } const L = Math.hypot(x, y) || 1; this.sx = x / L; this.sy = y / L; };
+      window.addEventListener('keydown', e => { if (!this.game || this.pad.hidden) return; if (K[e.key]) { e.preventDefault(); begin(); keys[e.key] = 1; kb(); } else if (e.key === ' ') { e.preventDefault(); if (this.started && !this.res && this.game.act) this.game.act(); else begin(); } });
+      window.addEventListener('keyup', e => { if (K[e.key]) { keys[e.key] = 0; kb(); } });
+    }
     const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; };
     cv.addEventListener('pointerdown', e => {
       e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (x) { /* sentetik olay */ }
@@ -484,7 +549,8 @@ export class Mini {
   play(kind, o) {
     return new Promise(resolve => {
       this.res = null; this.started = false; this.hasP = false; this.endT = 0; this.kind = kind; this.p = []; this.sh = 0; this.slow = 1; this.slowT = 0; this.fl = 0; this.it = 0;
-      this.game = GAMES[kind](this, o);
+      this.game = GAMES[kind](this, o); this.sx = this.sy = 0;
+      if (this.pad) { const P = PADS[kind]; this.pad.hidden = !P; this.cv.parentElement.classList.toggle('haspad', !!P); if (P) this.pad.querySelector('.pbtn').textContent = P; }
       let last = performance.now();
       // rAF arka planda durabilir; zamanlayıcı yedeği oyunun takılmasını önler.
       const next = f => { let done = false, ra = 0, to = 0; const run = () => { if (done) return; done = true; cancelAnimationFrame(ra); clearTimeout(to); f(performance.now()); }; ra = requestAnimationFrame(run); to = setTimeout(run, 60); };
@@ -514,8 +580,9 @@ export class Mini {
   intro() {
     const g = this.g, I = INTRO[this.kind], k = this.it, cx = W / 2, cy = 330, u = (k % 1.4) / 1.4;
     g.fillStyle = 'rgba(10,8,7,.78)'; g.fillRect(0, 0, W, H);
-    g.save(); g.translate(cx, 150); g.transform(1, 0, -.18, 1, 0, 0); g.fillStyle = '#ff6a2b'; g.fillRect(-124, -34, 248, 68); g.restore();
-    head(g, I[0], cx, 152, 52, '#14110e');
+    g.save(); g.translate(cx, 150); const cs = getComputedStyle(document.documentElement), th = cs.getPropertyValue('--or').trim() || '#ff6a2b', on = cs.getPropertyValue('--on').trim() || '#14110e';
+    g.transform(1, 0, -.18, 1, 0, 0); g.fillStyle = th; g.fillRect(-124, -34, 248, 68); g.restore();
+    head(g, I[0], cx, 152, 52, on);
     text(g, I[1], cx, 214, 16, '#f5efe4', 600); if (I[2]) text(g, I[2], cx, 238, 14, 'rgba(245,239,228,.7)', 500);
     // hareket ipucu: parmak animasyonu
     g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 2; g.setLineDash([5, 6]);

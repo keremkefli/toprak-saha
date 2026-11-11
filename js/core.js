@@ -1,5 +1,5 @@
 // Toprak Saha — oyun çekirdeği: durum, lig simülasyonu, sezon, transfer, ekonomi
-import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH } from './data.js';
+import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY } from './data.js';
 
 export let S = null;
 export const WEEKS = 38;
@@ -40,6 +40,9 @@ export function load() {
     S.perks ??= []; S.pp ??= 0; S.px ??= 0; S.ach ??= {}; S.feed ??= []; S.pop ??= []; S.mr ??= []; S.feedNew ??= 0; S.awards ??= 0;
     if (S.dream === undefined) S.dream = SAK();
     if (!S.euro) initEuro(euroQual());
+    for (const id in S.gen) if (!S.gen[id].c2) S.gen[id].c2 = '#f2f2f2';   // eski kayıtlarda boş kalan ikinci renk
+    S.net ??= []; S.diff ??= 'normal'; if (!S.mates || !S.mates.length) genMates(); if (!S.quest) newQuest();
+    S.fu ??= []; S.num ??= 9; S.cele ??= 'kayarak'; S.nick ??= ''; if (!S.refs || !S.refs.length) initRefs();
     S.assets = S.assets.filter(id => SHOP.some(x => x.id === id));
     return true;
   } catch (e) { return false; }
@@ -62,8 +65,23 @@ export const wref = () => Math.max(S.con.wage, 1500);
 export function addNews(s, ic = 'news') { S.news.unshift({ w: `${S.week}. hafta`, s, ic }); if (S.news.length > 24) S.news.length = 24; }
 export function tot() { const c = S.car, t = S.st; return { apps: c.apps + t.apps, g: c.g + t.g, a: c.a + t.a, rs: c.rs + t.rs }; }
 export function potText() { const p = S.pot; return p >= 91 ? 'Dünya çapında' : p >= 87 ? 'Çok yüksek' : p >= 83 ? 'Yüksek' : 'İyi'; }
-export function zones(lid) { const i = TRT.indexOf(lid); if (i < 0) return { up: 1, down: 0 }; return { up: i > 0 ? SWAP[i - 1] : 1, down: i < 7 ? SWAP[i] : 0 }; }
-function rname(c) { const N = NAMES[c] || NAMES.TR; return pick(N.f) + ' ' + pick(N.l); }
+// Lig kuralları (2025/26 statülerine göre, tek gruba sadeleştirilmiş).
+// up: doğrudan yükselen, po: play-off türü ve başladığı sıra, down: doğrudan düşen, out: play-out (kaybeden düşer)
+const RULES = {
+  tr1: { down: 3 },
+  tr2: { up: 2, po: 'p5', from: 3, down: 4 },      // 3-7 play-off, 3. doğrudan finalde
+  tr3: { up: 2, po: 'p4x2', from: 3, down: 2 },    // iki play-off maçının galipleri çıkar
+  tr4: { up: 1, po: 'p4', from: 2, down: 2 },      // 2-5 play-off
+  tr5: { up: 1, po: 'p4', from: 2, down: 1, out: 1 },
+  tr6: { up: 1, po: 'p2', from: 2, down: 1, out: 1 },   // şampiyon doğrudan, 2. ile 3. play-off
+  tr7: { up: 1, po: 'p4', from: 2, down: 1, out: 1 },
+  tr8: { up: 1, po: 'p4', from: 2, down: 0 },
+};
+const POSIZE = { p5: 5, p4: 4, p4x2: 4, p2: 2 }, PON = { p4: ['Yarı final', 'Final'], p5: ['Çeyrek final', 'Yarı final', 'Final'], p4x2: ['Final'], p2: ['Final'], o2: ['Play-out'] };
+export function zones(lid) { const R = RULES[lid]; if (!R) return { up: 1, po: 0, down: 0, out: 0 }; return { up: R.up || (lid === 'tr1' ? 1 : 0), po: R.po ? POSIZE[R.po] : 0, down: R.down || 0, out: R.out ? 2 : 0 }; }
+// Yerel amatör liglerde "yaşı küçük futbolcu" kuralı: ilk yarıda sahada genç oyuncu zorunlu, forma şansın artar
+export const youngRule = () => S.age <= 20 && LMAP[leagueOf(S.clubId)].c === 'TR' && tier() >= 6;
+export function rname(c) { const N = NAMES[c] || NAMES.TR; return pick(N.f) + ' ' + pick(N.l); }
 
 // Etki uygula, görünür değişiklikleri döndür. Gizli sayaçlar (prof, ego, sad) listelenmez.
 const LBL = { en: 'Enerji', mo: 'Moral', aile: 'Aile', ark: 'Arkadaşlar', par: 'İlişki', hoca: 'Hoca güveni', takim: 'Takım', taraf: 'Taraftar', fol: 'Takipçi', rep: 'İtibar', egt: 'Eğitim', dil: 'Dil' };
@@ -97,7 +115,7 @@ function genAmateur(prov) {
     names.forEach((n, i) => {
       const id = 'g' + (ti + 6) + '_' + i; let h = 0;
       for (const ch of n) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-      const a = keys[h % keys.length]; let b = ['W', 'K', 'Y', 'W'][(h >> 4) % 4]; if (b === a) b = 'W';
+      const a = keys[h % keys.length]; let b = ['W', 'K', 'Y', 'W'][(h >>> 4) % 4]; if (b === a) b = 'W';
       S.gen[id] = { n, c1: PAL[a], c2: PAL[b] };
       S.rt[id] = Math.round(rnd(rng[ti][0], rng[ti][1]));
       S.lg[lid].t.push(id);
@@ -107,7 +125,7 @@ function genAmateur(prov) {
 
 function initLeague(lid) {
   const lg = S.lg[lid], c = LMAP[lid].c;
-  shuffle(lg.t); lg.tb = {}; lg.rd = 0; lg.last = [];
+  shuffle(lg.t); lg.tb = {}; lg.rd = 0; lg.last = []; delete lg.res;
   for (const id of lg.t) {
     if (!S.sc[id]) S.sc[id] = [[rname(c), 0], [rname(c), 0]];
     else { S.sc[id][0][1] = 0; S.sc[id][1][1] = 0; if (chance(.25)) S.sc[id][ri(0, 1)][0] = rname(c); }
@@ -121,6 +139,7 @@ export function newCareer(o) {
   for (const k in P.b) at[k] += P.b[k];
   for (const k in O.at || {}) at[k] += O.at[k];
   for (const k in Tr.at || {}) at[k] += Tr.at[k];
+  for (const mod of [HT[o.ht], BUILD[o.build], (STYLES[o.pos] || [])[o.style]]) for (const k in (mod && mod.at) || {}) at[k] += mod.at[k];
   S = {
     v: 1, name: o.name, pos: o.pos, foot: o.foot, prov: o.prov, origin: o.origin, trait: o.trait, nat: 'TR', look: o.look || { skin: 1, hair: 0, hc: 0 },
     age: 16, year: 2026, season: 1, week: 1, used: 0, at, pot: clamp(ri(80, 91) + (O.pot || 0) + Math.floor(leg / 2), 78, 96),
@@ -131,7 +150,7 @@ export function newCareer(o) {
     inj: 0, ban: 0, banR: '', bench: 0, job: 0, assets: [], spon: [],
     st: { apps: 0, g: 0, a: 0, rs: 0, cs: 0, lg: 0 }, car: { apps: 0, g: 0, a: 0, rs: 0, caps: 0, ng: 0 },
     hist: [], tro: [], news: [], lastR: [], lastAvg: 0, peak: 0, peakC: 0, since: 1,
-    gen: {}, rt: {}, lg: {}, sc: {}, rival: null, over: null, tstat: 'mutlu', watch: [], loan: null, cup: null, euro: null, dream: null, perks: [], pp: 0, px: 0, ach: {}, feed: [], feedNew: 0, pop: [], mr: [], awards: 0,
+    gen: {}, rt: {}, lg: {}, sc: {}, rival: null, over: null, tstat: 'mutlu', watch: [], loan: null, cup: null, euro: null, dream: null, perks: [], pp: 0, px: 0, ach: {}, feed: [], feedNew: 0, pop: [], mr: [], awards: 0, refs: [], refi: 0, fu: [], mates: [], net: [], quest: null, po: null, diff: o.diff || 'normal', num: clamp(+o.num || 9, 1, 99), cele: o.cele || 'kayarak', nick: o.nick || '', ht: o.ht || 'orta', build: o.build || 'atletik', style: o.style || 0,
   };
   for (const k in Tr.hid || {}) S.hid[k] = clamp(S.hid[k] + Tr.hid[k], 0, 100);
   for (const k in Tr.rel || {}) S.rel[k] = clamp(S.rel[k] + Tr.rel[k], 0, 100);
@@ -149,7 +168,7 @@ export function newCareer(o) {
   S.clubId = pick(fit.length >= 2 ? fit.slice(-5) : byR.slice(0, 3));
   S.con = { wage: wageFor(S.rt[S.clubId], OVR()), until: 1, role: '11', goalB: 0 };
   S.con.rel = nice(value() * 4);
-  initCup(); initEuro(euroQual()); S.dream = SAK();
+  initCup(); initEuro(euroQual()); S.dream = SAK(); initRefs(); assignRef(); genMates(); newQuest();
   S.peak = OVR(); S.peakC = S.rt[S.clubId];
   S.rival = { n: rname('TR'), ovr: OVR() + ri(1, 4), pot: ri(82, 90), c: club(pick(S.lg[lid].t.filter(x => x !== S.clubId))).n };
   addNews(`${club(S.clubId).n} formasıyla ${LMAP[lid].name} macerası başlıyor.`);
@@ -177,8 +196,22 @@ export function roundPairs(teams, r) {
 
 export function table(lid) {
   const lg = S.lg[lid];
-  return lg.t.map(id => { const r = lg.tb[id] || [0, 0, 0, 0, 0, 0]; return { id, p: r[0], w: r[1], d: r[2], l: r[3], gf: r[4], ga: r[5], pts: r[1] * 3 + r[2], gd: r[4] - r[5] }; })
-    .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || club(a.id).n.localeCompare(club(b.id).n, 'tr'));
+  const rows = lg.t.map(id => { const r = lg.tb[id] || [0, 0, 0, 0, 0, 0]; return { id, p: r[0], w: r[1], d: r[2], l: r[3], gf: r[4], ga: r[5], pts: r[1] * 3 + r[2], gd: r[4] - r[5] }; });
+  const base = (a, b) => b.gd - a.gd || b.gf - a.gf || club(a.id).n.localeCompare(club(b.id).n, 'tr');
+  rows.sort((a, b) => b.pts - a.pts || base(a, b));
+  if (!lg.res) return rows;
+  // puan eşitliğinde önce aralarındaki maçlar (ikili averaj), sonra genel averaj
+  for (let i = 0; i < rows.length;) {
+    let j = i; while (j < rows.length && rows[j].pts === rows[i].pts) j++;
+    if (j - i > 1 && rows[i].p > 0) {
+      const ids = new Set(rows.slice(i, j).map(r => r.id)), hp = {}, hg = {};
+      for (const [h, a2, x, y] of lg.res) if (ids.has(h) && ids.has(a2)) { hg[h] = (hg[h] || 0) + x - y; hg[a2] = (hg[a2] || 0) + y - x; if (x > y) hp[h] = (hp[h] || 0) + 3; else if (y > x) hp[a2] = (hp[a2] || 0) + 3; else { hp[h] = (hp[h] || 0) + 1; hp[a2] = (hp[a2] || 0) + 1; } }
+      const part = rows.slice(i, j).sort((a2, b2) => (hp[b2.id] || 0) - (hp[a2.id] || 0) || (hg[b2.id] || 0) - (hg[a2.id] || 0) || base(a2, b2));
+      rows.splice(i, j - i, ...part);
+    }
+    i = j;
+  }
+  return rows;
 }
 
 export function scorers(lid) {
@@ -217,7 +250,7 @@ export function fixture() {
 export function role() {
   if (S.inj > 0) return 'sakat';
   if (S.ban > 0) return 'ceza';
-  const s = S.rel.hoca * 0.5 + (OVR() - S.rt[S.clubId]) * 3.5 + 28 + (S.fl.kaptan ? 8 : 0);
+  const s = S.rel.hoca * 0.5 + (OVR() - S.rt[S.clubId]) * 3.5 + 28 + (S.fl.kaptan ? 8 : 0) + (youngRule() ? 12 : 0);
   return s >= 50 ? '11' : s >= 30 ? 'yedek' : 'yok';
 }
 export const canPlay = () => { const r = role(); return r === '11' || r === 'yedek'; };
@@ -242,7 +275,7 @@ export function act(id) {
 }
 
 export function train(tid, mult) {
-  S.used++;
+  S.used++; questHit('train');
   const Tn = TRAIN.find(t => t.id === tid);
   const m = 0.28 * mult * (TRAITS[S.trait].tr || 1) * (1 + eff('tr')) * (Tn.a.length === 1 ? 1.5 : 1);
   const gs = Tn.a.map(k => [k, grow(k, m)]);
@@ -284,6 +317,7 @@ export function endWeek(own, ownCup, ownEuro) {
       if (own && lid === myL && (h === s.clubId || a === s.clubId)) { hg = own.hg; ag = own.ag; pg = own.pg || 0; }
       else[hg, ag] = simScore(s.rt[h], s.rt[a]);
       applyRes(lg, h, a, hg, ag, pg); res.push([h, a, hg, ag]);
+      if (lid === myL) (lg.res || (lg.res = [])).push([h, a, hg, ag]);
     }
     lg.last = res; lg.rd++;
   }
@@ -310,6 +344,12 @@ export function endWeek(own, ownCup, ownEuro) {
   s.fol = Math.round(s.fol + (s.fol * 0.002 + s.rep * s.rep * 0.5) * (1 + eff('fol')));
   if (s.job && s.con.wage > 20000) { s.job = 0; addNews('Maaşın artık yetiyor; fabrikadaki işten ayrıldın.'); }
   watchStep(); feedWeek(); checkAch();
+  for (const m of s.mates) m.b = clamp(m.b - .5, 0, 100);
+  for (const c of s.net) c.b = clamp(c.b - .7, 0, 100);
+  for (const c of s.net.filter(x => x.b < 4)) addNews(`${c.n} ile bağın koptu.`, 'users');
+  s.net = s.net.filter(x => x.b >= 4);
+  s.rel.takim += (chem() * 100 - s.rel.takim) * .03;   // soyunma odası havası, yakın olduğun isimlere bağlı
+  newQuest(); delete s.fl.rehabw;
   if (s.week % 4 === 0) {
     if (s.mr.length >= 3 && s.mr.reduce((a, b) => a + b, 0) / s.mr.length >= 7.6) {
       const b = nice(Math.max(1000, s.con.wage)); s.money += b; s.awards++; fx({ rep: 1, mo: 5 }); unlock('ay');
@@ -321,6 +361,7 @@ export function endWeek(own, ownCup, ownEuro) {
   delete s.fl.skip;
   s.peak = Math.max(s.peak, OVR());
   s.used = 0; s.week++;
+  if (s.week <= WEEKS) assignRef();
   return { over: s.week > WEEKS, inc };
 }
 
@@ -349,18 +390,25 @@ export function seasonEnd() {
   const top = scorers(myL)[0];
   if (top && top.me && st.lg >= 5) tro.push(`${L.name} Gol Krallığı (${st.lg} gol)`);
   if (st.apps >= 20 && avg >= 7.3) { tro.push('Yılın 11\'i'); unlock('yil11'); }
+  // sezon sonu ödül töreni
+  if (st.apps >= 22 && avg >= 7.7) tro.push(`${L.name} Yılın Futbolcusu`);
+  if (s.age <= 21 && st.apps >= 18 && avg >= 7.2) tro.push('Yılın Genç Oyuncusu');
+  if (s.fl.rov) { if (chance(.35)) tro.push('Yılın Golü (röveşata)'); delete s.fl.rov; }
   tro.forEach(t => s.tro.push(label + ' · ' + t));
   const champ = club(sorted[myL][0]).n;
   let moved = 0;
-  for (let i = 0; i < SWAP.length; i++) {
-    const up = s.lg[TRT[i]], dn = s.lg[TRT[i + 1]], k = SWAP[i];
-    const rel = sorted[TRT[i]].slice(-k), pro = sorted[TRT[i + 1]].slice(0, k);
+  if (!s.po) { initPlayoffs(); while (poPending()) poRound(); }   // arayüz oynatmadıysa simüle et
+  const poOf = (lid, key) => s.po.list.filter(x => x.lid === lid).flatMap(x => x[key]);
+  for (let i = 0; i < TRT.length - 1; i++) {
+    const U = TRT[i], D = TRT[i + 1], up = s.lg[U], dn = s.lg[D];
+    const rel = [...sorted[U].slice(sorted[U].length - RULES[U].down), ...poOf(U, 'down')], pro = [...sorted[D].slice(0, RULES[D].up), ...poOf(D, 'up')];
     up.t = up.t.filter(x => !rel.includes(x)).concat(pro);
     dn.t = dn.t.filter(x => !pro.includes(x)).concat(rel);
     if (pro.includes(s.clubId)) moved = 1;
     if (rel.includes(s.clubId)) moved = -1;
     rel.forEach(x => { s.rt[x] -= 1; }); pro.forEach(x => { s.rt[x] += 1.5; });
   }
+  s.po = null;
   if (moved === 1) { lines.push(`${club(s.clubId).n} bir üst lige yükseldi!`); fx({ mo: 12, taraf: 8 }); const b = nice(s.con.wage * 6); if (b) { s.money += b; lines.push(`Yükselme primi: ${fmt(b)}`); } }
   if (moved === -1) { lines.push(`${club(s.clubId).n} küme düştü.`); fx({ mo: -15, taraf: -10 }); }
   for (const lid in s.lg) {
@@ -369,7 +417,7 @@ export function seasonEnd() {
   }
   s.lastAvg = avg || s.lastAvg || 6.3;
   if (s.loan) {
-    const lc = s.clubId; s.clubId = s.loan.from; s.loan = null;
+    const lc = s.clubId; matesToNet(); s.clubId = s.loan.from; s.loan = null; genMates();
     s.rel.hoca = clamp(42 + (avg - 6.5) * 14, 20, 80); s.rel.takim = 45; s.rel.taraf = 35; s.since = s.season + 1; delete s.fl.kaptan;
     lines.push(`Kiralık süren bitti: ${club(s.clubId).n} takımına döndün.`);
     if (avg >= 6.6 && !s.watch.some(w => w.id === lc)) s.watch.push({ id: lc, lv: clamp(50 + (avg - 6.5) * 25, 40, 90) });
@@ -396,6 +444,7 @@ export function seasonEnd() {
   const exp = s.assets.filter(id => SHOP.find(x => x.id === id).yr);
   if (exp.length) { s.assets = s.assets.filter(id => !exp.includes(id)); lines.push('Sezonluk anlaşmaların bitti: ' + exp.map(id => SHOP.find(x => x.id === id).n).join(', ') + '.'); }
   gainXp(2);
+  for (const r of s.refs) r.me = clamp(r.me * .5, -1, .6);   // hakemler zamanla unutur
   addNews(`${label} sezonu bitti. ${L.name} şampiyonu ${champ}.`);
   return { label, league: L.name, pos, n, champ, st, avg, tro, lines, moved };
 }
@@ -493,7 +542,7 @@ function watchStep() {
       if (LMAP[lid].c !== 'TR' && s.rep < 40) continue;
       for (const id of s.lg[lid].t) { const r = s.rt[id]; if (id !== s.clubId && r >= o - 8 && r <= o + 5 && !s.watch.some(w => w.id === id)) { pool.push(id); if (r > cur) pool.push(id); } }
     }
-    if (pool.length) { const id = pick(pool); s.watch.push({ id, lv: ri(14, 32) }); addNews(`${club(id).n} scoutları seni izlemeye başladı.`, 'eye'); addFeed('basin', 'Transfer Hattı', `${club(id).n} cephesi ${s.name} için rapor istedi.`, 'haber'); }
+    if (pool.length) { const id = pick(pool); s.watch.push({ id, lv: ri(14, 32) }); addNews(`${club(id).n} scoutları seni izlemeye başladı.`, 'eye'); addFeed('basin', 'Transfer Hattı', say('rumor', { c: club(id).n, me: s.name }), 'haber'); }
   }
   // hayal takımı: seviyen yaklaşınca kendiliğinden radarına girersin
   const dr = s.dream;
@@ -560,7 +609,7 @@ export function acceptOffer(o) {
   if (move) {
     if (!o.loan && s.con.until >= s.season) s.hid.sad = clamp(s.hid.sad - 6, 0, 100);
     if (o.loan) s.loan = { from: s.clubId, back: s.season }; else s.loan = null;
-    s.clubId = o.id;
+    matesToNet(); s.clubId = o.id; genMates();
     s.rel.hoca = { '11': 60, rot: 46, genc: 34 }[o.role];
     s.rel.takim = 45; s.rel.taraf = clamp(28 + s.rep * 0.3, 0, 100);
     s.bench = 0; s.since = s.season; s.watch = []; s.tstat = 'mutlu';
@@ -593,35 +642,39 @@ export function natFixture() {
 }
 
 // ---------- maç ----------
-const MATTR = { sut: ['sut'], kafa: ['kafa'], frikik: ['sut', 'teknik'], penalti: ['sut', 'zihin'], pas: ['pas'], calim: ['teknik'], savunma: ['savunma'], kurtaris: ['kaleci'] };
-const XP = { sut: ['sut', 'zihin'], kafa: ['kafa', 'guc'], frikik: ['sut', 'teknik'], penalti: ['zihin', 'sut'], pas: ['pas', 'zihin'], calim: ['teknik', 'hiz'], savunma: ['savunma', 'guc'], kurtaris: ['kaleci', 'zihin'] };
+const MATTR = { sut: ['sut'], kafa: ['kafa'], frikik: ['sut', 'teknik'], penalti: ['sut', 'zihin'], pas: ['pas'], calim: ['teknik'], savunma: ['savunma'], kurtaris: ['kaleci'], vole: ['sut', 'teknik'], rovesata: ['teknik', 'kafa'], orta: ['pas', 'teknik'], korner: ['pas', 'teknik'] };
+const XP = { sut: ['sut', 'zihin'], kafa: ['kafa', 'guc'], frikik: ['sut', 'teknik'], penalti: ['zihin', 'sut'], pas: ['pas', 'zihin'], calim: ['teknik', 'hiz'], savunma: ['savunma', 'guc'], kurtaris: ['kaleci', 'zihin'], vole: ['sut', 'teknik'], rovesata: ['teknik', 'kafa'], orta: ['pas', 'teknik'], korner: ['pas', 'teknik'] };
 export const GOOD = ['gol', 'ok', 'gecti', 'kapildi', 'kurtardi'];
 export function skillFor(k) { const a = MATTR[k]; return a.reduce((s, x) => s + S.at[x], 0) / a.length + (has('krampon') ? 2 : 0); }
 
 export function buildMatch(fxt, rl) {
   const nat = !!fxt.nat;
-  const usR = nat ? fxt.usR : S.rt[S.clubId], oppR = nat ? fxt.opp.r : S.rt[fxt.opp];
+  const usR = nat ? fxt.usR : S.rt[S.clubId], oppR = (nat ? fxt.opp.r : S.rt[fxt.opp]) + (fxt.boost || 0);
+  const ref = nat ? null : curRef(), stam = clamp(55 + S.en * .45, 40, 100);
   const hb = nat || fxt.final ? 0 : (fxt.home ? 2 : -2), def = S.pos === 'DF' || S.pos === 'KL';
   const lu = 1.3 * Math.exp((usR + hb - oppR) * 0.05) * (def ? 0.95 : 0.6);
   const lo = 1.2 * Math.exp((oppR - hb - usR) * 0.05) * (S.pos === 'KL' ? 0.25 : def ? 0.55 : 0.95);
   const tl = [];
   for (let i = poisson(clamp(lu, .1, 4)); i > 0; i--) tl.push({ min: ri(2, 90), t: 'bg', us: true });
   for (let i = poisson(clamp(lo, .1, 4)); i > 0; i--) tl.push({ min: ri(2, 90), t: 'bg', us: false });
-  const from = rl === 'yedek' ? ri(58, 70) : 1, n = rl === 'yedek' ? ri(1, 2) : ri(3, 5);
+  const derby = !nat && isDerby(S.clubId, fxt.opp);
+  const from = rl === 'yedek' ? ri(58, 70) : 1, n = (rl === 'yedek' ? ri(1, 2) : ri(3, 5)) + (derby ? 1 : 0);
   for (let i = 0; i < n; i++) tl.push({ min: ri(from + 1, 90), t: 'mom', k: wpick(POS[S.pos].m) });
   shuffle([...FILL]).slice(0, 4).forEach(x => tl.push({ min: ri(3, 88), t: 'txt', s: x }));
   if (rl === '11' && !nat) { tl.push({ min: 45, t: 'dec', k: 'ht' }); if (chance(.4)) tl.push({ min: ri(50, 84), t: 'dec', k: pick(['pen', 'ref', 'knock']) }); }
   if (rl === 'yedek') tl.push({ min: from, t: 'txt', s: 'Hoca seni çağırdı. Oyuna giriyorsun!' });
   tl.sort((a, b) => a.min - b.min || (a.t === 'txt' ? -1 : 1));
-  return { fxt, nat, cup: !!fxt.cup, role: rl, usR, oppR, tl, usG: 0, oppG: 0, pg: 0, pa: 0, rt: 6, yel: 0, red: false, mom: 0, ok: 0 };
+  return { fxt, nat, cup: !!fxt.cup, role: rl, usR, oppR, tl, usG: 0, oppG: 0, pg: 0, pa: 0, rt: 6, yel: 0, red: false, mom: 0, ok: 0,
+    derby, stam, stam0: stam, mode: 'n', calls: 2, crowd: !nat && fxt.home ? 1 : 0, ref, bias: ref ? clamp(refBias(ref, S.clubId) - refBias(ref, fxt.opp) * .5 + ref.me, -1.2, 1.2) : 0 };
 }
 
 export function simMoment(k, M) {
-  const base = { sut: .2, kafa: .17, frikik: .08, penalti: .76, pas: .62, calim: .45, savunma: .58, kurtaris: .74 }[k];
-  const shot = k === 'sut' || k === 'kafa' || k === 'frikik';
-  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0), .05, shot ? .42 : .92));
+  const base = { sut: .2, kafa: .17, frikik: .08, penalti: .76, pas: .62, calim: .45, savunma: .58, kurtaris: .74, vole: .15, rovesata: .07, orta: .48, korner: .45 }[k];
+  const shot = k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'vole' || k === 'rovesata';
+  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (S.diff === 'kolay' ? .04 : S.diff === 'zor' ? -.04 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0), .05, shot ? .42 : .92));
   switch (k) {
     case 'pas': return ok ? { out: 'ok', adv: chance(.5) } : { out: pick(['kesildi', 'bos']) };
+    case 'orta': case 'korner': return ok ? { out: 'ok', adv: true } : { out: pick(['kesildi', 'bos']) };
     case 'calim': return { out: ok ? 'gecti' : 'kaptirdi' };
     case 'savunma': return { out: ok ? 'kapildi' : chance(.2) ? 'faul' : 'gecildi' };
     case 'kurtaris': return { out: ok ? 'kurtardi' : 'yedi' };
@@ -635,10 +688,12 @@ export function applyMoment(M, k, res) {
   M.mom++; if (good) M.ok++;
   XP[k].forEach(a => grow(a, good ? 0.04 : 0.02));
   const mate = !M.nat && S.sc[S.clubId] ? pick(S.sc[S.clubId])[0] : 'takım arkadaşın';
-  if (k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'penalti') {
+  if (k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'penalti' || k === 'vole' || k === 'rovesata') {
     if (out === 'gol') {
       M.usG++; M.pg++; M.rt += k === 'penalti' ? 0.8 : 1.2;
-      lines.push({ s: `GOL! ${me} ${k === 'kafa' ? 'kafayla ağları buldu' : k === 'frikik' ? 'frikikten harika attı' : k === 'penalti' ? 'penaltıyı gole çevirdi' : 'topu ağlara gönderdi'}!`, c: 'g' });
+      lines.push({ s: `GOL! ${me} ${k === 'kafa' ? 'kafayla ağları buldu' : k === 'frikik' ? 'frikikten harika attı' : k === 'penalti' ? 'penaltıyı gole çevirdi' : k === 'vole' ? 'gelişine vurdu, top ağlarda' : k === 'rovesata' ? 'röveşatayla stadı ayağa kaldırdı' : 'topu ağlara gönderdi'}!`, c: 'g' });
+      if (chance(.6) && CELE[S.cele]) lines.push({ s: `${me} ${CELE[S.cele][1]}.` });
+      if (k === 'rovesata') { S.fl.rov = 1; M.rt += .6; fx({ fol: Math.round(300 + S.fol * .12), taraf: 4 }); addFeed('basin', 'Saha Kenarı', `RÖVEŞATA! ${S.name} yılın golüne aday.`, 'manset'); }
     } else if (out === 'kurtaris') { M.rt += k === 'penalti' ? -0.6 : 0.1; lines.push({ s: 'Kaleci vuruşunu çıkardı.' }); }
     else if (out === 'direk') { M.rt += 0.05; lines.push({ s: 'Direk! Top oyun alanında kaldı.' }); }
     else if (out === 'baraj') { M.rt -= 0.1; lines.push({ s: 'Vuruşun barajda kaldı.' }); }
@@ -646,9 +701,9 @@ export function applyMoment(M, k, res) {
     else if (out === 'gec') { M.rt -= 0.25; lines.push({ s: 'Çok bekledin, top ayağından alındı.' }); }
     else if (out === 'iska') { M.rt -= 0.2; lines.push({ s: 'Topa vuramadın.' }); }
     else { M.rt -= k === 'penalti' ? 0.7 : 0.2; lines.push({ s: 'Vuruşun çerçeveyi bulmadı.' }); }
-  } else if (k === 'pas') {
+  } else if (k === 'pas' || k === 'orta' || k === 'korner') {
     if (out === 'ok') {
-      if (chance((res.adv ? .35 : .12) + (perk('gorus') ? .08 : 0))) { M.usG++; M.pa++; M.rt += 0.8; lines.push({ s: `GOL! ${me} asist yaptı, ${mate} tamamladı!`, c: 'g' }); }
+      if (chance((k !== 'pas' ? .5 : res.adv ? .35 : .12) + (perk('gorus') ? .08 : 0) + chem() * .1)) { M.usG++; M.pa++; M.rt += 0.8; lines.push({ s: `GOL! ${me} asist yaptı, ${mate} tamamladı!`, c: 'g' }); }
       else { M.rt += 0.35; lines.push({ s: 'Pasın yerini buldu, atak sürdü.' }); }
     } else if (out === 'kesildi') {
       M.rt -= 0.3; lines.push({ s: 'Pasın kesildi.' });
@@ -664,7 +719,7 @@ export function applyMoment(M, k, res) {
       if (chance(.45)) { M.oppG++; M.rt -= 0.2; lines.push({ s: 'Pozisyon golle sonuçlandı.', c: 'b' }); }
     } else {
       M.rt -= 0.2; lines.push({ s: 'Arkadan müdahale: faul.' });
-      if (chance(.6)) {
+      if (chance(clamp(.35 + (M.ref ? M.ref.strict * .5 - M.bias * .1 : .25), .15, .95))) {
         M.yel++;
         if (M.yel >= 2) { M.red = true; M.rt -= 1.5; lines.push({ s: 'İkinci sarı! Kırmızı kart gördün.', c: 'b' }); }
         else lines.push({ s: 'Sarı kart gördün.' });
@@ -692,6 +747,12 @@ export function postMatch(M) {
   } else {
     s.st.apps++; s.st.g += M.pg; s.st.a += M.pa; s.st.rs += rt; if (!M.cup) s.st.lg += M.pg;
     s.mr.push(rt); gainXp(rt >= 8.5 ? 2 : rt >= 7 ? 1 : 0);
+    if (rt >= 7) { questHit('rate'); for (const m of s.mates) m.b = clamp(m.b + .6, 0, 100); }
+    if (M.pg + M.pa > 0) questHit('goal');
+    if (M.derby) { fx({ taraf: win ? 8 : lose ? -8 : 0, mo: win ? 5 : 0 }); if (win) lines.push('Derbi galibiyeti! Taraftar +8'); }
+    // dört sarı kart cezası profesyonel liglerde geçerli; yerel amatörde uygulanmaz
+    s.st.yel = (s.st.yel || 0) + (M.red ? 0 : M.yel);
+    if (s.st.yel >= 4 && !(LMAP[leagueOf(s.clubId)].c === 'TR' && tier() >= 6)) { s.st.yel = 0; s.ban = Math.max(s.ban, 1); s.banR = 'Sarı kart cezası'; lines.push('Dördüncü sarı kart: gelecek hafta cezalısın.'); }
     if (def && M.oppG === 0) s.st.cs++;
     fx({ hoca: (rt - 6.6) * 2.2 * (rt > 6.6 && perk('kaptan') ? 1.3 : 1), takim: (rt - 6.5) * 1 + (win ? 0.6 : 0), taraf: (rt - 6.5) * 1.3 + M.pg * 0.8 });
     const prim = win ? nice(s.con.wage * 0.25) : 0, gb = (s.con.goalB || 0) * M.pg;
@@ -707,7 +768,9 @@ export function postMatch(M) {
   const fg = Math.round(Math.max(0, rt - 5.5) * tf + M.pg * tf * 2);
   if (fg > 0) { s.fol += fg; lines.push(`Takipçi +${fg.toLocaleString('tr-TR')}`); }
   const tired = s.en < 30 ? .06 : s.en < 45 ? .025 : 0;
-  s.en = clamp(s.en - (M.cup ? 12 : M.role === '11' ? 18 : 9) * (perk('akciger') ? .7 : 1), 0, 100);
+  const spent = M.stam0 > M.stam ? clamp((M.stam0 - M.stam) / 45, .6, 1.6) : 1;   // maçta harcanan efor
+  s.en = clamp(s.en - (M.cup ? 12 : M.role === '11' ? 18 : 9) * spent * (perk('akciger') ? .7 : 1), 0, 100);
+  if (M.fxt.press) { if (win && rt >= 7) { fx({ taraf: 6 }); lines.push('Sözünü tuttun. Taraftar +6'); } else { fx({ taraf: -5 }); lines.push('İddialı konuştun, olmadı. Taraftar −5'); } }
   if (chance((0.015 + tired) * (M.role === '11' ? 1 : .5) * (M.risk || 1) * (perk('celik') ? .6 : 1))) {
     const r = Math.random();
     if (r < .7) { s.inj = ri(1, 3); lines.push(`Maçta sakatlandın: ${s.inj} hafta yoksun.`); }
@@ -770,46 +833,76 @@ export function addFeed(a, n, t, k = 'fan') {
   if (S.feed.length > 40) S.feed.length = 40;
   S.feedNew = (S.feedNew || 0) + 1;
 }
+// Kalıplar: aynı cümle art arda dönmesin diye son kullanılanlar S.fu içinde tutulur
+const TX = {
+  great: ['{me} bu ligde ne arıyor ya.', 'Bugün {me} oynadı, biz izledik.', 'Bu çocuğu kaçırmayın. Buraya yazıyorum.', '{me} topu her aldığında tribün ayağa kalktı.', '{g} gol, {rt} not. Daha ne olsun.', 'Yıllardır böyle bir {pos} görmedik.', '{me} için besteye başlıyoruz.', 'Forma satışları patlar bu hafta. #{tag}', '{me} maçtan sonra top toplayıcı çocuğa formasını vermiş. Adam gibi adam.'],
+  bad: ['{me} bugün sahada mıydı?', 'Hoca bir hafta dinlendirsin: {me}.', '{me} bugün kafası başka yerdeydi sanki.', 'Bu performansla ilk 11 zor.', 'Top ayağında durmadı bugün.', 'Eleştiriyoruz çünkü seviyoruz. Toparla {me}.', 'Geçen haftaki oyuncu nerede?'],
+  win: ['Üç puan cepte. Devam!', 'Bu takım bu sene bir şeyler yapar.', '{opp} maçı kolay değildi, helal.', 'Yarış kızışıyor. #{tag}', 'Pazartesi işe mutlu gidiyoruz.', 'Savunma bugün duvar gibiydi.', 'Eve keyifle dönüyoruz. #{tag}', 'Bu galibiyet moral olur.'],
+  loss: ['Yine aynı film.', 'Bu savunmayla zor.', '{opp} bizi sahadan sildi.', 'Hocanın planı neydi, anlamadım.', 'Biletime yazık.', 'Toparlanırız. Hep toparlandık.', 'İkinci yarı sahaya çıkmadık.', 'Yönetim uyuyor mu?'],
+  draw: ['Bir puan da puandır.', 'İki puan bıraktık bence.', 'Son dakikalarda kalbim durdu.', 'Ne kazandık ne kaybettik.', 'Beraberlik adil sonuç.'],
+  opp: ['{me} iyiymiş ama abartmayın.', 'Rövanşta görüşürüz {club}.', 'Hakem olmasa farklı olurdu.', '{me} bize gelsin, oynatırız.', '{club} şanslıydı bugün.'],
+  stat: ['{me}: son maçların ortalaması {f5}. Grafik yukarı.', 'Sezon karnesi: {sg} gol, {sa} asist. Bir {pos} için ciddi rakamlar.', '{club} ligde {rank}. sırada. Kalan haftalar belirleyici.', 'Veri: {me} sahadayken takım daha çok pozisyon buluyor.', '{me} bu sezon {sm} maça çıktı. İstikrar burada başlıyor.'],
+  mate: ['Kardeşim {me} ile sahada olmak keyif.', 'Bu grup çok iyi. Hafta sonu yine sahadayız.', 'Antrenman bitti, {me} hâlâ şut çekiyor.', 'Soyunma odasında müziği {me} seçti. Bir daha asla.'],
+  reply: ['Kralsın.', 'Hafta sonu gol bekliyoruz.', 'Formanın hakkını veriyorsun.', 'Bizi unutma, imza günü yap.', 'Fotoğraf güzel de pazar maçı kazanalım.', 'Memleket seninle gurur duyuyor.', 'Yakışmış.', 'Sakatlanma da ne yaparsan yap.'],
+  rumor: ['{c} cephesi {me} için rapor istedi.', '{c} scoutu tribündeydi. Hedef: {me}.', 'Kulis: {c}, {me} için nabız yokluyor.', '{c} yönetimi: "{me} izlediğimiz isimlerden."', '{me} listesi kabarıyor: sıradaki {c}.'],
+  rival: ['Çalışmaya devam. Konuşanlar konuşsun.', 'Hedef büyük, yol uzun.', 'Bazıları şansla, bazıları emekle.', 'Rakamlar ortada. Kıyas yapan yapsın.', 'Bugün de üstüne koyduk.'],
+  news: ['{w}, {l} karşısında güldü: {s}.', '{w}, {l} engelini geçti: {s}.', '{l} evine eli boş döndü. {w} kazandı: {s}.', '{w} üç puanı {s} ile aldı.'],
+  end: ['MAÇ SONU | {sc}', '{sc} | Emeği geçen herkese teşekkürler.', 'Düdük çaldı: {sc}', 'Sahadan ayrılıyoruz: {sc}'],
+};
+function say(key, c = {}) {
+  const pool = TX[key].filter(t => !S.fu.includes(t)), t = pick(pool.length ? pool : TX[key]);
+  S.fu.push(t); if (S.fu.length > 34) S.fu.shift();
+  return t.replace(/\{(\w+)\}/g, (_, k) => (c[k] != null ? c[k] : ''));
+}
+function fctx(M) {
+  const cl = club(S.clubId), t = table(leagueOf(S.clubId)).map(r => r.id), r5 = S.lastR.length ? S.lastR.reduce((a, b) => a + b, 0) / S.lastR.length : 6;
+  return { me: S.nick && chance(.3) ? S.nick : S.name, club: cl.n, tag: cl.n.replace(/[^A-Za-zÇĞİÖŞÜçğıöşü0-9]/g, ''), pos: POS[S.pos].n.toLocaleLowerCase('tr'), sg: S.st.g, sa: S.st.a, sm: S.st.apps, rank: t.indexOf(S.clubId) + 1, f5: r5.toFixed(1).replace('.', ','),
+    g: M ? M.pg : 0, rt: M ? M.rt.toFixed(1).replace('.', ',') : '', opp: M ? (M.nat ? M.fxt.opp.n : club(M.fxt.opp).n) : '' };
+}
 function feedMatch(M) {
-  const me = S.name, rt = M.rt.toFixed(1).replace('.', ','), fan = pick(FANS);
-  const usN = M.nat ? M.fxt.usN : club(S.clubId).n, opN = M.nat ? M.fxt.opp.n : club(M.fxt.opp).n;
-  addFeed(M.nat ? 'fed' : 'c:' + S.clubId, usN, `MAÇ SONU | ${usN} ${M.usG}-${M.oppG} ${opN}`, 'kulup');
-  if (M.pg >= 2) addFeed('basin', 'Saha Kenarı', `${me} şov yaptı: ${M.pg} gol. Maç notu ${rt}.`, 'manset');
-  else if (M.rt >= 7.5) addFeed('basin', 'Saha Kenarı', `Maçın yıldızı ${me}. Maç notu ${rt}.`, 'haber');
-  else if (M.rt < 5.8) addFeed('basin', 'Saha Kenarı', `${me} için zor bir gün. Maç notu ${rt}.`, 'haber');
-  if (M.rt >= 8) addFeed('taraftar', fan, pick([`${me} bu ligde ne arıyor ya.`, `Bugün ${me} oynadı, biz izledik.`, `Bu çocuğu kaçırmayın. Buraya yazıyorum.`]));
-  else if (M.rt < 5.8) addFeed('taraftar', fan, pick([`${me} bugün sahada mıydı?`, `Hoca bir hafta dinlendirsin: ${me}.`]));
-  else if (chance(.4)) addFeed('taraftar', fan, pick(M.usG > M.oppG ? ['Üç puan cepte. Devam!', 'Bu takım bu sene bir şeyler yapar.'] : M.usG < M.oppG ? ['Yine aynı film.', 'Bu savunmayla zor.'] : ['Bir puan da puandır.']));
+  const c = fctx(M), usN = M.nat ? M.fxt.usN : c.club;
+  c.sc = `${usN} ${M.usG}-${M.oppG} ${c.opp}`;
+  addFeed(M.nat ? 'fed' : 'c:' + S.clubId, usN, say('end', c), 'kulup');
+  if (M.pg >= 2) addFeed('basin', 'Saha Kenarı', `${S.name} şov yaptı: ${M.pg} gol. Maç notu ${c.rt}.`, 'manset');
+  else if (M.rt >= 7.5) addFeed('basin', 'Saha Kenarı', pick([`Maçın yıldızı ${S.name}. Maç notu ${c.rt}.`, `${S.name} yine sahnedeydi: ${c.rt}.`, `Haftanın adamı ${S.name} olabilir. Not ${c.rt}.`]), 'haber');
+  else if (M.rt < 5.8) addFeed('basin', 'Saha Kenarı', pick([`${S.name} için zor bir gün. Maç notu ${c.rt}.`, `${S.name} beklentinin altında kaldı: ${c.rt}.`]), 'haber');
+  addFeed('taraftar', pick(FANS), say(M.rt >= 8 ? 'great' : M.rt < 5.8 ? 'bad' : M.usG > M.oppG ? 'win' : M.usG < M.oppG ? 'loss' : 'draw', c));
+  if (chance(.5)) addFeed('taraftar', pick(FANS), say(M.usG > M.oppG ? 'win' : M.usG < M.oppG ? 'loss' : 'draw', c));
+  if (!M.nat && chance(.3)) addFeed('golge', c.opp.replace(/\s+/g, '').toLocaleLowerCase('tr') + '_fan', say('opp', c));
+  if (!M.nat && M.rt >= 7 && chance(.3) && S.sc[S.clubId]) addFeed('takim', pick(S.sc[S.clubId])[0], say('mate', c), 'rakip');
+  if (S.st.apps >= 5 && chance(.22)) addFeed('basin', 'Rakamlarla Futbol', say('stat', c), 'haber');
+  if (M.varAg) addFeed('taraftar', pick(FANS), pick(['VAR yine sahne aldı. Tartışılır.', 'Çizgiyi kim çekti?', `Bu hakemi bir daha bize vermeyin: ${M.ref ? M.ref.n : ''}.`]));
 }
 function feedWeek() {
   const lid = leagueOf(S.clubId), lg = S.lg[lid], L = LMAP[lid], src = L.c === 'TR' && L.tier >= 6 ? 'Amatörün Sesi' : 'Saha Kenarı';
   const r = (lg.last || []).filter(x => x[0] !== S.clubId && x[1] !== S.clubId);
   if (r.length && chance(.55)) {
     const [h, a, hg, ag] = pick(r);
-    addFeed('basin', src, hg === ag ? `${club(h).n} ile ${club(a).n} yenişemedi: ${hg}-${ag}.` : `${club(hg > ag ? h : a).n}, ${club(hg > ag ? a : h).n} karşısında güldü: ${Math.max(hg, ag)}-${Math.min(hg, ag)}.`, 'haber');
+    addFeed('basin', src, hg === ag ? `${club(h).n} ile ${club(a).n} yenişemedi: ${hg}-${ag}.` : say('news', { w: club(hg > ag ? h : a).n, l: club(hg > ag ? a : h).n, s: `${Math.max(hg, ag)}-${Math.min(hg, ag)}` }), 'haber');
   }
   if (S.week % 6 === 0) {
     const t = table(lid)[0], sc = scorers(lid)[0];
     addFeed('basin', src, `${L.name} zirvesi: ${club(t.id).n}, ${t.pts} puan.` + (sc && sc.g ? ` Gol krallığında ${sc.n} önde: ${sc.g} gol.` : ''), 'manset');
   }
-  if (S.rival && chance(.06)) addFeed('rakip', S.rival.n, pick(['Çalışmaya devam. Konuşanlar konuşsun.', 'Hedef büyük, yol uzun.', 'Bazıları şansla, bazıları emekle.']), 'rakip');
+  if (S.rival && chance(.07)) addFeed('rakip', S.rival.n, say('rival'), 'rakip');
+  if (S.st.apps >= 6 && chance(.12)) addFeed('basin', 'Rakamlarla Futbol', say('stat', fctx()), 'haber');
   if (S.week === 19 || S.week === 38) addFeed('basin', 'Transfer Hattı', 'Transfer dönemi açılıyor. Telefonlar şimdiden çalıyor.', 'manset');
 }
 export const canPost = p => (!p.need || p.need.some(has)) && (!p.spon || S.spon.length > 0);
 export function post(id) {
-  const p = POSTS.find(x => x.id === id); S.used++;
+  const p = POSTS.find(x => x.id === id); S.used++; questHit('post');
   const g = Math.round((30 + S.rep * S.rep * 2) * rnd(.6, 1.4) * (1 + eff('fol')) * p.f * (perk('sahne') ? 1.5 : 1));
   const f = { ...p.fx, fol: g }; if (p.spon) f.para = nice(S.spon.reduce((a, x) => a + x.wk, 0) * .5);
   addFeed('me', S.name, pick(p.t), 'ben');
   if (id === 'luks' && chance(.3)) addFeed('taraftar', pick(FANS), 'Biz bilet parası biriktirirken...');
-  else if (chance(.5)) addFeed('taraftar', pick(FANS), pick(['Kralsın.', 'Hafta sonu gol bekliyoruz.', 'Formanın hakkını veriyorsun.']));
+  else { addFeed('taraftar', pick(FANS), say('reply')); if (chance(.4)) addFeed('taraftar', pick(FANS), say('reply')); }
   S.feedNew = 0;
   return fx(f);
 }
 
 // ---------- arkadaş aktiviteleri ----------
 export function hang(id) {
-  const h = HANG.find(x => x.id === id); S.used++;
+  const h = HANG.find(x => x.id === id); S.used++; questHit('hang'); if (id === 'gece') S.fl.gecew = absWeek();
   const ch = fx(h.fx); let t = h.r;
   if (h.risk && chance(h.risk)) { S.inj = Math.max(S.inj, ri(1, 2)); ch.push(`${S.inj} hafta sakat −`); t = 'Halı sahada bileğin döndü.'; }
   if (h.hoca && chance(h.hoca)) { ch.push(...fx({ hoca: -8 })); t = 'Gece uzadı; hoca duymuş.'; }
@@ -835,10 +928,10 @@ export function decide(M, k, c, min) {
     else if (chance(.72)) { M.usG++; L.push({ s: 'GOL! Penaltı ağlarda.', c: 'g' }); } else L.push({ s: 'Penaltı kaçtı.' });
   } else if (k === 'ref') {
     if (c === 0) {
-      fx({ taraf: 3 });
+      fx({ taraf: 3 }); if (M.ref) M.ref.me -= .25;   // hakem bunu unutmaz
       if (chance(.4)) { M.yel++; if (M.yel >= 2) { M.red = true; M.rt -= 1.5; L.push({ s: 'İkinci sarı! Kırmızı kart.', c: 'b' }); } else L.push({ s: 'İtirazdan sarı kart gördün.' }); }
       else L.push({ s: 'Hakem kararını değiştirmedi ama tribün seni alkışladı.' });
-    } else { fx({ hoca: 1 }); L.push({ s: 'Başını sallayıp yerine döndün.' }); }
+    } else { fx({ hoca: 1 }); if (M.ref) M.ref.me += .08; L.push({ s: 'Başını sallayıp yerine döndün.' }); }
   } else if (k === 'knock') {
     if (c === 0) { M.risk = 3; M.rt += .3; fx({ hoca: 2 }); L.push({ s: 'Dişini sıktın. Sakatlık riskin arttı.' }); }
     else { M.off = true; fx({ hoca: -1 }); L.push({ s: 'Kenara geldin. Bu maçlık bu kadar.' }); }
@@ -851,4 +944,201 @@ export const exportData = () => JSON.stringify(S);
 export function importData(str) {
   try { const d = JSON.parse(str); if (!d || d.v !== 1 || !d.name || !d.lg) return false; localStorage.setItem(KEY, JSON.stringify(d)); return load(); }
   catch (e) { return false; }
+}
+
+// ---------- hakemler ve VAR ----------
+// strict: kart eğilimi, vr: VAR'a gitme eğilimi, me: sana karşı tutumu (itirazlarınla değişir), b: kulüplere karşı eğilimi
+function initRefs() { S.refs = Array.from({ length: 10 }, () => ({ n: rname('TR'), strict: +rnd(.15, .95).toFixed(2), vr: +rnd(.2, .9).toFixed(2), me: 0, b: {} })); S.refi = 0; }
+export const curRef = () => S.refs[S.refi];
+function refBias(r, id) { if (r.b[id] == null) r.b[id] = +clamp(randn() * .5, -1, 1).toFixed(2); return r.b[id]; }
+export function refInfo() {
+  const r = curRef(), b = refBias(r, S.clubId) + r.me;
+  return { n: r.n, style: r.strict > .65 ? 'Kartı çabuk çıkarır' : r.strict < .35 ? 'Oyunu akıtır' : 'Dengeli düdük', att: b > .45 ? 'Size sıcak' : b < -.45 ? 'Size soğuk' : 'Tarafsız', cold: b < -.45 };
+}
+function assignRef() {
+  const f = fixture() || cupFixture() || cupFixture('euro'); if (!f) return;
+  S.refi = ri(0, S.refs.length - 1); const i = refInfo();
+  addFeed('fed', 'Hakem Kurulu', `${club(f.opp).n} maçına ${i.n} atandı. ${i.style}. Takımınıza tutumu: ${i.att.toLocaleLowerCase('tr')}.`, 'haber');
+  if (isDerby(S.clubId, f.opp)) addFeed('basin', 'Saha Kenarı', `DERBİ HAFTASI: ${club(S.clubId).n} - ${club(f.opp).n}. Şehir bu maçı konuşuyor.`, 'manset');
+}
+// Gol sonrası VAR incelemesi. us: gol bizim mi. null dönerse inceleme yok.
+export function varCheck(M, us) {
+  if (!M.ref || !chance(.05 + M.ref.vr * .1)) return null;
+  return { cancel: chance(clamp(.42 - (us ? M.bias : -M.bias) * .16, .1, .8)), why: pick(['ofsayt', 'elle oynama', 'faul']) };
+}
+
+// ---------- röportajlar ----------
+export const IV = {
+  post: { q: ['Harika bir maç çıkardın. Sırrı ne?', 'Tribünler adını haykırıyor. Ne söylemek istersin?', 'Bu performansı kime armağan ediyorsun?', 'Formunun zirvesindesin. Hedef ne?'],
+    a: [{ t: 'Takım arkadaşlarım sayesinde', fx: { takim: 4, hoca: 1 }, say: 'Tek başıma hiçbir şeyim. Bu takımın emeği.' },
+      { t: 'Aileme armağan olsun', fx: { aile: 5, taraf: 2 }, say: 'Bu maç annemle babama armağan.' },
+      { t: 'Daha iyisini de yaparım', fx: { ego: 3, taraf: 3 }, fol: 1.5, say: 'Bu daha başlangıç. Daha iyisini göreceksiniz.' },
+      { t: 'Hakem konusunda susmayacağım', v: 1, fx: { taraf: 4, hoca: -1 }, ref: -.4, fine: 1, say: 'Bu kararlarla futbol oynanmaz.' }] },
+  pre: { q: ['Büyük maç öncesi beklentin ne?', 'Rakip hakkında ne düşünüyorsun?', 'Herkes bu maçı konuşuyor. Baskı hissediyor musun?'],
+    a: [{ t: 'Rakibe saygı duyuyoruz', fx: { takim: 1 }, say: 'Zor bir maç. Saygımız sonsuz, sahada görüşürüz.' },
+      { t: 'Kazanacağız, net', fx: { ego: 2 }, press: 1, say: 'Kazanacağız. Bundan şüphem yok.' },
+      { t: 'Onlar bizden korksun', fx: { ego: 4 }, boost: 1.5, fol: 2, say: 'Korkması gereken biz değiliz.' }] },
+};
+export function interview(kind, i, fxt) {
+  const a = IV[kind].a[i], f = { ...a.fx };
+  if (a.fol) f.fol = Math.round((60 + S.rep * S.rep * 2) * a.fol);
+  if (a.fine) f.para = -nice(wref() * 2);
+  if (a.ref) curRef().me += a.ref;
+  if (fxt && a.press) fxt.press = 1; if (fxt && a.boost) fxt.boost = a.boost;
+  addFeed('me', S.name, '“' + a.say + '”', 'ben');
+  return fx(f);
+}
+export function bigMatch(f) {
+  if (isDerby(S.clubId, f.opp) || f.po) return true;
+  if (f.cup) return ['Final', 'Yarı final', 'Çeyrek final'].includes(f.round);
+  if (f.opp === S.dream) return true;
+  const t = table(leagueOf(S.clubId)).map(r => r.id), a = t.indexOf(S.clubId), b = t.indexOf(f.opp);
+  return S.week > 8 && a < 5 && b >= 0 && b < 5;
+}
+
+// ---------- sezon arası planı ----------
+export const OFF = [
+  { t: 'Bodrum tatili', s: 'Kafa dinle: moral ve enerji tavan, kondisyon biraz düşer', i: 'smile' },
+  { t: 'Özel kamp', s: 'Ücretli. Hız ve güç artar, yeni sezona zinde başlarsın', i: 'train' },
+  { t: 'Memleket', s: 'Aile ve arkadaşlarla vakit, mahalle maçları', i: 'home' },
+];
+export function offseason(i) {
+  if (i === 0) { S.en = 100; return fx({ mo: 15, guc: -0.5 }); }
+  if (i === 1) { S.en = 75; return fx({ para: -nice(Math.max(5000, S.con.wage * 3)), hiz: 1, guc: 1, prof: 3 }); }
+  S.en = 90; return fx({ aile: 12, ark: 8, mo: 8 });
+}
+
+// Transfer sonrası imza töreni soruları
+IV.imza = { q: ['Yeni kulübünde ilk sözün ne?', 'Taraftara mesajın var mı?'],
+  a: [{ t: 'Bu formayı terletmeye geldim', fx: { taraf: 6, takim: 2 }, say: 'Bu formanın hakkını vereceğim.' },
+    { t: 'Hedefim şampiyonluk', fx: { taraf: 8, ego: 3 }, say: 'Buraya kupa kaldırmaya geldim.' },
+    { t: 'Eski kulübüme teşekkür ederim', fx: { sad: 6, taraf: 3 }, say: 'Beni yetiştiren herkese teşekkür ederim. Şimdi yeni bir sayfa.' }] };
+
+// ---------- play-off ve play-out ----------
+export function initPlayoffs() {
+  const list = [];
+  for (const lid of TRT) {
+    const R = RULES[lid], t = table(lid).map(r => r.id), n = t.length;
+    if (R.po) {
+      const T = t.slice(R.from - 1, R.from - 1 + POSIZE[R.po]);
+      const cur = R.po === 'p5' ? [[T[1], T[4]], [T[2], T[3]]] : R.po === 'p2' ? [[T[0], T[1]]] : [[T[0], T[3]], [T[1], T[2]]];
+      list.push({ lid, k: R.po, n: LMAP[lid].name + ' play-off', cur, bye: R.po === 'p5' ? T[0] : null, r: 0, up: [], down: [], done: false });
+    }
+    if (R.out) list.push({ lid, k: 'o2', n: LMAP[lid].name + ' play-out', cur: [[t[n - 2 - R.down], t[n - 1 - R.down]]], r: 0, up: [], down: [], done: false });
+  }
+  S.po = { list };
+}
+export const poPending = () => !!S.po && S.po.list.some(b => !b.done);
+// Oyuncunun kulübü bir eşleşmedeyse o maçı döndürür
+export function poFixture() {
+  if (!S.po) return null;
+  for (const b of S.po.list) {
+    if (b.done) continue;
+    const p = b.cur.find(x => x.includes(S.clubId)); if (!p) continue;
+    const last = (b.k === 'p4' && b.r === 1) || (b.k === 'p5' && b.r === 2) || b.k === 'o2';
+    return { cup: true, key: 'po', po: b.k === 'o2' ? 'out' : 'off', name: b.n, round: PON[b.k][b.r], opp: p[0] === S.clubId ? p[1] : p[0], home: last ? true : p[0] === S.clubId, final: last };
+  }
+  return null;
+}
+// Bir tur oynatır. own: {win} oyuncunun maçının sonucu
+export function poRound(own) {
+  for (const b of S.po.list) {
+    if (b.done) continue;
+    const W = [], Lo = [];
+    for (const [h, a] of b.cur) {
+      let w;
+      if (own && (h === S.clubId || a === S.clubId)) w = own.win ? S.clubId : (h === S.clubId ? a : h);
+      else { const [hg, ag] = simScore(S.rt[h], S.rt[a]); w = hg > ag ? h : ag > hg ? a : chance(.5) ? h : a; }
+      W.push(w); Lo.push(w === h ? a : h);
+    }
+    if (b.k === 'o2') { b.down = Lo; b.done = true; }
+    else if (b.k === 'p2' || b.k === 'p4x2') { b.up = W; b.done = true; }
+    else if (b.r === 0) b.cur = [[W[0], W[1]]];
+    else if (b.k === 'p5' && b.r === 1) b.cur = [[b.bye, W[0]]];
+    else { b.up = W; b.done = true; }
+    b.r++;
+    if (b.done && b.lid === leagueOf(S.clubId)) addFeed('basin', 'Saha Kenarı', b.k === 'o2' ? `Play-out bitti: ${club(b.down[0]).n} küme düştü.` : `Play-off bitti: ${b.up.map(x => club(x).n).join(' ve ')} üst ligde.`, 'manset');
+  }
+  S.en = clamp(S.en + 14, 0, 100);
+}
+
+// ---------- derbi ----------
+export function isDerby(a, b) {
+  if (!a || !b || a === b) return false;
+  if (a[0] === 'g' && b[0] === 'g') { const [ta, ia] = a.slice(1).split('_'), [tb, ib] = b.slice(1).split('_'); return ta === tb && (+ia ^ 1) === +ib; }   // amatörde komşu mahalle
+  const A = club(a), B = club(b);
+  return !!A && !!B && DERBY.some(g => g.includes(A.n) && g.includes(B.n));
+}
+
+// ---------- takım arkadaşları ----------
+const MROLE = ['Kaptan', 'Takımın yıldızı', 'Kıdemli', 'Genç yetenek', 'Kaleci'];
+function genMates() {
+  const sc = S.sc[S.clubId] || [], c = LMAP[leagueOf(S.clubId)].c;
+  S.mates = MROLE.map((r, i) => ({ n: i > 0 && i < 3 && sc[i - 1] ? sc[i - 1][0] : rname(c), r, b: ri(18, 40), lk: { skin: ri(0, 3), hair: ri(0, 7), hc: ri(0, 2), beard: ri(0, 2) } }));
+}
+// Kulüpten ayrılırken yakın olduğun isimler ağına geçer
+function matesToNet() {
+  for (const m of S.mates || []) if (m.b >= 60) netAdd('eski', m.n, S.clubId, 45, m.lk);
+  if (S.rel.hoca >= 72) netAdd('hoca', rname('TR'), S.clubId, 50);
+}
+export const chem = () => (S.mates && S.mates.length ? S.mates.reduce((a, m) => a + m.b, 0) / S.mates.length / 100 : .3);
+export function mateAct(i, k) {
+  const m = S.mates[i], A = MACT[k], f = { ...A.fx }, first = m.n.split(' ')[0]; S.used++; questHit('hang');
+  m.b = clamp(m.b + A.b, 0, 100);
+  if (A.cost) f.para = -nice(Math.max(300, wref() * A.cost));
+  if (A.grow) for (const a of Object.keys(POS[S.pos].w).slice(0, 2)) grow(a, .25);
+  return [A.r.replace('{n}', first), [...fx(f), `${first} ile bağ +${A.b}`]];
+}
+
+// ---------- ağ (network) ----------
+export function netAdd(k, n, org, b = 30, lk) {
+  if (S.net.some(c => c.k === k && c.n === n) || S.net.length >= 14) return;
+  S.net.push({ k, n, org: org || null, b, cd: 0, lk: lk || null });
+  S.pop.push('Yeni tanıdık: ' + n); addNews(`Çevren genişliyor: ${n} (${NET[k].n}).`, 'users');
+}
+export function netMeet(i) {
+  const c = S.net[i]; S.used++; questHit('net');
+  c.b = clamp(c.b + 12, 0, 100);
+  if (c.k === 'yildiz') grow(Object.keys(POS[S.pos].w)[0], .3);
+  return [`${c.n} ile görüştün.`, [...fx(c.k === 'golge' ? { prof: -3, mo: 2 } : { mo: c.k === 'yildiz' ? 4 : 2 }), 'Bağ +12']];
+}
+// İyilik iste: bağ en az 50 olmalı, 20 haftada bir
+export function netFavor(i) {
+  const c = S.net[i], now = absWeek(); if (c.b < 50 || c.cd > now) return null;
+  c.cd = now + 20; c.b -= 12; const o = OVR();
+  const recommend = id => {
+    if (!id || id === S.clubId || !leagueOf(id)) return 'Şu an yapabileceği bir şey yok.';
+    if (S.rt[id] > o + 9) return `${club(id).n} için "henüz erken" dedi. Biraz daha gelişmen gerekiyor.`;
+    const w = S.watch.find(x => x.id === id); if (w) w.lv = clamp(w.lv + 30, 0, 100); else S.watch.push({ id, lv: 58 });
+    addFeed('basin', 'Transfer Hattı', `${club(id).n}, ${S.name} için devrede. Referansı güçlü.`, 'manset');
+    return `${c.n} seni ${club(id).n} yönetimine önerdi. Kulüp dosyanı açtı.`;
+  };
+  switch (c.k) {
+    case 'yildiz': case 'eski': case 'hoca': return [recommend(c.org), []];
+    case 'scout': { const pool = []; for (const lid in S.lg) for (const id of S.lg[lid].t) if (id !== S.clubId && S.rt[id] > S.rt[S.clubId] + 1 && S.rt[id] <= o + 6 && (LMAP[lid].c === 'TR' || S.rep >= 40)) pool.push(id); return [recommend(pool.length ? pick(pool) : null), []]; }
+    case 'abi': {
+      if (LMAP[leagueOf(S.clubId)].c === 'TR' && tier() >= 5) { S.q.push({ id: 'deneme', at: now }); return ['"Bir telefon açtım. Bu hafta seni denemeye çağıracaklar."', []]; }
+      const wk = nice(1500 + S.fol * .05); S.spon.push({ n: 'Yerel iş insanı', wk, until: now + 38 }); return [`Tanıdığı bir iş insanı sana sponsor oldu: haftada ${fmt(wk)}.`, []];
+    }
+    case 'gazeteci': S.fl.kalkan = now + 20; return ['Hakkında övgü dolu bir yazı çıktı. Bir süre kötü haberin de çıkmaz.', fx({ rep: 2, taraf: 4, fol: Math.round(200 + S.fol * .05) })];
+    case 'doktor': if (S.inj > 0) { S.inj = Math.max(0, S.inj - 2); return ['Özel programla dönüşün iki hafta öne çekildi.', []]; } return ['Kontrolden geçtin, takviye programı aldın.', fx({ en: 25 })];
+    case 'marka': { const wk = nice(Math.max(2000, S.fol * .2)); S.spon.push({ n: 'Marka anlaşması', wk, until: now + 38 }); return [`Masaya oturdunuz: haftada ${fmt(wk)}.`, []]; }
+    case 'golge': if (chance(.4)) S.q.push({ id: 'bahis_sonuc', at: now + ri(6, 14) }); return ['"Küçük bir iş" dedi. Zarf cebinde. Soru sormadın.', fx({ para: nice(wref() * 6), prof: -10, sad: -4 })];
+  }
+  return ['', []];
+}
+
+// ---------- haftalık görev ----------
+const QUESTS = [['train', 'İki antrenman yap', 2], ['rate', 'Maçta 7,0 ve üstü not al', 1], ['post', 'Sosyal medyada paylaşım yap', 1], ['hang', 'Bir arkadaşınla vakit geçir', 1], ['goal', 'Gol at ya da asist yap', 1], ['net', 'Çevrenden biriyle görüş', 1]];
+function newQuest() { const q = pick(QUESTS.filter(x => x[0] !== (S.quest && S.quest.k) && (x[0] !== 'net' || S.net.length))); S.quest = { k: q[0], t: q[1], n: q[2], p: 0 }; }
+function questHit(k) {
+  const q = S.quest; if (!q || q.k !== k || q.p >= q.n) return;
+  if (++q.p >= q.n) { const b = nice(Math.max(500, S.con.wage * .2)); S.money += b; gainXp(2); S.pop.push(`Görev tamam: ${fmt(b)} ve yetenek deneyimi`); }
+}
+
+// ---------- rehabilitasyon ----------
+export function rehab(ok) {
+  S.used++; S.fl.rehabw = 1;
+  if (ok) { S.inj = Math.max(0, S.inj - 1); return ['Rehabilitasyon iyi gitti: dönüş bir hafta öne geldi.', []]; }
+  return ['Zorladın, ağrı arttı. Bugünlük bu kadar.', fx({ en: -6 })];
 }

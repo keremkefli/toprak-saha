@@ -1,13 +1,16 @@
 // Toprak Saha — olay kartları. Her seçenek kısa ve uzun vadeli sonuç doğurur.
 // Alanlar: w ağırlık, cd bekleme (hafta), once tek sefer, must koşul oluşunca zorunlu, chain yalnızca kuyruktan
-import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref } from './core.js';
-import { LMAP, AGENTS } from './data.js';
+import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname } from './core.js';
+import { LMAP, AGENTS, SHOP } from './data.js';
 
 const inTR = () => LMAP[leagueOf(S.clubId)].c === 'TR';
 const amat = () => inTR() && tier() >= 5;
 const lowPro = () => inTR() && tier() >= 3;
 const form = () => S.lastR.length ? S.lastR.reduce((a, b) => a + b, 0) / S.lastR.length : 6;
 const later = (id, w, ctx) => S.q.push({ id, at: absWeek() + w, ctx });
+const own = id => S.assets.includes(id);
+// İşler yolundayken (form, moral, profesyonellik) olumsuz olaylar karşına çıkmaz
+const goodRun = () => form() >= 7 && S.mo >= 60 && S.hid.prof >= 45;
 const partner = () => S.fl.evli ? 'eşine' : 'sevgiline';
 
 function trialClub() {
@@ -119,10 +122,10 @@ export const EVENTS = [
       { t: 'Kabul et', fx: { takim: 10, zihin: 2, taraf: 6 }, run: () => { S.fl.kaptan = 1; }, r: 'Artık kaptansın. Forma şansın arttı, sorumluluğun da.' },
       { t: 'Hazır değilim', fx: { hoca: -4 }, r: 'Pazubent başkasına gitti.' },
     ] },
-  { id: 'kavga', w: 2.5, cd: 18, if: () => S.rel.takim < 75,
+  { id: 'kavga', neg: 1, w: 2.5, cd: 18, if: () => S.rel.takim < 75,
     t: 'Antrenmanda gerginlik', d: 'Kıdemli bir oyuncu sana kasten sert girdi, sonra da sırıttı.',
     o: [
-      { t: 'Karşılık ver', fx: { takim: -10, ego: 5 }, run: () => chance(.35) ? { fx: { hoca: -8 }, r: 'İtiş kakış çıktı. Hoca ikinizi de antrenmandan attı.' } : { r: 'Üstüne yürüdün, araya girdiler. Soyunma odası buz gibi.' } },
+      { t: 'Karşılık ver', fx: { takim: -10, ego: 5 }, run: () => { later('kavga2', 1); return chance(.35) ? { fx: { hoca: -8 }, r: 'İtiş kakış çıktı. Hoca ikinizi de antrenmandan attı.' } : { r: 'Üstüne yürüdün, araya girdiler. Soyunma odası buz gibi.' }; } },
       { t: 'Alttan al', fx: { takim: 3, mo: -4 }, r: 'Bir şey demeden kalktın. Bazıları bunu olgunluk saydı.' },
       { t: 'Hocaya söyle', fx: { takim: -6, hoca: 2 }, r: 'Hoca uyardı. Takımda "ispiyoncu" diye fısıldaşıyorlar.' },
     ] },
@@ -132,14 +135,14 @@ export const EVENTS = [
       { t: 'Kal ve çalış', fx: { en: -10, takim: 5, zihin: 1, teknik: 1 }, r: 'Bir saat boyunca duruşunu, bakışını düzeltti. Kitaplarda yazmayan şeyler.' },
       { t: 'Yorgunum', fx: { takim: -3 }, r: 'Başını salladı, çantasını aldı.' },
     ] },
-  { id: 'maas', w: 2.5, cd: 26, if: () => lowPro() && S.con.wage >= 500,
+  { id: 'maas', neg: 1, w: 2.5, cd: 26, if: () => lowPro() && S.con.wage >= 500,
     t: 'Maaşlar yatmadı', d: 'Kulüp iki aydır ödeme yapmıyor. Soyunma odası kaynıyor.',
     o: [
       { t: 'Sabret', fx: { sad: 8, mo: -5 }, run: () => ({ fx: { para: -S.con.wage * 3 }, r: 'Bekledin. Üç haftalık alacağın hâlâ içeride.' }) },
       { t: 'Arkadaşlarla idmana çıkma', fx: { hoca: -8, takim: 6 }, run: () => chance(.5) ? { r: 'Boykot işe yaradı, başkan parayı buldu.' } : { fx: { para: -S.con.wage * 2 }, r: 'Yönetim oralı olmadı. İki haftalık alacağın yandı.' } },
       { t: 'Federasyona şikâyet et', fx: { hoca: -15, sad: -10 }, r: 'Paranı aldın. Yönetim sana cephe aldı.' },
     ] },
-  { id: 'krampon', w: 2.5, cd: 30, if: () => amat() && tier() >= 7,
+  { id: 'krampon', neg: 1, w: 2.5, cd: 30, if: () => amat() && tier() >= 7,
     t: 'Krampon yırtıldı', d: 'Tek kramponun tabanı açıldı. Kulübün malzeme dolabı boş.',
     o: [
       { t: 'Yenisini al (₺2.500)', if: () => S.money >= 2500, fx: { para: -2500, mo: 3 }, r: 'Yeni krampon ayağına oturdu.' },
@@ -202,14 +205,14 @@ export const EVENTS = [
     ] },
   { id: 'viral', chain: true, cd: 20, t: 'Golün viral oldu', d: 'Son maçtaki performansın her yerde dönüyor.',
     o: [{ t: 'Keyfini çıkar', run: () => ({ fx: { fol: Math.round(Math.min(2e6, S.fol * 0.25 + 500)), mo: 6, ego: 3 } }), r: 'Telefonun susmuyor.' }] },
-  { id: 'linc', w: 2, cd: 24, if: () => S.fol >= 5000 && (form() < 6.2 || S.hid.ego > 60),
+  { id: 'linc', neg: 1, w: 2, cd: 24, if: () => !(S.fl.kalkan > absWeek()) && S.fol >= 5000 && (form() < 6.2 || S.hid.ego > 60),
     t: 'Linç', d: 'Eski bir paylaşımın bağlamından koparılıp gündem oldu. Yorumlar acımasız.',
     o: [
       { t: 'Özür dile', fx: { taraf: 5, mo: -4 }, run: () => ({ fx: { fol: -Math.round(S.fol * 0.03) } }), r: 'Açıklama yaptın, ortalık yatıştı.' },
       { t: 'Sert cevap ver', fx: { taraf: -8, ego: 5, mo: -2 }, run: () => ({ fx: { fol: Math.round(S.fol * 0.06) } }), r: 'Ateşe benzin döktün. Takipçin arttı, saygınlığın azaldı.' },
       { t: 'Sessiz kal', fx: { mo: -6 }, r: 'Üç gün sonra herkes başka konuya geçti.' },
     ] },
-  { id: 'bahis', w: 1.5, once: true, if: () => S.fol >= 50000,
+  { id: 'bahis', neg: 1, w: 1.5, once: true, if: () => S.fol >= 50000,
     t: 'Kolay para', d: () => `Yasa dışı bir bahis sitesi tek hikâye paylaşımı için ${fmt(nice(wref() * 8))} öneriyor.`,
     o: [
       { t: 'Paylaş, parayı al', run: () => { later('bahis_sonuc', ri(6, 14)); return { fx: { para: nice(wref() * 8), prof: -8 } }; }, r: 'Para hesabında. Kimse bir şey demedi. Şimdilik.' },
@@ -217,7 +220,7 @@ export const EVENTS = [
     ] },
   { id: 'bahis_sonuc', chain: true, t: 'Soruşturma', d: 'Federasyon, yasa dışı bahis reklamı nedeniyle hakkında dosya açtı.',
     o: [{ t: 'Savunmanı ver', run: () => { S.ban = 5; S.banR = 'Disiplin cezası'; return { fx: { para: -nice(wref() * 10), rep: -8, taraf: -10, hoca: -8 } }; }, r: 'Beş hafta men ve para cezası aldın. Sponsorlar tedirgin.' }] },
-  { id: 'sike', w: 1.2, cd: 60, if: () => inTR() && tier() >= 3 && S.week >= 28,
+  { id: 'sike', neg: 1, w: 1.2, cd: 60, if: () => inTR() && tier() >= 3 && S.week >= 28,
     t: 'Otoparkta bir adam', d: () => `Rakip kulübe yakın biri kolunu omzuna attı: "Bu hafta biraz ağırdan al. ${fmt(nice(Math.max(15000, wref() * 12)))} nakit."`,
     o: [
       { t: 'Kabul et', run: () => { S.fl.sike = (S.fl.sike || 0) + 1; later('sike_sonuc', ri(10, 30)); return { fx: { para: nice(Math.max(15000, wref() * 12)), prof: -20, sad: -10 } }; }, r: 'Zarfı aldın. Maçta "kötü gününde" görüneceksin. Bu sır seninle yaşayacak.' },
@@ -231,7 +234,7 @@ export const EVENTS = [
       S.ban = 20; S.banR = 'Şike cezası';
       return { fx: { rep: -25, taraf: -30, hoca: -25, aile: -15, mo: -20 }, r: 'Yirmi hafta men cezası aldın. Adın bu lekeyle anılacak.' };
     } }] },
-  { id: 'doping', w: 1.2, once: true, if: () => S.age >= 29 || S.inj >= 4,
+  { id: 'doping', neg: 1, w: 1.2, once: true, if: () => S.age >= 29 || S.inj >= 4,
     t: 'Mucize takviye', d: 'Tanımadığın bir "kondisyoner" yanına geldi: "Testte çıkmaz. Üç ayda beş yaş gençleşirsin."',
     o: [
       { t: 'Kullan', fx: { hiz: 3, guc: 3, prof: -15 }, run: () => { later('doping_sonuc', ri(8, 24)); }, r: 'Bacaklarında yıllardır hissetmediğin bir güç var.' },
@@ -249,7 +252,7 @@ export const EVENTS = [
     ] },
   { id: 'yatirim_sonuc', chain: true, t: 'Kafenin hesabı', d: 'Yatırım yaptığın kafenin ilk bilançosu geldi.',
     o: [{ t: 'Hesaba bak', run: c => chance(.5) ? { fx: { para: Math.round(c.a * 2.2), ark: 6 }, r: 'İşler tıkırında. Payını kârıyla aldın.' } : { fx: { ark: -15, mo: -8 }, r: 'Kafe battı. Para da gitti, arkadaşlık da yara aldı.' } }] },
-  { id: 'poker', w: 2, cd: 20, if: () => S.con.wage >= 8000,
+  { id: 'poker', neg: 1, w: 2, cd: 20, if: () => S.con.wage >= 8000,
     t: 'Poker gecesi', d: 'Takım arkadaşları kamp otelinde masa kurdu. "Gel, iki el at."',
     o: [
       { t: 'Otur', fx: { takim: 5, prof: -4, en: -6 }, run: () => { const v = Math.round(rnd(-2.5, 1.8) * wref()); return { fx: { para: v }, r: v >= 0 ? 'Şansın yaver gitti.' : 'Kaybettin. Sabaha karşı odana döndün.' }; } },
@@ -279,6 +282,137 @@ export const EVENTS = [
       { t: 'Programa başla', fx: { para: -500000 }, run: () => { S.fl.bakim = 1; }, r: 'Yaşa bağlı düşüşün artık daha yavaş olacak.' },
       { t: 'Gerek yok', r: 'Vücudunu dinleyerek devam edeceksin.' },
     ] },
+  // ---------- zincirler ve gerçek hayat ----------
+  { id: 'kavga2', chain: true, t: 'Yardımcı antrenörün odası', d: 'Yardımcı antrenör kapıyı kapattı: "Dünkü olay neydi? Hocaya gitmeden ben çözmek istiyorum."',
+    o: [
+      { t: 'Özür dile', fx: { takim: 6, ego: -3, hoca: 2 }, r: 'Elini sıktı: "Konu kapandı." Soyunma odasında da duyuldu.' },
+      { t: '"O başlattı"', fx: { hoca: -4, takim: -3 }, run: () => { if (chance(.4)) later('kavga3', 1); }, r: 'Başını iki yana salladı. Not aldığını gördün.' },
+      { t: '"Sana hesap vermem"', fx: { ego: 6, takim: -4 }, run: () => { later('kavga3', 1); }, r: 'Odadan çıktın. Arkandan telefona sarıldı.' },
+    ] },
+  { id: 'kavga3', chain: true, t: 'Hocanın kararı', d: 'Teknik direktör seni herkesin önünde çağırdı: "Bu takımda kimse takımdan büyük değil."',
+    o: [
+      { t: 'Cezayı kabul et', run: () => { S.ban = Math.max(S.ban, 1); S.banR = 'Kadro dışı'; return { fx: { para: -nice(wref() * 2), hoca: -6 } }; }, r: 'İki haftalık maaş cezası ve bir maç kadro dışı.' },
+      { t: 'Takımdan özür dile', fx: { takim: 8, hoca: 3, ego: -5 }, r: 'Ayağa kalkıp özür diledin. Hoca başıyla onayladı.' },
+      { t: 'Basına konuş', fx: { hoca: -20, taraf: -6, ego: 6, fol: 2500 }, run: () => { S.tstat = 'istek'; S.fl.istek = 1; }, r: 'Manşet oldun. Kulüp seni satış listesine koydu.' },
+    ] },
+  { id: 'dolandirici', neg: 1, w: 2.5, cd: 80, if: () => S.agent && !own('musavir') && S.money > wref() * 20 && (S.agent.pw < .5 || S.hid.prof < 45),
+    prep: () => ({ a: nice(S.money * .18) }),
+    t: 'Hesapta bir tuhaflık', d: c => `Banka dökümüne baktın: menajerin ${S.agent.n}, hesabından ${fmt(c.a)} tutarını "danışmanlık" diye kendi şirketine aktarmış.`,
+    o: [
+      { t: 'Dava aç', run: c => { const ag = S.agent.n; S.agent = null; return chance(.65) ? { fx: { para: -Math.round(c.a * .15), mo: -4 }, r: `Avukat tuttun, paranı geri aldın. ${ag} ile yollar ayrıldı.` } : { fx: { para: -Math.round(c.a * 1.15), mo: -8 }, r: `Dava uzadı, para gitti. ${ag} ortadan kayboldu.` }; } },
+      { t: 'Yüzleş', run: c => { if (chance(.5)) return { fx: { para: -Math.round(c.a * .5) }, r: 'Kızardı, bozardı. Yarısını geri yatırdı; "muhasebe hatası" dedi.' }; S.agent = null; return { fx: { para: -c.a, mo: -6 }, r: 'Telefonlarını açmıyor. Para da menajer de gitti.' }; } },
+      { t: 'Sessiz kal', run: c => { later('dolandirici2', ri(18, 30)); return { fx: { para: -c.a, mo: -3 } }; }, r: 'Görmezden geldin. Belki bir açıklaması vardır.' },
+    ] },
+  { id: 'dolandirici2', chain: true, if: () => !!S.agent, prep: () => ({ a: nice(Math.max(S.money, wref() * 10) * .3) }),
+    t: 'Bu kez imzan var', d: c => `Bankadan aradılar: adına ${fmt(c.a)} kredi çekilmiş. Evraklarda senin imzan var; ama sen atmadın.`,
+    o: [
+      { t: 'Savcılığa git', run: c => { S.agent = null; return { fx: { para: -Math.round(c.a * .4), mo: -8, rep: -2 } }; }, r: 'Menajerin gözaltına alındı. Borcun bir kısmı yine de sana kaldı.' },
+      { t: 'İyi bir avukat tut', run: c => { S.agent = null; return { fx: { para: -Math.round(c.a * .12), mo: -4 } }; }, r: 'Sahtecilik kanıtlandı. Menajersiz kaldın ama temizsin.' },
+    ] },
+  { id: 'gec', neg: 1, w: 2, cd: 20, if: () => S.hid.prof < 45,
+    t: 'Geç kaldın', d: 'Alarmı duymamışsın. Antrenmana yirmi dakika geç girdin; herkes ısınmayı bitirmişti.',
+    o: [
+      { t: 'Özür dile, ekstra koş', fx: { hoca: -2, en: -8, prof: 4 }, r: 'Antrenmandan sonra tek başına on tur attın.' },
+      { t: 'Trafik de', fx: { hoca: -6, prof: -2 }, r: 'Hoca inanmadı. Kasaya para cezası yazıldı.' },
+    ] },
+  { id: 'paparazzi', neg: 1, w: 3, cd: 20, if: () => !(S.fl.kalkan > absWeek()) && S.fl.gecew && absWeek() - S.fl.gecew <= 2 && S.fol >= 3000,
+    t: 'Gece çıkışı manşette', d: 'Gece kulübü çıkışında çekilmiş bir fotoğrafın her yerde. Altında: "Maç öncesi böyle hazırlanıyor."',
+    o: [
+      { t: 'Açıklama yap', fx: { taraf: 3, hoca: -2, mo: -3 }, r: '"İzin günümdü" dedin. Ortalık yatıştı.' },
+      { t: 'Umursama', fx: { hoca: -8, taraf: -5, ego: 3 }, r: 'Susman kabul sayıldı. Hoca toplantıda yüzüne bile bakmadı.' },
+      { t: 'Sahada cevap ver', fx: { prof: 4, mo: 2 }, r: 'Telefonu kapattın. Bu hafta herkes seni izleyecek.' },
+    ] },
+  { id: 'vergi', neg: 1, w: 2, cd: 60, if: () => S.con.wage >= 150000 && !own('musavir'), prep: () => ({ a: nice(S.con.wage * 6) }),
+    t: 'Vergi dairesinden yazı', d: c => `Beyanname eksik verilmiş. Ödeme emri: ${fmt(c.a)}.`,
+    o: [
+      { t: 'Öde, kapat', run: c => ({ fx: { para: -c.a, mo: -3 } }), r: 'Ödedin. Bir daha olmasın diye not aldın.' },
+      { t: 'Mali müşavirle anlaş', run: c => { if (!own('musavir')) S.assets.push('musavir'); return { fx: { para: -Math.round(c.a * .7) } }; }, r: 'Müşavir cezayı indirdi, sezon sonuna kadar hesaplarına o bakacak.' },
+    ] },
+  { id: 'hirsiz', neg: 1, w: 2, cd: 60, if: () => (own('ev') || own('villa') || own('spor')) && !own('guvenlik'), prep: () => ({ a: nice(Math.max(50000, S.money * .05)) }),
+    t: 'Deplasmandayken', d: c => `Sen maçtayken evine girmişler. Kayıp: ${fmt(c.a)} değerinde eşya.`,
+    o: [
+      { t: 'Güvenlik sistemi kur', run: c => { if (!own('guvenlik')) S.assets.push('guvenlik'); const g = SHOP.find(x => x.id === 'guvenlik'); return { fx: { para: -c.a - Math.round(g.yr / 2), mo: -4 } }; }, r: 'Kamera, alarm, özel güvenlik. Bir daha olmaz.' },
+      { t: 'Polise bırak', run: c => ({ fx: { para: -c.a, mo: -8, aile: -3 } }), r: 'Tutanak tutuldu. Ailen tedirgin.' },
+    ] },
+  { id: 'akraba', w: 2, cd: 30, if: () => S.money >= 2000000, prep: () => ({ a: nice(S.money * .04) }),
+    t: 'Uzaktan bir akraba', d: c => `Yıllardır görmediğin bir kuzenin aradı: düğün yapacakmış, ${fmt(c.a)} borç istiyor.`,
+    o: [
+      { t: 'Ver gitsin', run: c => ({ fx: { para: -c.a, aile: 6 } }), r: 'Geri gelmeyeceğini ikiniz de biliyorsunuz.' },
+      { t: 'Yarısını ver', run: c => ({ fx: { para: -Math.round(c.a / 2), aile: 2 } }), r: 'Teşekkür etti ama sesi soğuktu.' },
+      { t: 'Nazikçe reddet', fx: { aile: -6 }, r: 'Sülalede "parayı bulunca değişti" diye konuşuluyor.' },
+    ] },
+  { id: 'yalnizlik', neg: 1, w: 3, cd: 24, if: () => !inTR() && S.rel.aile < 55,
+    t: 'Uzun akşamlar', d: 'Yabancı bir şehirde akşamlar uzun. Telefonda annenin sesi titriyor.',
+    o: [
+      { t: 'Aileni yanına getir', if: () => S.money >= 150000, fx: { para: -150000, aile: 18, mo: 10 }, r: 'Bir aylığına geldiler. Ev ilk kez ev gibi koktu.' },
+      { t: 'Her akşam görüntülü ara', fx: { aile: 6, mo: 2 }, r: 'Ekrandan da olsa aynı sofradasınız.' },
+      { t: 'Kendini işe ver', fx: { prof: 4, mo: -6 }, r: 'Tesiste ışıkları sen kapatıyorsun artık.' },
+    ] },
+  { id: 'tukenmislik', neg: 1, must: true, cd: 16, if: () => S.mo < 28,
+    t: 'Sabah kalkamıyorsun', d: 'Antrenman çantası kapının önünde duruyor. İçinden gitmek gelmiyor.',
+    o: [
+      { t: 'Psikoloğa git', if: () => S.money >= 8000, fx: { para: -8000, mo: 18 }, r: 'Konuşmak iyi geldi. "Bu da oyunun parçası" dedi.' },
+      { t: 'Hocadan izin iste', fx: { mo: 12, hoca: -3 }, run: () => { S.fl.skip = 1; }, r: 'Bu hafta maçta yoksun. Nefes aldın.' },
+      { t: 'Dişini sık', fx: { mo: -2, prof: 2 }, run: () => chance(.15) ? { fx: { inj: 2 }, r: 'Kafan başka yerdeyken bileğin döndü.' } : { r: 'Gittin. Bugün de geçti.' } },
+    ] },
+  { id: 'reklam', w: 2.5, cd: 30, if: () => S.fol >= 100000, prep: () => ({ a: nice(S.fol * 1.2) }),
+    t: 'Reklam filmi', d: c => `Bir içecek markası iki günlük çekim için ${fmt(c.a)} öneriyor. Çekim maç haftasına denk geliyor.`,
+    o: [
+      { t: 'Kabul et', run: c => ({ fx: { para: c.a, en: -16, fol: Math.round(S.fol * .03), hoca: -2 } }), r: 'Yirmi kez aynı cümleyi söyledin. Para hesapta.' },
+      { t: 'Sezon sonuna ertele', fx: { prof: 3, hoca: 2 }, r: 'Marka bekleyeceğini söyledi. Hoca duyunca memnun oldu.' },
+    ] },
+  { id: 'vakif', w: 2, once: true, if: () => S.money >= 20000000 && S.rep >= 60,
+    t: 'Geriye bir şey bırakmak', d: 'Memleketinde çocuklar için ücretsiz bir futbol okulu açma fikri aklından çıkmıyor.',
+    o: [
+      { t: 'Okulu kur', fx: { para: -5000000, rep: 6, taraf: 8, aile: 6, mo: 10 }, r: 'Açılışta ilk topu sen attın. Tabelada adın yazıyor.' },
+      { t: 'Emeklilikten sonra', r: 'Fikri bir kenara not ettin.' },
+    ] },
+  // ---------- ağ: tanışmalar. Kiminle yakınlaştığın ileride kapı açar ya da başını yakar ----------
+  { id: 'net_abi', w: 3, once: true, if: () => amat(), prep: () => ({ n: rname('TR') }),
+    t: 'Kahvehanede bir masa', d: c => `Köşedeki masada herkesin ayağa kalkıp selamladığı biri var: şehrin eski kulüp başkanı ${c.n}. Seni yanına çağırdı.`,
+    o: [
+      { t: 'Otur, dinle', fx: { zihin: 0.5 }, run: c => { netAdd('abi', c.n, null, 36); }, r: 'Bir saat eski maçları anlattı. Giderken "bir şeye ihtiyacın olursa ara" dedi.' },
+      { t: 'Selam ver, geç', r: 'Başıyla selamladı. Fırsat geçti gitti.' },
+    ] },
+  { id: 'net_yildiz', w: 2.5, once: true, if: () => S.rep >= 16 || S.car.caps > 0,
+    prep: () => { const o = OVR(), pool = []; for (const lid in S.lg) for (const id of S.lg[lid].t) if (S.rt[id] >= o + 4 && S.rt[id] <= o + 16) pool.push(id); return { n: rname('TR'), org: pool.length ? pick(pool) : null }; },
+    t: 'Yardım maçı', d: c => `Bir yardım maçında ${c.org ? club(c.org).n : 'büyük bir kulüp'} forması giyen ${c.n} ile aynı takımdasın. Maçtan sonra yanına geldi: "Sende iş var."`,
+    o: [
+      { t: 'Tavsiye iste', fx: { mo: 5 }, run: c => { netAdd('yildiz', c.n, c.org, 34); }, r: 'Numarasını verdi: "Takıldığın yerde ara." Bu tanışıklık bir gün kapı açabilir.' },
+      { t: 'Fotoğraf çektir', run: c => { netAdd('yildiz', c.n, c.org, 14); return { fx: { fol: Math.round(300 + S.fol * .08), ego: 2 } }; }, r: 'Fotoğraf çok beğeni aldı. Seni hatırlar mı, belli değil.' },
+      { t: 'Çekindin', fx: { mo: -2 }, r: 'Yanına gidemedin. Otobüste kendine kızdın.' },
+    ] },
+  { id: 'net_gazeteci', w: 2, once: true, if: () => S.fol >= 3000, prep: () => ({ n: rname('TR') }),
+    t: 'Kartvizit', d: c => `Antrenman çıkışında spor yazarı ${c.n} kartını uzattı: "Hikâyeni ben yazmak isterim."`,
+    o: [
+      { t: 'Kartı al, ara', run: c => { netAdd('gazeteci', c.n, null, 30); }, r: 'Bir kahve içtiniz. Basında bir dostun var artık.' },
+      { t: 'Mesafeli dur', fx: { prof: 2 }, r: 'Teşekkür edip yürüdün.' },
+    ] },
+  { id: 'net_doktor', w: 2, once: true, if: () => S.car.apps + S.st.apps >= 20, prep: () => ({ n: 'Dr. ' + rname('TR') }),
+    t: 'Muayenede', d: c => `Rutin kontrolde ${c.n} koşu bandındaki değerlerine baktı: "Bu vücuda iyi bakarsan uzun oynarsın. Bana uğra."`,
+    o: [
+      { t: 'Düzenli git', run: c => { netAdd('doktor', c.n, null, 32); }, r: 'Artık bir telefon uzağında bir hekimin var.' },
+      { t: 'Gerek yok', r: 'Kendini iyi hissediyorsun.' },
+    ] },
+  { id: 'net_scout', w: 2.5, once: true, if: () => inTR() && tier() >= 3 && form() >= 7, prep: () => ({ n: rname('TR') }),
+    t: 'Tribündeki adam', d: c => `Üç maçtır aynı koltukta oturan adam otoparkta yanına geldi: ${c.n}, serbest çalışan bir scout.`,
+    o: [
+      { t: 'Numaranı ver', run: c => { netAdd('scout', c.n, null, 30); }, r: '"Raporunu doğru yerlere ulaştırırım" dedi.' },
+      { t: 'Menajerime yönlendir', if: () => !!S.agent, fx: { prof: 2 }, r: 'İşi menajerine bıraktın.' },
+      { t: 'İlgilenme', r: 'Omuz silkip gitti.' },
+    ] },
+  { id: 'net_marka', w: 2, once: true, if: () => S.fol >= 20000, prep: () => ({ n: rname('TR') }),
+    t: 'Davet', d: c => `Bir spor markasının lansmanına çağrıldın. Pazarlama müdürü ${c.n} seninle özel ilgilendi.`,
+    o: [
+      { t: 'Sohbeti ilerlet', run: c => { netAdd('marka', c.n, null, 30); }, r: 'Kartlar değişildi. Sponsorluk kapısı aralandı.' },
+      { t: 'Erken ayrıl', fx: { en: 4 }, r: 'Yarın antrenman var.' },
+    ] },
+  { id: 'net_golge', neg: 1, w: 2.5, once: true, if: () => S.hid.prof < 50 || (S.fl.gecew && absWeek() - S.fl.gecew <= 3), prep: () => ({ n: rname('TR').split(' ')[0] + ' Abi' }),
+    t: 'Masana biri oturdu', d: c => `Gece kulübünde herkesin "${c.n}" dediği biri masana oturdu. Hesabı o ödedi: "Senin gibi delikanlıya her kapı açılır."`,
+    o: [
+      { t: 'Uzak dur', fx: { prof: 4 }, r: 'Teşekkür edip kalktın.' },
+      { t: 'Tanışıklığı sürdür', fx: { prof: -4, mo: 3 }, run: c => { netAdd('golge', c.n, null, 40); }, r: 'Numaralar alındı. Bu adamın açtığı kapılar kolay paraya çıkar, belki başka yerlere de.' },
+    ] },
 ];
 
 const EV = {}; for (const e of EVENTS) EV[e.id] = e;
@@ -296,13 +430,15 @@ export function pickEvent() {
   const qi = S.q.findIndex(q => q.at <= now);
   if (qi >= 0) { const q = S.q.splice(qi, 1)[0], ev = EV[q.id]; if (ev && (!ev.if || ev.if())) return inst(ev, q.ctx); }
   const ok = e => !e.chain && (!e.once || !S.fl['e_' + e.id]) && (S.cd[e.id] || 0) <= now && (!e.if || e.if());
-  const must = EVENTS.find(e => e.must && ok(e));
+  const must = EVENTS.find(e => e.must && ok(e) && !(e.neg && goodRun() && e.id !== 'tukenmislik'));
   if (must) return inst(must);
   if (!chance(.5)) return null;
-  const pool = EVENTS.filter(e => !e.must && e.w && ok(e));
+  const good = goodRun(), trouble = S.hid.ego > 60 || S.hid.prof < 40 ? 2 : 1;
+  const pool = EVENTS.filter(e => !e.must && e.w && ok(e) && !(e.neg && good));
   if (!pool.length) return null;
-  let t = pool.reduce((a, e) => a + e.w, 0), r = Math.random() * t;
-  for (const e of pool) { r -= e.w; if (r <= 0) return inst(e); }
+  const wt = e => e.w * (e.neg ? trouble : 1);
+  let t = pool.reduce((a, e) => a + wt(e), 0), r = Math.random() * t;
+  for (const e of pool) { r -= wt(e); if (r <= 0) return inst(e); }
   return inst(pool[0]);
 }
 

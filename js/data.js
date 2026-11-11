@@ -323,10 +323,10 @@ export const ATTR = { sut: 'Şut', pas: 'Pas', teknik: 'Teknik', hiz: 'Hız', gu
 // w: genel güç ağırlıkları, m: maç anı ağırlıkları, b: başlangıç bonusu
 export const POS = {
   KL: { n: 'Kaleci', w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 85, pas: 15 }, b: { kaleci: 24, zihin: 3 } },
-  DF: { n: 'Defans', w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 60, kafa: 12, pas: 28 }, b: { savunma: 9, guc: 5, kafa: 4 } },
-  OS: { n: 'Orta Saha', w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 42, sut: 18, calim: 15, savunma: 18, frikik: 7 }, b: { pas: 8, teknik: 5, zihin: 3 } },
-  KN: { n: 'Kanat', w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 40, pas: 28, sut: 27, kafa: 5 }, b: { hiz: 8, teknik: 6, pas: 2 } },
-  FV: { n: 'Forvet', w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 45, kafa: 15, calim: 18, pas: 15, penalti: 7 }, b: { sut: 8, kafa: 4, teknik: 3 } },
+  DF: { n: 'Defans', w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 55, kafa: 12, pas: 23, orta: 10 }, b: { savunma: 9, guc: 5, kafa: 4 } },
+  OS: { n: 'Orta Saha', w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 32, sut: 15, calim: 12, savunma: 16, frikik: 7, orta: 8, korner: 8, vole: 2 }, b: { pas: 8, teknik: 5, zihin: 3 } },
+  KN: { n: 'Kanat', w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 30, pas: 16, sut: 22, kafa: 4, orta: 22, vole: 6 }, b: { hiz: 8, teknik: 6, pas: 2 } },
+  FV: { n: 'Forvet', w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 40, kafa: 13, calim: 16, pas: 12, penalti: 6, vole: 9, rovesata: 4 }, b: { sut: 8, kafa: 4, teknik: 3 } },
 };
 
 export const ORIGINS = {
@@ -360,6 +360,9 @@ export const SHOP = [
   { id: 'araba', n: 'İkinci el araba', d: 'Yol yorgunluğu biter. Haftalık enerji +3.', p: 650000, e: { en: 3 } },
   { id: 'daire', n: 'Kiralık daire', d: 'Kendi düzenin. Enerji +4, moral +4.', yr: 260000, e: { en: 4, mo: 4 } },
   { id: 'diyet', n: 'Diyetisyen', d: 'Haftalık enerji +5.', yr: 300000, e: { en: 5 } },
+  { id: 'musavir', n: 'Mali müşavir', d: 'Vergi sürprizlerini ve dolandırıcıları uzak tutar.', yr: 400000 },
+  { id: 'guvenlik', n: 'Ev güvenliği', d: 'Hırsızlık riskini kaldırır.', yr: 250000 },
+  { id: 'psikolog', n: 'Spor psikoloğu', d: 'Moralin daha hızlı toparlanır. Moral +6.', yr: 350000, e: { mo: 6 } },
   { id: 'pt', n: 'Kişisel antrenör', d: 'Antrenman verimi +%20.', yr: 600000, e: { tr: .2 } },
   { id: 'halisaha', n: 'Halı saha işletmesi', d: 'Haftalık ₺45.000 gelir.', p: 3000000, e: { inc: 45000 } },
   { id: 'ev', n: 'Ev satın al', d: 'Aile rahat eder. Enerji +3, moral +6.', p: 6000000, e: { en: 3, mo: 6 } },
@@ -387,6 +390,10 @@ export const MOM = {
   calim: { n: 'Çalım', i: 'Önünde savunma var. Adam eksilt!' },
   savunma: { n: 'Savunma', i: 'Rakip hızla üstüne geliyor. Durdur!' },
   kurtaris: { n: 'Kurtarış', i: 'Rakip şut pozisyonunda!' },
+  vole: { n: 'Vole', i: 'Top havadan geliyor, yere indirmeden vurabilirsin!' },
+  rovesata: { n: 'Röveşata', i: 'Top arkanda kaldı. Tek yol: röveşata!' },
+  orta: { n: 'Orta', i: 'Kanatta boşsun, ceza sahasına koşu var.' },
+  korner: { n: 'Korner', i: 'Korner vuruşunu sen kullanıyorsun.' },
 };
 
 export const FILL = [
@@ -449,3 +456,38 @@ export const DEC = {
   ref: { t: 'Tartışmalı karar', p: 'fed', i: 'alert', o: ['İtiraz et', 'Oyuna dön'], s: ['Tribün sever, kart riski var', 'Hoca takdir eder'] },
   knock: { t: 'Bir şey oldu', p: 'doktor', i: 'plus', o: ['Devam et', 'Değişiklik iste'], s: ['Sakatlık riski artar', 'Maç senin için biter'] },
 };
+
+// Oyuncu yaratma ayrıntıları
+export const HT = { kisa: { n: 'Kısa', at: { hiz: 2, teknik: 1, kafa: -2 } }, orta: { n: 'Orta', at: {} }, uzun: { n: 'Uzun', at: { kafa: 3, guc: 1, hiz: -2 } } };
+export const BUILD = { cevik: { n: 'Çevik', at: { hiz: 1, teknik: 1, guc: -2 } }, atletik: { n: 'Atletik', at: {} }, guclu: { n: 'Güçlü', at: { guc: 3, hiz: -2 } } };
+export const STYLES = {
+  KL: [{ n: 'Çizgi kalecisi', at: { kaleci: 2 } }, { n: 'Libero kaleci', at: { pas: 2, hiz: 1 } }],
+  DF: [{ n: 'Sert stoper', at: { savunma: 2, guc: 1 } }, { n: 'Top kullanan', at: { pas: 2, teknik: 1 } }, { n: 'Hızlı bek', at: { hiz: 3 } }],
+  OS: [{ n: 'Oyun kurucu', at: { pas: 3 } }, { n: 'İki yönlü', at: { guc: 2, hiz: 1 } }, { n: 'Ön libero', at: { savunma: 3 } }],
+  KN: [{ n: 'Çizgi kanadı', at: { hiz: 2, pas: 1 } }, { n: 'İçe kat eden', at: { sut: 2, teknik: 1 } }],
+  FV: [{ n: 'Fırsatçı', at: { sut: 2, zihin: 1 } }, { n: 'Hedef santrfor', at: { kafa: 3, guc: 1, hiz: -1 } }, { n: 'Sürükleyici', at: { teknik: 2, hiz: 1 } }],
+};
+export const CELE = { kayarak: ['Dizüstü kayış', 'dizlerinin üstünde korner bayrağına kaydı'], takla: ['Takla', 'havada takla attı'], kalp: ['Kalp', 'tribüne elleriyle kalp yaptı'], sus: ['Sus işareti', 'parmağını dudağına götürdü'] };
+
+// Ağ (network): tanıdık türleri. f: isteyebileceğin iyilik
+export const NET = {
+  yildiz: { n: 'Yıldız futbolcu', i: 'star', p: 'rakip', d: 'Seni kulübüne önerebilir. Görüştükçe oyunun gelişir.', f: 'Kulübüne öner' },
+  abi: { n: 'Şehrin kıdemlisi', i: 'home', p: 'baskan', d: 'Eski kulüp başkanı. Deneme, sponsor, iş kapısı açar.', f: 'Bir kapı aç' },
+  gazeteci: { n: 'Gazeteci', i: 'mic', p: 'basin', d: 'Hakkında iyi yazar, kötü haberi yumuşatır.', f: 'Haber yaptır' },
+  doktor: { n: 'Spor hekimi', i: 'plus', p: 'doktor', d: 'Sakatlıkta öncelik: dönüş süren kısalır.', f: 'Özel tedavi' },
+  scout: { n: 'Scout', i: 'eye', p: 'scout', d: 'Raporunu üst lig kulüplerine ulaştırır.', f: 'Raporumu gönder' },
+  hoca: { n: 'Eski hocan', i: 'whistle', p: 'hoca', d: 'Çalıştığı kulübe seni isteyebilir.', f: 'Beni iste' },
+  marka: { n: 'Marka müdürü', i: 'tag', p: 'sponsor', d: 'Sponsorluk kapısı.', f: 'Anlaşma iste' },
+  eski: { n: 'Eski takım arkadaşı', i: 'users', p: 'takim', d: 'Oynadığı kulübe seni önerebilir.', f: 'Kulübüne öner' },
+  golge: { n: 'Karanlık tanıdık', i: 'lock', p: 'golge', d: 'Kolay para vadeder. Açtığı kapılar tehlikelidir.', f: 'İş sor' },
+};
+// Takım arkadaşıyla aktiviteler. b: bağ artışı, cost: haftalık ücretin katı
+export const MACT = {
+  kal: { n: 'Antrenmandan sonra kal', i: 'train', b: 8, fx: { en: -6 }, grow: 1, r: '{n} ile yarım saat fazladan çalıştınız.' },
+  yemek: { n: 'Yemeğe çık', i: 'heart', b: 10, cost: .4, fx: { mo: 3 }, r: '{n} hesabı ödemek istedi ama sen ısrar ettin.' },
+  oyun: { n: 'Oyun gecesi', i: 'phone', b: 7, fx: { mo: 4, en: -2 }, r: '{n} sabaha karşı rövanş istedi.' },
+};
+export const DERBY = [['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Trabzonspor'], ['Sakaryaspor', 'Kocaelispor'], ['Göztepe', 'Karşıyaka', 'Altay'], ['Bursaspor', 'Eskişehirspor'], ['Adana Demirspor', 'Adanaspor'], ['Gençlerbirliği', 'MKE Ankaragücü'],
+  ['Real Madrid', 'Barcelona', 'Atlético Madrid'], ['Manchester United', 'Manchester City', 'Liverpool'], ['Arsenal', 'Tottenham', 'Chelsea'], ['Inter', 'Milan', 'Juventus'], ['Roma', 'Lazio'], ['Bayern München', 'Borussia Dortmund'],
+  ['Paris Saint-Germain', 'Marseille'], ['Ajax', 'Feyenoord', 'PSV'], ['Benfica', 'Porto', 'Sporting CP'], ['Al-Hilal', 'Al-Nassr', 'Al-Ittihad']];
+export const DIFF = { kolay: ['Kolay', .85], normal: ['Normal', 1], zor: ['Zor', 1.15] };

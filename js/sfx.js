@@ -10,7 +10,7 @@ function ac() {
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
     ctx = new C(); master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination);
   }
-  if (ctx.state === 'suspended') ctx.resume();
+  if (ctx.state !== 'running') ctx.resume();
   return ctx;
 }
 function env(g, t, d, vol, a) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + d); }
@@ -30,11 +30,33 @@ function noise(d, { f = 1000, q = 1, type = 'bandpass', vol = .2, at = 0, a = .0
   s.buffer = nbuf(c); s.loop = true; fl.type = type; fl.frequency.setValueAtTime(f, t); if (to) fl.frequency.exponentialRampToValueAtTime(to, t + d); fl.Q.value = q;
   env(g, t, d, vol, a); s.connect(fl); fl.connect(g); g.connect(master); s.start(t, Math.random()); s.stop(t + d + .05);
 }
+// iOS: ses ancak bir dokunuş içinde açılır; ayrıca sessiz anahtarı açıkken Web Audio susar.
+// Döngüde çalan sessiz bir <audio> oturumu "oynatma" kipine alır, böylece efektler duyulur.
+let keep = null;
+function unlock() {
+  if (!has || !on) return;
+  const c = ac(); if (!c) return;
+  try { const b = c.createBufferSource(); b.buffer = c.createBuffer(1, 1, 22050); b.connect(c.destination); b.start(0); } catch (e) { /* yok */ }
+  if (!keep) {
+    try {
+      const n = 4000, buf = new ArrayBuffer(44 + n), v = new DataView(buf), w = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+      w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+      for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+      keep = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }))); keep.loop = true; keep.setAttribute('playsinline', ''); keep.volume = 0.01;
+    } catch (e) { /* yok */ }
+  }
+  if (keep && keep.paused) keep.play().catch(() => { /* engellendi */ });
+}
+if (has) {
+  ['touchend', 'pointerup', 'click', 'keydown'].forEach(e => document.addEventListener(e, unlock, true));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx && ctx.state !== 'running') ctx.resume(); });
+}
 const vib = p => { try { if (has && on && navigator.vibrate) navigator.vibrate(p); } catch (e) { /* desteklenmiyor */ } };
 
 export const sfx = {
   get on() { return on; },
-  toggle() { on = !on; try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) { /* yok */ } if (!on) this.ambOff(); else this.click(); return on; },
+  toggle() { on = !on; try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) { /* yok */ } if (!on) { this.ambOff(); if (keep) keep.pause(); } else { unlock(); this.click(); } return on; },
   click() { tone(520, .05, { type: 'triangle', vol: .09 }); },
   pop() { tone(300, .09, { type: 'triangle', vol: .12, to: 520 }); },
   kick() { tone(170, .13, { vol: .5, to: 48 }); noise(.05, { f: 1800, q: .7, vol: .22 }); vib(12); },

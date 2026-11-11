@@ -61,11 +61,13 @@ const HAIR = [
   c => `<g fill="${c}"><ellipse cx="50" cy="25" rx="19" ry="10"/><circle cx="34" cy="24" r="9"/><circle cx="46" cy="17" r="10"/><circle cx="59" cy="18" r="10"/><circle cx="68" cy="27" r="8"/><circle cx="30" cy="35" r="6"/><circle cx="71" cy="36" r="5.5"/></g>`,
   c => `<path d="M26 62C20 24 36 10 50 10s30 14 24 52c-1-14-4-27-9-32-8 1-22 0-29-6-5 6-9 22-10 38z" fill="${c}"/>`,
   () => '',
+  c => `<path d="M30 37C29 24 39 17 50 17s21 7 20 20c-2-7-8-10-20-10s-18 3-20 10z" fill="${c}" opacity=".45"/><path d="M43 30 45 8c3-3 7-3 10 0l2 22c-4-3-10-3-14 0z" fill="${c}"/>`,
+  c => `<circle cx="50" cy="9" r="7.5" fill="${c}"/><path d="M28.5 42C25 22 38 12 50 12s25 10 21.5 30c-2-9-7-15-21.5-15S30.5 33 28.5 42z" fill="${c}"/>`,
 ];
 export const HAIRS = HAIR.length;
 
 export function avatar(look = {}, c1 = '#3a3f47', c2 = '#f2f2f2', x = {}) {
-  const sk = SKIN[look.skin ?? 1], hc = HAIRC[look.hc ?? 0], hair = HAIR[look.hair ?? 0] || HAIR[0];
+  const sk = SKIN[look.skin ?? 1], hc = HAIRC[look.hc ?? 0], hair = HAIR[look.hair ?? 0] || HAIR[0], bd = x.beard ? 2 : look.beard || 0;
   return `<svg class="av" viewBox="0 0 100 110" aria-hidden="true">
     <path d="M8 110C8 88 24 79 40 77h20c16 2 32 11 32 33z" fill="${c1}"/>
     <path d="M24 110 35 80l9-3-12 33z" fill="${c2}" opacity=".9"/>
@@ -74,8 +76,10 @@ export function avatar(look = {}, c1 = '#3a3f47', c2 = '#f2f2f2', x = {}) {
     <circle cx="29" cy="45" r="4.5" fill="${sk}"/><circle cx="71" cy="45" r="4.5" fill="${sk}"/>
     <ellipse cx="50" cy="42" rx="21" ry="25" fill="${sk}"/>
     <path d="M50 17c12 0 21 11 21 25s-9 25-21 25z" fill="#000" opacity=".07"/>
-    ${x.beard ? `<path d="M30 46c1 16 9 23 20 23s19-7 20-23c-3 8-6 11-10 12-6-3-14-3-20 0-4-1-7-4-10-12z" fill="${hc}" opacity=".9"/>` : ''}
+    ${bd ? `<path d="M30 46c1 16 9 23 20 23s19-7 20-23c-3 8-6 11-10 12-6-3-14-3-20 0-4-1-7-4-10-12z" fill="${hc}" opacity="${bd === 1 ? .3 : .9}"/>` : ''}
     ${hair(hc)}
+    ${look.band ? '<path d="M29.6 33q20.4-9.5 40.8 0v5.5q-20.4-9.5-40.8 0z" fill="#f2f2f2"/>' : ''}
+    ${x.num ? `<text x="64" y="104" text-anchor="middle" font-family="'Big Shoulders Display','Arial Narrow',sans-serif" font-weight="900" font-size="17" fill="${c2}" stroke="rgba(0,0,0,.35)" stroke-width="1.5" paint-order="stroke">${x.num}</text>` : ''}
     <path d="M38 37.5q4-2.5 8 0M54 37.5q4-2.5 8 0" stroke="#000" opacity=".55" stroke-width="2.2" fill="none" stroke-linecap="round"/>
     ${x.glasses ? '<path d="M34 40h13v8H34zM53 40h13v8H53z" fill="#101010"/><path d="M47 43h6" stroke="#101010" stroke-width="2"/>' : '<circle cx="42" cy="43.5" r="2.3" fill="#191512"/><circle cx="58" cy="43.5" r="2.3" fill="#191512"/>'}
     <path d="M50 46v6l-2.5 1.5" stroke="#000" opacity=".25" stroke-width="1.8" fill="none" stroke-linecap="round"/>
