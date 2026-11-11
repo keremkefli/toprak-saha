@@ -1,8 +1,8 @@
 // Toprak Saha — olay kartları. Her seçenek kısa ve uzun vadeli sonuç doğurur.
 // Alanlar: w ağırlık, cd bekleme (hafta), once tek sefer, must koşul oluşunca zorunlu, chain yalnızca kuyruktan
 import { tt } from './i18n.js';
-import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname, kidAge, myNat, KW, tierCfg, kx, kxAdd } from './core.js';
-import { LMAP, AGENTS, SHOP, NATN } from './data.js';
+import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname, kidAge, myNat, KW, tierCfg, kx, kxAdd, klikAdj, tenAdj, newMate, bootMake, bootGoal } from './core.js';
+import { LMAP, AGENTS, SHOP, NATN, BOOTS } from './data.js';
 
 const inTR = () => LMAP[leagueOf(S.clubId)].c === 'TR';
 const amat = () => inTR() && tier() >= tierCfg().amat;
@@ -497,6 +497,49 @@ export const EVENTS = [
     o: [
       { t: tt('Uzak dur'), fx: { prof: 4 }, r: tt('Teşekkür edip kalktın.') },
       { t: tt('Tanışıklığı sürdür'), fx: { prof: -4, mo: 3 }, run: c => { netAdd('golge', c.n, null, 40); }, r: tt('Numaralar alındı. Bu adamın açtığı kapılar kolay paraya çıkar, belki başka yerlere de.') },
+    ] },
+  // ---------- krampon sponsoru ----------
+  { id: 'bootdeal', w: 4, cd: 30, if: () => !S.boot && S.rep >= 12 && S.con.wage >= 1500 && S.week <= 30, prep: () => ({ n: pick(BOOTS), a: bootMake(false), b: bootMake(true) }),
+    t: tt('Krampon markası kapıda'), d: c => tt`${c.n} bu sezon ayağında kendi kramponunu görmek istiyor. İki teklif var: haftada ${fmt(c.a.wk)} sabit ödeme; ya da haftada ${fmt(c.b.wk)} ve hedef tutarsa sezon sonunda ${fmt(c.b.bon)} prim. Hedef: ${bootGoal(c.b.tgt)}.`,
+    o: [
+      { t: tt('Sabit ödemeyi al'), run: c => { S.boot = { n: c.n, ...c.a }; }, r: tt('İmzalar atıldı. Para her hafta hesabında.') },
+      { t: tt('Hedefli anlaşmayı al'), run: c => { S.boot = { n: c.n, ...c.b }; }, r: tt('Kendine güveniyorsun. Hedef tutarsa büyük prim senin.') },
+      { t: tt('İstemiyorum'), r: tt('Teklifi geri çevirdin.') },
+    ] },
+  { id: 'bootshoot', w: 2.5, cd: 18, if: () => !!S.boot, prep: () => ({ n: S.boot.n, p: nice(S.boot.wk * 6) }),
+    t: tt('Reklam çekimi'), d: c => tt`${c.n} maçtan iki gün önce bütün gün sürecek bir çekim istiyor: ${fmt(c.p)} ödeyecek.`,
+    o: [
+      { t: tt('Çekime git'), run: c => ({ fx: { para: c.p, en: -15, fol: Math.round(300 + S.fol * .02), hoca: -2 }, r: tt('Işıklar, makyaj, kırk tekrar. Akşam bacakların tutmuyordu ama reklam güzel oldu.') }) },
+      { t: tt('Maçtan sonraya ertele'), run: c => (chance(.6) ? { fx: { para: Math.round(c.p * .7), fol: Math.round(200 + S.fol * .01), prof: 2 }, r: tt('Marka kabul etti; çekim sakin bir günde yapıldı, ücret biraz düştü.') } : { r: tt('Marka takvimi değiştiremedi; çekim iptal oldu.') }) },
+      { t: tt('Reddet'), fx: { prof: 2, hoca: 1 }, run: () => { if (S.boot && chance(.3)) { S.boot.wk = nice(S.boot.wk * .9); return { r: tt('Marka bozuldu: haftalık ödemeni biraz kıstı.') }; } return { r: tt('Marka üstelemedi.') }; } },
+    ] },
+  // ---------- soyunma odası ----------
+  { id: 'lr_yeni', w: 2.5, cd: 26, if: () => S.mates.length >= 4 && ((S.week >= 2 && S.week <= 6) || (S.week >= 21 && S.week <= 25)), prep: () => newMate(1),
+    t: tt('Yeni transfer soyunma odasında'), d: c => tt`${c.old} gitti, yerine ${c.n} geldi. Ücretinin herkesten yüksek olduğu konuşuluyor; kıdemliler homurdanıyor.`,
+    o: [
+      { t: tt('İlk sen karşıla'), fx: { takim: 2 }, run: () => { tenAdj(-6); S.mates[1].b = clamp(S.mates[1].b + 14, 0, 100); klikAdj('kid', -2); }, r: c => tt`${c.n} için şehirde tanıdığı ilk kişi sen oldun. Bunu unutmaz.` },
+      { t: tt('Mesafeli dur'), run: () => { tenAdj(5); }, r: tt('Kimse bir şey demedi ama hava ağırlaştı.') },
+      { t: tt('Kıdemlilerin yanında dur'), run: () => { klikAdj('kid', 7); tenAdj(4); S.mates[1].b = clamp(S.mates[1].b - 6, 0, 100); }, r: tt('Kıdemliler memnun. Yeni gelen ise kimin tarafında olduğunu not etti.') },
+    ] },
+  { id: 'lr_klik', w: 2.5, cd: 28, if: () => S.mates.length >= 4 && S.week >= 6,
+    t: tt('Soyunma odası ikiye bölündü'), d: () => tt`Prim dağıtımı yüzünden kıdemlilerle gençler birbirine girdi. ${S.mates[0].n} ile ${S.mates[3].n} aynı anda sana baktı.`,
+    o: [
+      { t: tt('Kıdemlileri tut'), run: () => { klikAdj('kid', 9); klikAdj('gen', -8); tenAdj(5); }, r: tt('"Sıra size de gelecek" dedin gençlere. Kıdemliler başını salladı.') },
+      { t: tt('Gençleri tut'), run: () => { klikAdj('gen', 12); klikAdj('kid', -7); tenAdj(5); }, r: tt('"Sahada koşan onlar" dedin. Gençler arkanda, kıdemliler soğuk.') },
+      { t: tt('Arabulucu ol'), run: () => { if (chance(clamp(.3 + S.at.zihin / 200 + (S.trait === 'lider' ? .2 : 0) + (S.fl.kaptan ? .15 : 0), .1, .9))) { tenAdj(-14); klikAdj('kid', 3); klikAdj('gen', 3); return { fx: { takim: 5, hoca: 2 }, r: tt('İki tarafı da dinledin, orta yolu buldun. Hoca uzaktan izliyordu.') }; } tenAdj(6); return { fx: { takim: -2 }, r: tt('İki taraf da seni karşı tarafta sandı. Daha beter oldu.') }; } },
+    ] },
+  { id: 'lr_patla', chain: true, cd: 16, t: tt('Soyunma odası patladı'), d: tt('Maçtan sonra kapı kapandı ve herkes içini döktü. Bağıranlar, susanlar, eşyasını toplayanlar. Hoca toplantı istiyor.'),
+    o: [
+      { t: tt('Söz al, sorumluluğu üstlen'), fx: { takim: 6, hoca: 3, mo: -4 }, run: () => { tenAdj(-30); }, r: tt('"Önce ben düzeleceğim" dedin. Oda sustu, sonra biri elini omzuna koydu.') },
+      { t: tt('Sessiz kal'), fx: { takim: -3 }, run: () => { tenAdj(-12); }, r: tt('Fırtına geçti ama kimse bir şey çözmedi.') },
+      { t: tt('Suçluları say'), fx: { hoca: -4, ego: 4 }, run: () => { tenAdj(-8); klikAdj('kid', -10); klikAdj('yil', -10); klikAdj('gen', -6); }, r: tt('İsim isim saydın. Haklıydın belki ama artık odada yalnızsın.') },
+    ] },
+  // ---------- veteran dönemi ----------
+  { id: 'oyuncu_antrenor', once: true, w: 6, cd: 99, if: () => S.age >= 33 && (S.vet || 0) >= 5 && S.rel.hoca >= 55 && !S.loan && !S.fl.pc,
+    t: tt('Oyuncu-antrenörlük teklifi'), d: tt('Hoca seni odasına çağırdı: "Gençler seni dinliyor. Sahada benim sesim olur musun? Seni ekibe de yazdırayım; yine oynarsın ama artık biraz da bizdensin."'),
+    o: [
+      { t: tt('Kabul et'), fx: { hoca: 8, takim: 4 }, run: () => { S.fl.pc = 1; S.con.wage = nice(S.con.wage * 1.15); addNews(tt('Oyuncu-antrenör oldun: ücretin %15 arttı, taktik uyumun yükseldi.'), 'whistle'); }, r: tt('Artık toplantılara sen de giriyorsun. Forma şansın biraz azalır ama kenardaki yolun açıldı.') },
+      { t: tt('Sadece oyuncuyum'), fx: { hoca: -2 }, r: tt('"Daha oynayacak maçlarım var hocam." Hoca gülümsedi.') },
     ] },
 ];
 

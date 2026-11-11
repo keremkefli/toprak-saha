@@ -470,11 +470,11 @@ export const SESS = [
 export const PTAG = { formsuz: tt('Formsuz'), duzenli: tt('Düzenli oyuncu'), yukselen: tt('Yükselen oyuncu'), genc: tt('Genç yetenek'), yildiz: tt('Ligin yıldızı') };
 
 export const AGENTS = [
-  { n: 'Kemal Aksoy', d: tt('Mahallenin abisi. Az komisyon, az bağlantı.'), cut: .05, pw: .2 },
-  { n: 'Selin Karaca', d: tt('Ligleri iyi tanır. Dengeli seçim.'), cut: .10, pw: .55 },
-  { n: 'Viktor Lang', d: tt('Avrupa bağlantılı ağır top. Pahalı.'), cut: .15, pw: .95 },
-  { n: 'Deniz Arman', d: tt('Yıldızların menajeri. Kapıları tekmeyle açar; payı da ona göre.'), cut: .2, pw: 1.25, rep: 60 },
-  { n: 'Amcan', d: tt('Aileden biri. Seni kandırmaz ama kimseyi de tanımaz.'), cut: .03, pw: .08 },
+  { n: 'Kemal Aksoy', d: tt('Mahallenin abisi. Az komisyon, az bağlantı.'), cut: .05, pw: .2, hi: tt('"Söyle bakalım, dinliyorum."') },
+  { n: 'Selin Karaca', d: tt('Ligleri iyi tanır. Dengeli seçim.'), cut: .10, pw: .55, hi: tt('"Rakamlar önümde. Ne konuşuyoruz?"') },
+  { n: 'Viktor Lang', d: tt('Avrupa bağlantılı ağır top. Pahalı.'), cut: .15, pw: .95, hi: tt('"Kısa tut, üç telefon bekliyor."') },
+  { n: 'Deniz Arman', d: tt('Yıldızların menajeri. Kapıları tekmeyle açar; payı da ona göre.'), cut: .2, pw: 1.25, rep: 60, hi: tt('"Yıldızım, bugün kimin kapısını çalıyoruz?"') },
+  { n: 'Amcan', d: tt('Aileden biri. Seni kandırmaz ama kimseyi de tanımaz.'), cut: .03, pw: .08, hi: tt('"Çayı koydum, anlat."') },
 ];
 
 export const NATIONS = [['İspanya', 86], ['Fransa', 87], ['Almanya', 85], ['İtalya', 83], ['Hollanda', 83], ['Portekiz', 85], ['Hırvatistan', 80], ['İsviçre', 78], ['Avusturya', 77], ['Çekya', 75], ['Macaristan', 74], ['Galler', 73], ['Gürcistan', 72], ['İzlanda', 70], ['Bulgaristan', 68], ['Karadağ', 68], ['Türkiye', 79]];
@@ -554,11 +554,12 @@ export const ACH = [
   ['kupa', tt('Kupa kaldırdın'), 'trophy'], ['avrupa', tt('Şampiyonlar Ligi şampiyonu'), 'crown'], ['al', tt('Avrupa Ligi şampiyonu'), 'trophy'], ['hayal', tt('Hayalindeki forma'), 'heart'], ['m1', tt('1 milyon takipçi'), 'phone'],
   ['ay', tt('Ayın oyuncusu'), 'star'], ['yil11', tt('Yılın 11\'i'), 'users'],
   ['milk', tt('Milli takımla kupa'), 'flag'], ['efsane', tt('Kulüp efsanesi'), 'crown'],
+  ['sc_kurtar', tt('Kurtarıcı'), 'shield'], ['sc_donus', tt('Büyük dönüş'), 'plus'], ['sc_sondans', tt('Son dans'), 'crown'], ['derbi', tt('Derbi kahramanı'), 'bolt'], ['akil', tt('Akıl hocası'), 'book'], ['koleksiyon', tt('Koleksiyoncu'), 'star'],
 ];
 
 // Maç içi kararlar. p: konuşan kişi, i: ikon
 export const DEC = {
-  ht: { t: tt('Devre arası'), p: 'hoca', i: 'whistle', o: [tt('Takımı ateşle'), tt('Kendi oyununa odaklan'), tt('Riskli oyna')], s: [tt('Tutarsa takım gol bulabilir'), tt('Kalan anlar daha sakin akar'), tt('Fazladan pozisyon, fazladan sakatlık riski')] },
+  ht: { t: tt('Devre arası'), p: 'hoca', i: 'whistle', o: [tt('Takımı ateşle'), tt('Kendi oyununa odaklan'), tt('Riskli oyna'), tt('Hocaya plan sor'), tt('Hocaya itiraz et')], s: [tt('Tutarsa takım gol bulabilir'), tt('Kalan anlar daha sakin akar'), tt('Fazladan pozisyon, fazladan sakatlık riski'), tt('İstediği an ikinci yarıda karşına çıkar'), tt('Tutarsa sistem sana göre değişir; tutmazsa kenara gelebilirsin')] },
   pen: { t: tt('Penaltı!'), p: 'takim', i: 'target', o: [tt('Ben atarım'), tt('Ustası atsın')], s: [tt('Penaltıyı sen kullanırsın'), tt('Takımın penaltıcısı atar')] },
   ref: { t: tt('Tartışmalı karar'), p: 'fed', i: 'alert', o: [tt('İtiraz et'), tt('Oyuna dön')], s: [tt('Tribün sever, kart riski var'), tt('Hoca takdir eder')] },
   knock: { t: tt('Bir şey oldu'), p: 'doktor', i: 'plus', o: [tt('Devam et'), tt('Değişiklik iste')], s: [tt('Sakatlık riski artar'), tt('Maç senin için biter')] },
@@ -593,6 +594,7 @@ export const MACT = {
   kal: { n: tt('Antrenmandan sonra kal'), i: 'train', b: 8, fx: { en: -6 }, grow: 1, r: tt('{n} ile yarım saat fazladan çalıştınız.') },
   yemek: { n: tt('Yemeğe çık'), i: 'heart', b: 10, cost: .4, fx: { mo: 3 }, r: tt('{n} hesabı ödemek istedi ama sen ısrar ettin.') },
   oyun: { n: tt('Oyun gecesi'), i: 'phone', b: 7, fx: { mo: 4, en: -2 }, r: tt('{n} sabaha karşı rövanş istedi.') },
+  akil: { n: tt('Akıl hocalığı yap'), i: 'book', b: 9, vet: 1, fx: { hoca: 2, takim: 2 }, r: tt('{n} ile maç görüntülerini izlediniz; nerede duracağını tek tek gösterdin.') },
 };
 export const DERBY = [['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Trabzonspor'], ['Sakaryaspor', 'Kocaelispor'], ['Göztepe', 'Karşıyaka', 'Altay'], ['Bursaspor', 'Eskişehirspor'], ['Adana Demirspor', 'Adanaspor'], ['Gençlerbirliği', 'MKE Ankaragücü'],
   ['Real Madrid', 'Barcelona', 'Atlético Madrid'], ['Manchester United', 'Manchester City', 'Liverpool'], ['Arsenal', 'Tottenham', 'Chelsea'], ['Inter', 'Milan', 'Juventus'], ['Roma', 'Lazio'], ['Bayern München', 'Borussia Dortmund'],
@@ -712,4 +714,90 @@ export const MVAR = {
   sondk: { n: tt('Son dakikalar'), d: tt('Bu top maçın kaderini belirler.'), k: ['sut', 'kafa', 'pas', 'calim', 'savunma', 'markaj', 'orta', 'korner', 'frikik', 'kurtaris', 'kosu'], vr: { t: .85, acc: 1.08, sp: 1.06 }, dif: .03, rt: .35, from: 82 },
   uzak: { n: tt('Uzak mesafe'), d: tt('Kale uzak: isabet zor, kaleci hazır.'), k: ['sut', 'frikik'], vr: { acc: 1.28 }, dif: .05, rt: .3 },
   sert: { n: tt('Yakın mesafe'), d: tt('Vuruş burnunun dibinden geliyor.'), k: ['kurtaris', 'cikis'], vr: { sp: 1.22 }, dif: .06, rt: .3 },
+};
+
+// ---------- oyun rolleri: maçta karşına çıkan anları değiştirir. m: an ağırlığı çarpanı, add: mevkide olmayan an, tac: uyduğu sistemler ----------
+export const PROLE = {
+  FV: [
+    { id: 'hedef', n: tt('Hedef forvet'), d: tt('Sırtı dönük oyna, hava toplarını indir. Kafa ve dönen top çok gelir, koşu azalır.'), i: 'shield', m: { kafa: 1.9, ribaund: 1.6, calim: .5, kosu: .55 }, tac: ['kanat', 'otobus'] },
+    { id: 'firsatci', n: tt('Fırsatçı'), d: tt('Savunmanın arkasına koş, ceza sahasında bekle. Koşu ve tek vuruş çok gelir, pas azalır.'), i: 'bolt', m: { kosu: 2, ribaund: 1.5, sut: 1.1, pas: .55, kafa: .8 }, tac: ['kontra', 'hucum'] },
+    { id: 'sahte9', n: tt('Sahte dokuz'), d: tt('Geriye gel, oyunu kur. Pas ve çalım artar, kafa azalır; frikik de gelir.'), i: 'swap', m: { pas: 2.2, calim: 1.4, sut: .8, kafa: .45 }, add: { frikik: 5 }, tac: ['top', 'pres'] },
+  ],
+  KN: [
+    { id: 'cizgi', n: tt('Çizgi kanadı'), d: tt('Çizgiye in, ortayı kes. Orta ve korner artar, şut azalır.'), i: 'right', m: { orta: 1.8, korner: 1.4, sut: .55, calim: 1.1 }, tac: ['kanat'] },
+    { id: 'iceri', n: tt('İçe kat eden kanat'), d: tt('İçeri gir, kaleyi yokla. Şut ve çalım artar, orta azalır.'), i: 'target', m: { sut: 1.7, calim: 1.3, orta: .5, vole: 1.3 }, tac: ['hucum', 'kontra'] },
+    { id: 'kbek', n: tt('Kanat bek'), d: tt('Bütün çizgi senin: geride top kap, önde orta aç. Şut neredeyse hiç gelmez.'), i: 'shield', m: { orta: 1.3, sut: .45, calim: .7 }, add: { savunma: 16, markaj: 6 }, tac: ['otobus', 'pres'] },
+  ],
+  OS: [
+    { id: 'kurucu', n: tt('Oyun kurucu'), d: tt('Top hep sende. Pas ve duran top artar, savunma görevi azalır.'), i: 'swap', m: { pas: 1.7, frikik: 1.5, korner: 1.4, savunma: .6, markaj: .6 }, tac: ['top'] },
+    { id: 'kutu', n: tt('İki yönlü orta saha'), d: tt('Bir ceza sahasından ötekine. Şut, dönen top ve müdahale artar; pas azalır.'), i: 'bolt', m: { sut: 1.5, savunma: 1.4, ribaund: 2.2, pas: .8 }, tac: ['pres', 'hucum'] },
+    { id: 'kesici', n: tt('Ön libero'), d: tt('Savunmanın önünde süpür. Müdahale ve markaj çok gelir, şut ve çalım azalır.'), i: 'shield', m: { savunma: 2, markaj: 2.4, sut: .45, calim: .5 }, tac: ['otobus', 'kontra'] },
+  ],
+  DF: [
+    { id: 'stoper', n: tt('Stoper'), d: tt('Ceza sahasının bekçisi. Markaj, kafa ve müdahale artar; orta neredeyse hiç gelmez.'), i: 'shield', m: { savunma: 1.3, markaj: 1.6, kafa: 1.4, orta: .25 }, tac: ['otobus'] },
+    { id: 'hbek', n: tt('Hücum beki'), d: tt('Çizgiden bindir. Orta ve pas artar, çalım da gelir; markaj azalır.'), i: 'right', m: { orta: 2.2, pas: 1.2, kafa: .6, markaj: .7 }, add: { calim: 8 }, tac: ['kanat', 'hucum'] },
+    { id: 'kuran', n: tt('Oyun kuran stoper'), d: tt('Oyunu geriden sen başlat. Pas çok gelir, orta azalır.'), i: 'swap', m: { pas: 2, savunma: .9, orta: .5 }, tac: ['top'] },
+  ],
+  KL: [
+    { id: 'kcizgi', n: tt('Çizgi kalecisi'), d: tt('Çizgide kal, refleksine güven. Kurtarış artar; hava topu ve ayakla oyun azalır.'), i: 'shield', m: { kurtaris: 1.25, cikis: .5, pas: .5 }, tac: ['otobus'] },
+    { id: 'libero', n: tt('Libero kaleci'), d: tt('Kalenden çık, oyuna katıl. Pas ve hava topu çok gelir.'), i: 'swap', m: { pas: 2.4, cikis: 1.7, kurtaris: .85 }, tac: ['top', 'pres'] },
+    { id: 'penci', n: tt('Penaltı avcısı'), d: tt('Büyük anların kalecisi. Penaltı ve frikik kurtarışı çok gelir.'), i: 'target', m: { penkurtar: 2.6, duvar: 1.6 }, tac: [] },
+  ],
+};
+
+// ---------- senaryolu başlangıçlar ----------
+export const SCENS = [
+  { id: 'kurtar', n: tt('Kurtarıcı'), d: tt('24 yaşındasın. En üst ligin en zayıf takımındasın; herkes düşmenizi bekliyor.'), g: tt('Sezonu küme düşmeden bitir'), i: 'shield' },
+  { id: 'donus', n: tt('Dönüş'), d: tt('27 yaşındasın. Ağır bir diz sakatlığından çıkıyorsun: ilk sekiz hafta yoksun, hızın eskisi gibi değil.'), g: tt('15 maça çık ve 7,0 ortalama yakala'), i: 'plus' },
+  { id: 'sondans', n: tt('Son dans'), d: tt('35 yaşındasın. Zirveye oynayan bir takımda belki de son sezonun.'), g: tt('Şampiyon ol ya da 15 maçta 7,2 ortalama yakala'), i: 'crown' },
+];
+
+// ---------- koleksiyon: mağazanın üçüncü kademesi, her sezon yeni parçalar ----------
+export const COLK = {
+  forma: { n: tt('İmzalı forma'), i: 'shirt', base: 4e6, l: [tt('1954 finalinin forması'), tt('Çamurlu derbi forması'), tt('Efsane kalecinin eldiveni'), tt('İlk milli maç forması'), tt('Kupa finali kaptan pazubendi'), tt('Yüzüncü gol topu'), tt('Eski mahalle takımı forması'), tt('Veda maçı kramponu')] },
+  saat: { n: tt('Saat'), i: 'clock', base: 15e6, l: [tt('Çelik kasa dalgıç saati'), tt('Altın kordonlu klasik'), tt('Ay takvimli el işi'), tt('Yarış kronografı'), tt('Platin ince kasa'), tt('Pilot saati'), tt('Sınırlı üretim iskelet'), tt('Cep saati, 1920')] },
+  tablo: { n: tt('Tablo'), i: 'star', base: 40e6, l: [tt('Boğaz\'da sabah'), tt('Toprak sahada çocuklar'), tt('Kırmızı tribün'), tt('Sapanca\'da sis'), tt('Maç günü kalabalığı'), tt('Limanda akşam'), tt('Soyut: doksan artı üç'), tt('Yağmurda kale direği')] },
+  araba: { n: tt('Klasik araba'), i: 'car', base: 90e6, l: [tt('1965 kırmızı coupe'), tt('1972 üstü açık roadster'), tt('1958 krem rengi sedan'), tt('1969 yeşil yarış arabası'), tt('1981 köşeli hatchback'), tt('1954 gümüş martı kanat'), tt('1977 sarı arazi aracı'), tt('1990 siyah süper spor')] },
+};
+
+// ---------- krampon sponsoru ve menajerin bulduğu markalar ----------
+export const BOOTS = ['Poyraz', 'Zirve', 'Akın', 'Kıvılcım'];
+export const SPN = [tt('Enerji içeceği markası'), tt('Banka reklamı'), tt('Otomobil bayisi'), tt('Telefon operatörü'), tt('Giyim markası'), tt('Yerel süt markası')];
+
+// ---------- soyunma odası klikleri: r takım arkadaşı sırası (kaptan, yıldız, kıdemli, genç, kaleci) ----------
+export const KLIK = { kid: { n: tt('Kıdemliler'), r: [0, 2], i: 'crown' }, yil: { n: tt('Yıldızlar'), r: [1, 4], i: 'star' }, gen: { n: tt('Gençler'), r: [3], i: 'up' } };
+
+// ---------- sezon öncesi kamp ----------
+export const CAMP = [
+  { id: 'kon', n: tt('Kondisyon'), d: tt('Sezon boyunca her hafta enerji +3'), i: 'bolt' },
+  { id: 'tak', n: tt('Taktik'), d: tt('Bu sezon hocanın sistemine uyumun +8'), i: 'whistle' },
+  { id: 'tek', n: tt('Bireysel teknik'), d: tt('Mevkinin iki ana özelliği hemen gelişir'), i: 'ball' },
+  { id: 'bag', n: tt('Takım ruhu'), d: tt('Takım arkadaşlarınla bağ +8, soyunma odası gerginliği düşer'), i: 'users' },
+];
+
+// ---------- sözleşme pazarlığı maddeleri ----------
+export const NEGO = [
+  { id: 'wage', n: tt('Ücret'), d: tt('Haftalık ücrete %12 zam'), i: 'coin' },
+  { id: 'sign', n: tt('İmza parası'), d: tt('İmza parasını %35 artır'), i: 'pen' },
+  { id: 'goalB', n: tt('Gol primi'), d: tt('Gol başına primi ikiye katla'), i: 'ball' },
+  { id: 'img', n: tt('İmaj hakkı'), d: tt('Sponsor gelirin %25 artar'), i: 'tag' },
+  { id: 'loy', n: tt('Sadakat primi'), d: tt('Kulüpte kaldığın her sezon sonunda toplu ödeme'), i: 'heart' },
+  { id: 'rel', n: tt('Serbest kalma bedeli'), d: tt('Bedeli düşük tut: ayrılmak kolaylaşır'), i: 'lock' },
+  { id: 'kisa', n: tt('Süreyi kısalt'), d: tt('Bir sezon erken serbest kalırsın'), i: 'clock' },
+];
+
+// ---------- menajerle konuşma ----------
+export const AGTOP = {
+  durum: { n: tt('Piyasam nasıl?'), d: tt('Kulüpler seni nasıl görüyor'), i: 'chart' },
+  bul: { n: tt('Bana kulüp bul'), d: tt('Ne istediğini söyle, kapıları çalsın'), i: 'eye' },
+  zam: { n: tt('Zam iste'), d: tt('Kulüple masaya otursun: sezonda bir kez'), i: 'coin' },
+  spon: { n: tt('Sponsor bul'), d: tt('Yeni bir reklam anlaşması arasın'), i: 'tag' },
+  hayal: { n: tt('Hedef takımım'), d: tt('O formaya ne kadar uzaksın'), i: 'heart' },
+  kiralik: { n: tt('Kiralık ayarla'), d: tt('Forma giyeceğin bir kulüp bulsun'), i: 'clock' },
+};
+export const AGBR = {
+  ust: { n: tt('Daha güçlü bir kulüp'), d: tt('Seviye atlamak istiyorum'), i: 'up' },
+  sure: { n: tt('Forma şansı'), d: tt('Güç fark etmez, oynayacağım bir yer olsun'), i: 'shirt' },
+  para: { n: tt('En yüksek ücret'), d: tt('Kim çok veriyorsa'), i: 'coin' },
+  yurt: { n: tt('Yurt dışı'), d: tt('Başka bir ülkede oynamak istiyorum'), i: 'globe' },
 };
