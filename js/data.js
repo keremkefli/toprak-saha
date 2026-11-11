@@ -318,7 +318,44 @@ export const XIDS = T(`
   Ludogorets|69|GW|Bulgaristan
   Legia Varşova|70|GW|Polonya
   Maccabi Tel Aviv|70|YB|İsrail
+  Hearts|68|MW|İskoçya
+  Aberdeen|67|RW|İskoçya
+  Gent|70|BW|Belçika
+  Antwerp|70|RW|Belçika
+  LASK|68|KW|Avusturya
+  Rapid Wien|69|GW|Avusturya
+  AEK Atina|71|YK|Yunanistan
+  Aris|68|YK|Yunanistan
+  Bröndby|69|YB|Danimarka
+  Lugano|68|KW|İsviçre
+  Servette|68|MW|İsviçre
+  Hajduk Split|69|WB|Hırvatistan
+  Rijeka|68|WB|Hırvatistan
+  Jagiellonia|68|YR|Polonya
+  Rakow|69|RB|Polonya
+  CFR Cluj|68|MW|Romanya
+  Rosenborg|68|WK|Norveç
+  Molde|69|BW|Norveç
+  Djurgarden|68|SB|İsveç
+  Hammarby|68|GW|İsveç
+  HJK Helsinki|66|BW|Finlandiya
+  Shamrock Rovers|65|GW|İrlanda
+  Omonia|66|GW|Kıbrıs
+  APOEL|66|YB|Kıbrıs
+  Slovan Bratislava|68|SW|Slovakya
+  Olimpija Ljubljana|66|GW|Slovenya
 `).map((t, i) => { const [n, r, c, x] = t.split('|'), id = 'x_' + i; CLUBS[id] = { n, r: +r, c1: PAL[c[0]], c2: PAL[c[1]], x }; return id; });
+
+// Kıtalararası Kupa rakipleri: Şampiyonlar Ligi'ni kazanan kulübün karşısına çıkar
+export const WIDS = T(`
+  Flamengo|80|RK|Brezilya
+  Palmeiras|79|GW|Brezilya
+  River Plate|78|WR|Arjantin
+  Boca Juniors|77|NY|Arjantin
+  Monterrey|74|NW|Meksika
+  Al Ahly|72|RW|Mısır
+  Urawa Reds|70|RK|Japonya
+`).map((t, i) => { const [n, r, c, x] = t.split('|'), id = 'w_' + i; CLUBS[id] = { n, r: +r, c1: PAL[c[0]], c2: PAL[c[1]], x }; return id; });
 
 // İl bazlı amatör ligler. l: elle yazılmış 3 kademe, d: ilçelerden üretilir.
 export const PROV = {
@@ -356,7 +393,7 @@ export const ATTR = { sut: 'Şut', pas: 'Pas', teknik: 'Teknik', hiz: 'Hız', gu
 
 // w: genel güç ağırlıkları, m: maç anı ağırlıkları, b: başlangıç bonusu
 export const POS = {
-  KL: { n: 'Kaleci', w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 85, pas: 15 }, b: { kaleci: 24, zihin: 3 } },
+  KL: { n: 'Kaleci', w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 72, pas: 15, duvar: 8, penkurtar: 5 }, b: { kaleci: 24, zihin: 3 } },
   DF: { n: 'Defans', w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 53, kafa: 12, pas: 22, orta: 13 }, b: { savunma: 9, guc: 5, kafa: 4 } },
   OS: { n: 'Orta Saha', w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 30, sut: 15, calim: 12, savunma: 15, frikik: 7, orta: 11, korner: 8, vole: 2 }, b: { pas: 8, teknik: 5, zihin: 3 } },
   KN: { n: 'Kanat', w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 28, pas: 15, sut: 21, kafa: 4, orta: 24, vole: 6, korner: 6 }, b: { hiz: 8, teknik: 6, pas: 2 } },
@@ -367,7 +404,7 @@ export const ORIGINS = {
   mahalle: { n: 'Mahalle Sahası', d: 'Toprak sahada büyüdün, kimse seni tanımıyor. En alttan, 2. Amatör Lig\'den başlarsın. Evde para dar.', tier: 8, at: { teknik: 4, zihin: 3 }, money: 500, fl: { dar: 1 }, pot: 1 },
   okul: { n: 'Okul Takımı', d: 'Beden eğitimi öğretmenin seni fark etti. 1. Amatör Lig\'de başlarsın, okul notların iyi.', tier: 7, at: { pas: 2, zihin: 2 }, money: 2500, egt: 25 },
   altyapi: { n: 'Akademi Çıkışlı', d: 'Profesyonel bir kulübün akademisinde yetiştin ama sözleşme alamadın. Süper Amatör Lig\'de başlarsın. Ailen uzakta.', tier: 6, all: 5, money: 4000, pot: 2, rel: { aile: -10 } },
-  gurbet: { n: 'Gurbetçi', d: 'Almanya\'da doğdun, ailen memlekete döndü. Almancan var. İleride milli takım tercihi önüne gelir.', tier: 7, at: { teknik: 3, guc: 3 }, money: 9000, dil: 55, fl: { gurbet: 1 } },
+  gurbet: { n: 'Gurbetçi', d: 'Avrupa\'da doğdun, ailen memlekete döndü. Doğduğun ülkenin dilini bilirsin. İleride milli takım tercihi önüne gelir.', tier: 7, at: { teknik: 3, guc: 3 }, money: 9000, dil: 55, fl: { gurbet: 1 } },
 };
 
 export const TRAITS = {
@@ -410,6 +447,8 @@ export const AGENTS = [
   { n: 'Kemal Aksoy', d: 'Mahallenin abisi. Az komisyon, az bağlantı.', cut: .05, pw: .2 },
   { n: 'Selin Karaca', d: 'Ligleri iyi tanır. Dengeli seçim.', cut: .10, pw: .55 },
   { n: 'Viktor Lang', d: 'Avrupa bağlantılı ağır top. Pahalı.', cut: .15, pw: .95 },
+  { n: 'Deniz Arman', d: 'Yıldızların menajeri. Kapıları tekmeyle açar; payı da ona göre.', cut: .2, pw: 1.25, rep: 60 },
+  { n: 'Amcan', d: 'Aileden biri. Seni kandırmaz ama kimseyi de tanımaz.', cut: .03, pw: .08 },
 ];
 
 export const NATIONS = [['İspanya', 86], ['Fransa', 87], ['Almanya', 85], ['İtalya', 83], ['Hollanda', 83], ['Portekiz', 85], ['Hırvatistan', 80], ['İsviçre', 78], ['Avusturya', 77], ['Çekya', 75], ['Macaristan', 74], ['Galler', 73], ['Gürcistan', 72], ['İzlanda', 70], ['Bulgaristan', 68], ['Karadağ', 68], ['Türkiye', 79]];
@@ -429,6 +468,8 @@ export const MOM = {
   rovesata: { n: 'Röveşata', i: 'Top arkanda kaldı. Tek yol: röveşata!' },
   orta: { n: 'Orta', i: 'Kanatta boşsun, ceza sahasına koşu var.' },
   korner: { n: 'Korner', i: 'Korner vuruşunu sen kullanıyorsun.' },
+  duvar: { n: 'Frikik savunması', i: 'Ceza yayı önünde rakip frikik. Barajı sen kuracaksın.' },
+  penkurtar: { n: 'Penaltı kurtarışı', i: 'Hakem beyaz noktayı gösterdi. Sen ve o; başka kimse yok.' },
 };
 
 export const FILL = [
@@ -526,7 +567,7 @@ export const MACT = {
 export const DERBY = [['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Trabzonspor'], ['Sakaryaspor', 'Kocaelispor'], ['Göztepe', 'Karşıyaka', 'Altay'], ['Bursaspor', 'Eskişehirspor'], ['Adana Demirspor', 'Adanaspor'], ['Gençlerbirliği', 'MKE Ankaragücü'],
   ['Real Madrid', 'Barcelona', 'Atlético Madrid'], ['Manchester United', 'Manchester City', 'Liverpool'], ['Arsenal', 'Tottenham', 'Chelsea'], ['Inter', 'Milan', 'Juventus'], ['Roma', 'Lazio'], ['Bayern München', 'Borussia Dortmund'],
   ['Paris Saint-Germain', 'Marseille'], ['Ajax', 'Feyenoord', 'PSV'], ['Benfica', 'Porto', 'Sporting CP'], ['Al-Hilal', 'Al-Nassr', 'Al-Ittihad']];
-export const DIFF = { kolay: ['Kolay', .85], normal: ['Normal', 1], zor: ['Zor', 1.15] };
+export const DIFF = { kolay: ['Kolay', .85], normal: ['Normal', 1], zor: ['Zor', 1.15], gercek: ['Gerçekçi', 1.22] };
 
 // Hoca taktikleri. m: maç anı ağırlık çarpanları, add: mevkide olmayan ana eklenen ağırlık,
 // lu/lo: takımın attığı/yediği gol çarpanı, st: enerji tüketimi, fit: yakışan mevkiler, key: aranan özellik
@@ -558,3 +599,25 @@ export const FREE = [
   { id: 'okul', n: 'Derslere ağırlık ver', s: 'Eğitim ve aile artar', i: 'book' },
   { id: 'tanidik', n: 'Bir tanıdık bul', s: 'Şehrin kıdemlisi sıradaki denemede kapı aralar', i: 'users' },
 ];
+
+// Gurbetçinin doğduğu ülke: milli takım tercihi ve dil avantajı buna bağlı
+export const NATN = { TR: 'Türkiye', DE: 'Almanya', NL: 'Hollanda', FR: 'Fransa', BE: 'Belçika' };
+export const NATC = { TR: ['#d81e2c', '#f2f2f2'], DE: ['#161616', '#ffd21a'], NL: ['#f47b20', '#12265e'], FR: ['#12265e', '#f2f2f2'], BE: ['#d81e2c', '#ffd21a'] };
+
+// Hava ve zemin. [ad, ikon, açıklama, enerji tüketimi çarpanı, zorlaşan anlar, zorluk çarpanı]
+export const WX = {
+  acik: ['Açık hava', 'sun', 'Zemin iyi, bahane yok.', 1, [], 1],
+  yagmur: ['Yağmur', 'rain', 'Top kayıyor: pas ve çalım zorlaşır, kaleciler de zorlanır.', 1.05, ['pas', 'orta', 'korner', 'calim'], 1.07],
+  camur: ['Çamur', 'rain', 'Saha bataklık: koşmak ve dönmek zor, enerji çabuk biter.', 1.18, ['calim', 'savunma', 'pas'], 1.09],
+  ruzgar: ['Rüzgâr', 'wind', 'Havadan gelen her top oyun oynar: orta, korner ve frikik zorlaşır.', 1, ['orta', 'korner', 'frikik', 'kafa'], 1.1],
+  sicak: ['Sıcak', 'sun', 'Hava bunaltıyor: enerji çok hızlı tükenir.', 1.28, [], 1],
+  kar: ['Kar', 'snow', 'Zemin beyaz, top ağır. Her şey biraz daha zor.', 1.12, ['pas', 'orta', 'calim', 'savunma', 'sut'], 1.05],
+};
+
+// Yatırımlar. [ad, açıklama, haftalık ortalama getiri, oynaklık, ikon]
+export const INV = {
+  ev: ['Gayrimenkul', 'Yavaş ama sağlam. Yılda yaklaşık %8.', .0015, .004, 'home'],
+  fon: ['Borsa fonu', 'Orta risk. İyi yılda %20, kötü yılda eksi.', .0021, .022, 'chart'],
+  isl: ['İşletme ortaklığı', 'Ortağına bağlı. İyi giderse kazandırır, batarsa gider.', .0028, .03, 'cart'],
+  kripto: ['Kripto', 'Yüksek risk. Katlanabilir de, eriyebilir de.', .0036, .085, 'bolt'],
+};

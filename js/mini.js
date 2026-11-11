@@ -18,7 +18,7 @@ const OUT = {
   kurtardi: ['KURTARDIN!', 1], yedi: ['GOL OLDU', 0],
 };
 // [başlık, ipucu 1, ipucu 2, hareket animasyonu]
-const INTRO = {
+export const INTRO = {
   sut: ['ŞUT', 'Kaleye doğru kaydır. Hızlı kaydır: sert.', 'Sol alttaki topta vuruş noktasını seç.', 'swipe'],
   kafa: ['KAFA', 'Top başına geldiği an kaydır.', 'Halka kapanınca vur.', 'swipe'],
   vole: ['VOLE', 'Top yere inmeden kaydır.', 'Halka kapanınca vur. Sert gider.', 'swipe'],
@@ -31,6 +31,8 @@ const INTRO = {
   calim: ['ÇALIM', 'Soldaki analogla koş.', 'Kırmızı hattan çık. ÇALIM: ani sıçrama.', 'drag'],
   savunma: ['SAVUNMA', 'Soldaki analogla önünü kes.', 'Halka yeşilken KAY tuşuna bas.', 'drag'],
   kurtaris: ['KURTARIŞ', 'Eldiveni topa yetiştir.', '', 'drag'],
+  duvar: ['FRİKİK', 'Top barajı aşınca eldiveni yetiştir.', 'Kurduğun baraj vuruşun yönünü belirler.', 'drag'],
+  penkurtar: ['PENALTI', 'Vuruş anını bekle, köşeyi tahmin et.', 'Erken oynarsan boş köşe kalır.', 'drag'],
 };
 
 // ---------- çizim ----------
@@ -458,8 +460,9 @@ function crossGame(m, o) {
 // ---------- kurtarış ----------
 function keepGame(m, o) {
   const { gx, gy, gw, gh } = GOAL, gb = gy + gh, glove = { x: 180, y: gy + 56 }, crowd = mkCrowd(o), trail = [];
-  const T = clamp(0.54 - o.oppQ * 0.2, .3, .56) / o.hard, R = 20 + o.skill * 14, gs = (330 + o.skill * 260) * ((o.pk || {}).refleks ? 1.2 : 1);
-  const corner = Math.random() < .6;
+  // pen: penaltı düellosu (çok hızlı, hep köşe). wall: kurduğun baraj [köşe olasılığı, hız çarpanı]
+  const W2 = o.wall || null, T = clamp(0.54 - o.oppQ * 0.2, .3, .56) / o.hard * (o.pen ? .62 : W2 ? W2[1] : 1), R = 20 + o.skill * 14 + (o.pen ? 6 : 0), gs = (330 + o.skill * 260) * ((o.pk || {}).refleks ? 1.2 : 1) * (o.pen ? 1.25 : 1);
+  const corner = o.pen ? true : Math.random() < (W2 ? W2[0] : .6);
   const tx = corner ? (Math.random() < .5 ? gx + rnd(14, 64) : gx + gw - rnd(14, 64)) : gx + rnd(40, gw - 40);
   const ty = gy + rnd(14, gh - 14);
   let wait = rnd(0.9, 2.1), phase = 'wait', fly = 0, t = 0, net = null, bp = null, bv = null;
@@ -502,7 +505,7 @@ export const GAMES = {
   frikik: (m, o) => shotGame(m, { ...o, variant: 'frikik' }), penalti: (m, o) => shotGame(m, { ...o, variant: 'penalti' }),
   vole: (m, o) => shotGame(m, { ...o, variant: 'vole' }), rovesata: (m, o) => shotGame(m, { ...o, variant: 'rovesata' }),
   orta: (m, o) => crossGame(m, { ...o, variant: 'orta' }), korner: (m, o) => crossGame(m, { ...o, variant: 'korner' }),
-  pas: passGame, calim: dribGame, savunma: defGame, kurtaris: keepGame,
+  pas: passGame, calim: dribGame, savunma: defGame, kurtaris: keepGame, duvar: keepGame, penkurtar: (m, o) => keepGame(m, { ...o, pen: 1 }),
 };
 const PADS = { calim: 'ÇALIM', savunma: 'KAY' };   // analog + eylem tuşu kullanan oyunlar
 
@@ -616,11 +619,11 @@ export class Mini {
 const FORM = [[.05, .5], [.2, .14], [.2, .38], [.2, .62], [.2, .86], [.42, .12], [.42, .38], [.42, .62], [.42, .88], [.64, .34], [.64, .66]];
 export const PSLOT = { KL: 0, DF: 2, OS: 6, KN: 8, FV: 9 };
 export class Pitch {
-  constructor(cv, { cu = '#ff6a2b', co = '#5a6470', me = -1, flip = false } = {}) {
+  constructor(cv, { cu = '#ff6a2b', co = '#5a6470', me = -1, flip = false, wx = '' } = {}) {
     this.cv = cv; this.g = cv.getContext('2d'); this.w = 360; this.h = 150;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = this.w * dpr; cv.height = this.h * dpr; this.g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.cu = cu; this.co = co; this.me = me; this.flip = flip; this.on = true; this.t = 0; this.last = performance.now();
+    this.cu = cu; this.co = co; this.me = me; this.flip = flip; this.wx = wx; this.on = true; this.t = 0; this.last = performance.now();
     this.us = FORM.map(([x, y]) => ({ x, y, hx: x, hy: y })); this.op = FORM.map(([x, y]) => ({ x: 1 - x, y, hx: 1 - x, hy: y }));
     this.b = { x: .5, y: .5, tx: .5, ty: .5, sp: 1.2 }; this.pos = true; this.next = .6; this.push = 0; this.flash = 0; this.fu = true; this.ring = 0; this.lock = 0; this.trail = [];
     const loop = () => { if (!this.on) return; const n = performance.now(), dt = Math.min(.05, (n - this.last) / 1000); if (dt > .012) { this.last = n; this.step(dt); this.draw(); } };
@@ -671,5 +674,8 @@ export class Pitch {
     if (this.ring > 0 && this.me >= 0) { const p = this.us[this.me], r = 8 + (2.2 - this.ring) % .7 * 16; g.strokeStyle = `rgba(255,210,63,${.9 - ((2.2 - this.ring) % .7) / .7 * .8})`; g.lineWidth = 2; g.beginPath(); g.arc(X(p.x), Y(p.y), r, 0, 6.3); g.stroke(); }
     this.trail.forEach(([x, y], i) => { g.fillStyle = `rgba(255,255,255,${i / 28})`; g.beginPath(); g.arc(X(x), Y(y), 2, 0, 6.3); g.fill(); });
     g.fillStyle = '#fff'; g.strokeStyle = '#111'; g.lineWidth = 1; g.beginPath(); g.arc(X(this.b.x), Y(this.b.y), 3, 0, 6.3); g.fill(); g.stroke();
+    if (this.wx === 'yagmur' || this.wx === 'camur') { g.strokeStyle = 'rgba(200,225,255,.35)'; g.lineWidth = 1; g.beginPath(); for (let i = 0; i < 46; i++) { const x = (i * 53 + this.t * 190) % (W + 20) - 10, y = (i * 37 + this.t * 420) % H; g.moveTo(x, y); g.lineTo(x - 3, y + 9); } g.stroke(); if (this.wx === 'camur') { g.fillStyle = 'rgba(90,60,30,.22)'; g.fillRect(0, 0, W, H); } }
+    else if (this.wx === 'kar') { g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 40; i++) { const x = (i * 47 + Math.sin(this.t + i) * 8 + this.t * 14) % W, y = (i * 29 + this.t * 46) % H; g.fillRect(x, y, 1.6, 1.6); } }
+    else if (this.wx === 'sicak') { g.fillStyle = 'rgba(255,170,60,.08)'; g.fillRect(0, 0, W, H); }
   }
 }

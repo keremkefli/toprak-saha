@@ -1,7 +1,7 @@
 // Toprak Saha — olay kartları. Her seçenek kısa ve uzun vadeli sonuç doğurur.
 // Alanlar: w ağırlık, cd bekleme (hafta), once tek sefer, must koşul oluşunca zorunlu, chain yalnızca kuyruktan
-import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname } from './core.js';
-import { LMAP, AGENTS, SHOP } from './data.js';
+import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname, kidAge, myNat } from './core.js';
+import { LMAP, AGENTS, SHOP, NATN } from './data.js';
 
 const inTR = () => LMAP[leagueOf(S.clubId)].c === 'TR';
 const amat = () => inTR() && tier() >= 5;
@@ -99,7 +99,42 @@ export const EVENTS = [
     ] },
   { id: 'cocuk', w: 2, once: true, if: () => S.fl.evli && S.age >= 25,
     t: 'Müjde', d: 'Bir çocuğunuz oluyor.',
-    o: [{ t: 'Hayatımın en güzel haberi', fx: { mo: 20, aile: 10, en: -10 }, run: () => { S.fl.cocuk = 1; }, r: 'Uykusuz geceler başlıyor. Emekli olduğunda soyadın sahada devam edebilir.' }] },
+    o: [{ t: 'Hayatımın en güzel haberi', fx: { mo: 20, aile: 10, en: -10 }, run: () => { S.fl.cocuk = 1; S.kid = { n: rname('TR').split(' ')[0] + ' ' + S.name.split(' ').slice(-1)[0], born: S.season, tal: 0 }; return { r: `Adını ${S.kid.n.split(' ')[0]} koydunuz. Uykusuz geceler başlıyor. Emekli olduğunda soyadın sahada devam edebilir.` }; } }] },
+  { id: 'kid_top', w: 2.5, cd: 22, if: () => !!S.kid && kidAge() >= 3, prep: () => ({ n: S.kid.n.split(' ')[0] }),
+    t: 'Bahçede bir top', d: c => `${c.n} elinde topla kapıda bekliyor: "Baba, şut çekelim mi?" İdmandan yeni döndün.`,
+    o: [
+      { t: 'Hadi çıkalım', fx: { en: -6, aile: 7, mo: 4 }, run: () => { S.kid.tal = clamp(S.kid.tal + 2, 0, 20); }, r: 'Bir saat top oynadınız. Sol ayağı fena değil.' },
+      { t: 'Yarın, söz', fx: { aile: -3 }, r: 'Topu köşeye bıraktı. Yarın yine deplasman var.' },
+    ] },
+  { id: 'kid_alt', w: 3, once: true, if: () => !!S.kid && kidAge() >= 8, prep: () => ({ n: S.kid.n.split(' ')[0] }),
+    t: 'Seçmeler', d: c => `${c.n} futbol okuluna yazılmak istiyor. Nereye gidecek?`,
+    o: [
+      { t: 'Kulübümün altyapısı', fx: { aile: 4, taraf: 3 }, run: () => { S.kid.tal = clamp(S.kid.tal + 4, 0, 20); S.kid.ak = S.clubId; return { r: `${club(S.clubId).n} altyapısına yazıldı. Formayı giyince aynada uzun uzun baktı.` }; } },
+      { t: 'Mahalle kulübü', fx: { aile: 6 }, run: () => { S.kid.tal = clamp(S.kid.tal + 2, 0, 20); }, r: 'Toprak sahada başlasın, baban gibi.' },
+      { t: 'Önce okul', fx: { aile: 3 }, run: () => { S.kid.tal = clamp(S.kid.tal - 1, 0, 20); }, r: 'Futbol bekler. Karnesi gelsin önce.' },
+    ] },
+  { id: 'kid_mac', w: 2, cd: 30, if: () => !!S.kid && kidAge() >= 10, prep: () => ({ n: S.kid.n.split(' ')[0] }),
+    t: 'Tribünde bir baba', d: c => `${c.n} hafta sonu ilk resmî maçına çıkıyor. Senin de idmanın var.`,
+    o: [
+      { t: 'İzin al, maça git', fx: { hoca: -2, aile: 9, mo: 5 }, run: () => { S.kid.tal = clamp(S.kid.tal + 2, 0, 20); }, r: 'Gol atınca tribüne, sana baktı. O bakışı unutmazsın.' },
+      { t: 'Videosunu izlerim', fx: { aile: -4, prof: 2 }, r: 'Akşam telefondan izledin. Sevinirken kamerayı aramış.' },
+    ] },
+  { id: 'menajer_savas', w: 2, cd: 40, if: () => !!S.agent && S.rep >= 30, prep: () => ({ n: pick(AGENTS.filter(a => a.n !== S.agent.n && a.n !== 'Amcan')).n, b: nice(wref() * 10) }),
+    t: 'Menajer savaşı', d: c => `${c.n} gizlice aradı: "Menajerin seni ucuza satıyor. Bana gel, imza için ${fmt(c.b)} peşin vereyim."`,
+    o: [
+      { t: 'Teklifi kabul et', run: c => { const a = AGENTS.find(x => x.n === c.n); S.agent = { ...a }; return { fx: { para: c.b - nice(wref() * 3), sad: -6 } }; }, r: 'İmzayı attın. Eski menajerin tazminat davası açtı; bir kısmını ödedin, adın "vefasız"a çıktı.' },
+      { t: 'Menajerime sadığım', fx: { sad: 6 }, run: () => { S.agent.pw = Math.min(1.4, S.agent.pw + .1); }, r: 'Durumu menajerine anlattın. Mahcup oldu; senin için daha çok kapı çalacak.' },
+      { t: 'İkisini yarıştır', run: () => (chance(.5) ? (S.agent.cut = Math.max(.02, +(S.agent.cut - .02).toFixed(2)), { r: 'Menajerin komisyonunu iki puan düşürdü. Sen kazandın.' }) : { fx: { sad: -3 }, r: 'İkisi de oyunu anladı. Menajerinle aran soğudu.' }) },
+    ] },
+  { id: 'rv_duel', w: 2.5, cd: 14, if: () => !!S.rv && S.rv.inj <= 0 && S.inj <= 0,
+    prep: () => ({ n: S.rv.n }),
+    t: 'Forma kavgası', d: c => `İdmanda çift kale maç. Karşı takımda mevki rakibin ${c.n} var; hoca ikinizi de izliyor.`,
+    o: [
+      { t: 'Her topa sert gir', run: () => (chance(clamp(.5 + (OVR() - S.rv.ovr) * .05, .15, .9)) ? { fx: { hoca: 5, takim: -1 }, r: 'Onu ezdin geçtin. Hoca defterine bir şey yazdı.' } : chance(.15) ? { fx: { hoca: -2, inj: 1 }, r: 'Fazla zorladın; arka adalen çekti.' } : { fx: { hoca: -2 }, r: 'Bugün o daha iyiydi. Kabullenmek zor.' }) },
+      { t: 'Kendi oyununu oyna', fx: { hoca: 2, prof: 2 }, r: 'Kimseyle yarışmadın, işini yaptın. Hoca başını salladı.' },
+      { t: 'Ona yardım et', fx: { takim: 5, prof: 2 }, run: () => { S.rv.ovr += .6; }, r: 'İdman sonrası birlikte çalıştınız. Rakibin gelişti; soyunma odası seni daha çok sevdi.' },
+    ] },
+
 
   // ---------- kulüp ve kariyer ----------
   { id: 'hoca', must: true, cd: 8, if: () => S.bench >= 4,
@@ -188,10 +223,11 @@ export const EVENTS = [
       { t: 'Tercümanla idare et', fx: { hoca: -10, takim: -6 }, run: () => { delete S.fl.dilBar; }, r: 'İdare ediyorsun ama takımla aranda cam var.' },
     ] },
   { id: 'milli_tercih', must: true, once: true, if: () => S.fl.gurbet && OVR() >= 58,
-    t: 'İki forma', d: 'Aynı hafta iki telefon: Almanya alt yaş milli takımı da Türkiye de seni istiyor. Seçim kalıcı.',
+    prep: () => ({ n: NATN[S.gur || 'DE'] }),
+    t: 'İki forma', d: c => `Aynı hafta iki telefon: ${c.n} alt yaş milli takımı da Türkiye de seni istiyor. Seçim kalıcı.`,
     o: [
       { t: 'Türkiye', fx: { taraf: 8, aile: 10 }, run: () => { S.nat = 'TR'; }, r: 'Ay-yıldızlı formayı seçtin. Baban telefonda ağladı.' },
-      { t: 'Almanya', fx: { rep: 3, aile: -10 }, run: () => { S.nat = 'DE'; }, r: 'Almanya\'yı seçtin. Memlekette karışık tepkiler var.' },
+      { t: 'Doğduğum ülke', fx: { rep: 3, aile: -10 }, run: () => { S.nat = S.gur || 'DE'; return { r: `${myNat()} formasını seçtin. Memlekette karışık tepkiler var.` }; } },
     ] },
 
   // ---------- şöhret ve para ----------

@@ -45,6 +45,10 @@ const P = {
   down: 'M12 5v14M19 12l-7 7-7-7',
   right: 'M5 12h14M13 5l7 7-7 7',
   cal: 'M3 5h18v16H3zM16 3v4M8 3v4M3 10h18',
+  sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  rain: 'M7 15a5 5 0 1 1 1.5-9.8A6 6 0 0 1 20 8a4 4 0 0 1-1 7.9zM8 19l-1 2M12 19l-1 2M16 19l-1 2',
+  wind: 'M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h7a2.5 2.5 0 1 1-2.5 2.5',
+  snow: 'M12 2v20M4.2 6.5l15.6 11M19.8 6.5l-15.6 11M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5',
 };
 
 export function ic(n, s = 20, cls = '') {
@@ -167,6 +171,10 @@ export function euLogo(k, s = 40) {
     return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gcl" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#3f74ff"/><stop offset="1" stop-color="#061045"/></radialGradient></defs>
       <circle cx="50" cy="50" r="48" fill="url(#gcl)" stroke="#a9c1ff" stroke-width="2"/><circle cx="50" cy="50" r="21.5" fill="none" stroke="#a9c1ff" stroke-width="1.2" opacity=".65"/>${ring}<path d="${starP(50, 51, 16)}" fill="#fff"/></svg>`;
   }
+  if (k === 'ko') return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gko" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#34d07f"/><stop offset="1" stop-color="#06402a"/></radialGradient></defs>
+    <circle cx="50" cy="50" r="48" fill="url(#gko)" stroke="#b6f2d2" stroke-width="2"/>
+    <path d="M50 20 74 30v20c0 15-10 25-24 31-14-6-24-16-24-31V30z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M38 50 47 59 63 41" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gel" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#ff9a3d"/><stop offset="1" stop-color="#8f2c00"/></radialGradient></defs>
     <circle cx="50" cy="50" r="48" fill="url(#gel)" stroke="#ffd2a6" stroke-width="2"/>
     <path d="M16 60a36 36 0 0 0 68 0M22 70a32 32 0 0 0 56 0" fill="none" stroke="#ffd2a6" stroke-width="2.2" stroke-linecap="round" opacity=".75"/>
