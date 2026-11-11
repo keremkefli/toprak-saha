@@ -17,6 +17,7 @@ const OUT = {
   gecti: [tt('GEÇTİN!'), 1], kaptirdi: [tt('TOPU KAPTIRDIN'), 0],
   kapildi: [tt('TOPU KAPTIN'), 1], gecildi: [tt('RAKİP GEÇTİ'), 0], faul: [tt('FAUL'), 0],
   kurtardi: [tt('KURTARDIN!'), 1], yedi: [tt('GOL OLDU'), 0],
+  kacti: [tt('ARKAYA SARKTIN!'), 1], ofsayt: [tt('OFSAYT'), 0],
 };
 // [başlık, ipucu 1, ipucu 2, hareket animasyonu]
 export const INTRO = {
@@ -34,6 +35,10 @@ export const INTRO = {
   kurtaris: [tt('KURTARIŞ'), tt('Eldiveni topa yetiştir.'), '', 'drag'],
   duvar: [tt('FRİKİK'), tt('Top barajı aşınca eldiveni yetiştir.'), tt('Kurduğun baraj vuruşun yönünü belirler.'), 'drag'],
   penkurtar: [tt('PENALTI'), tt('Vuruş anını bekle, köşeyi tahmin et.'), tt('Erken oynarsan boş köşe kalır.'), 'drag'],
+  kosu: [tt('KOŞU'), tt('Pas çıktıktan sonra, imleç yeşile girince dokun.'), tt('Erken koşarsan ofsayt, geç kalırsan top kaçar.'), 'tap'],
+  cikis: [tt('YAN TOP'), tt('Top geldiğinde, imleç yeşile girince dokun.'), tt('Erken çıkarsan kale boş kalır.'), 'tap'],
+  ribaund: [tt('DÖNEN TOP'), tt('Savunmadan önce topa dokun.'), tt('Ne kadar çabuk, o kadar net.'), 'tap'],
+  markaj: [tt('MARKAJ'), tt('Soldaki analogla adamının dibinde kal.'), tt('Halka yeşilken süre sayılır. PRES: kısa hamle.'), 'drag'],
 };
 
 // ---------- çizim ----------
@@ -114,21 +119,22 @@ function figure(g, x, y, col, s = 1) {
 // Yön = kaydırma yönü. Sertlik = kaydırma hızı. Yükseklik ve falso = topa vurduğun nokta (sol alttaki top).
 // Uçuş sırasında parmağı sağa sola kaydırmak topa ek falso verir. 'sut' anında top koşu hâlindedir.
 function shotGame(m, o) {
-  const { gx, gy, gw, gh } = GOAL, gb = gy + gh, v = o.variant, pk = o.pk || {}, crowd = mkCrowd(o), trail = [];
+  const { gx, gy, gw, gh } = GOAL, gb = gy + gh, v = o.variant, pk = o.pk || {}, crowd = mkCrowd(o), trail = [], V = o.vr || {};   // V: maça özel çeşitleme (t süre, sp rakip hızı, acc isabet, n fazladan savunmacı, side dar açı)
   const run = v === 'sut';
   // havadan gelen toplar: win zamanlama payı, hy vuruş yüksekliği, sg isabet çarpanı, hN topun gideceği yükseklik
   const AIR = { kafa: { win: pk.hava ? .34 : .24, hy: 318, sg: 1.5, hN: .1, rd: 0 }, vole: { win: .2, hy: 352, sg: 1.55, hN: .02, rd: .02 }, rovesata: { win: .13, hy: 330, sg: 2.1, hN: .4, rd: .08 } }[v];
-  const ball = { x: 180 + (run ? rnd(-46, 46) : 0), y: run ? 428 : 392 };
+  const ball = { x: 180 + (run ? (V.side ? (Math.random() < .5 ? -1 : 1) * rnd(96, 122) : rnd(-46, 46)) : 0), y: run ? 428 : 392 };
   const hit = { x: 0, y: .25 };                 // vuruş noktası: y -1 topun üstü (yerden) … +1 topun altı (havadan), x yan (falso)
   const HW = { x: 46, y: 412, r: 30 };          // vuruş noktası göstergesi
-  let phase = AIR ? 'cross' : 'aim', t = 0, tl = run ? 4.6 : 7, kx = 180, sw = null, sh = null, net = null, bp = null, bv = null, hold = false, lastX = null;
-  const tl0 = tl, ks = (1.1 + o.oppQ * 1.1) * o.hard, kAmp = v === 'penalti' ? 8 : 56;
+  let phase = AIR ? 'cross' : 'aim', t = 0, tl = (run ? 4.6 : 7) * (V.t || 1), kx = 180, sw = null, sh = null, net = null, bp = null, bv = null, hold = false, lastX = null;
+  const tl0 = tl, ks = (1.1 + o.oppQ * 1.1) * o.hard * (V.sp || 1), kAmp = v === 'penalti' ? 8 : 56;
   const defs = [];
-  if (run && !o.bonus && o.oppQ > .4) defs.push({ x: rnd(100, 260), y: 258, vx: (Math.random() < .5 ? -1 : 1) * (44 + o.oppQ * 46) * o.hard });
+  if (run && !o.bonus && !(V.n < 0) && (o.oppQ > .4 || V.n > 0)) defs.push({ x: rnd(100, 260), y: 258, vx: (Math.random() < .5 ? -1 : 1) * (44 + o.oppQ * 46) * o.hard });
+  if (run && !o.bonus && V.n > 0) defs.push({ x: rnd(90, 270), y: 300, vx: (Math.random() < .5 ? -1 : 1) * (38 + o.oppQ * 40) * o.hard });
   const wall = v === 'frikik' ? { x: 180 + rnd(-38, 38) - (pk.frikik ? 32 : 40), w: pk.frikik ? 64 : 80, y: 270 } : null;
   const cr = AIR ? { x0: Math.random() < .5 ? -10 : 370, T: rnd(1.2, 1.6) / o.hard, hx: 180, hy: AIR.hy, win: AIR.win } : null;
   if (cr) { ball.x = cr.x0; ball.y = 250; }
-  const sigma0 = (20 - o.skill * 14) * o.hard * (v === 'frikik' ? (pk.frikik ? 1.05 : 1.45) : v === 'penalti' ? .6 : 1) * (pk.plase ? .8 : 1);
+  const sigma0 = (20 - o.skill * 14) * o.hard * (v === 'frikik' ? (pk.frikik ? 1.05 : 1.45) : v === 'penalti' ? .6 : 1) * (pk.plase ? .8 : 1) * (V.acc || 1);
   const org = () => (cr ? { x: cr.hx, y: cr.hy } : ball);
   const far = () => clamp((org().y - gb) / 208, .5, 1.2);            // kaleye uzaklık (1 = başlangıç mesafesi)
   const rush = () => (run ? clamp((428 - ball.y) / 110, 0, 1) : 0);   // kalecinin açı kapatması
@@ -272,10 +278,11 @@ function shotGame(m, o) {
 function passGame(m, o) {
   const me = { x: 180, y: 410 }, trail = [];
   const mates = [{ x: 70, y: 95, vx: 55 }, { x: 280, y: 200, vx: -45 }, { x: 120, y: 285, vx: 38 }];
-  const sp = (0.75 + o.oppQ * 0.55) * o.hard;
+  const V = o.vr || {}, sp = (0.75 + o.oppQ * 0.55) * o.hard * (V.sp || 1);
   const defs = [{ x: 200, y: 150, vx: 80 * sp }, { x: 100, y: 245, vx: -95 * sp }, { x: 250, y: 340, vx: 70 * sp }];
+  if (V.n > 0) defs.push({ x: 150, y: 195, vx: -86 * sp }); else if (V.n < 0) defs.pop();
   const ri = 13 + o.oppQ * 5 - o.skill * 3, rcv = 17 + o.skill * 5 + ((o.pk || {}).gorus ? 5 : 0), vb = 300 + o.skill * 150;
-  let ball = null, tl = 7, hold = null;
+  let ball = null, tl = 7 * (V.t || 1), hold = null;
   const fire = (x, y) => { if (ball) return; const dx = x - me.x, dy = y - me.y, L = Math.hypot(dx, dy); if (L < 25) return; ball = { x: me.x, y: me.y, dx: dx / L, dy: dy / L, d: 0, len: L + 18 }; sfx.kick(); };
   const done = (out, x) => {
     if (out === 'ok') { m.burst(ball.x, ball.y, 12, ['#fff', '#5dff9e'], 120); sfx.up(); }
@@ -318,9 +325,10 @@ function passGame(m, o) {
 // ---------- çalım: analogla koş; savunmacılar işaret verip kayar; ÇALIM tuşu ani sıçrama ----------
 function dribGame(m, o) {
   const me = { x: 180, y: 425, vx: 0, vy: 0, fx: 0, fy: -1 }, sp = 128 + o.speed * 52, tr = 14 - o.skill * 3, trail = [];
-  const defs = [330, 235, 140].map(y => { const x = rnd(70, 290); return { x, y, hx: x, hy: y, st: 'jog', tm: 0, cd: rnd(.8, 1.3), dx: 0, dy: 0 }; });
-  const wind = .48 - o.oppQ * .16 + o.skill * .08 + ((o.pk || {}).bilek ? .09 : 0), dashV = (290 + o.oppQ * 90) * o.hard, lr = 70 + o.oppQ * 18, jog = sp * (.42 + o.oppQ * .2) * o.hard, lead = .08 + o.oppQ * .1;
-  let tl = 9, t = 0, dash = 0, dcd = 0;
+  const V = o.vr || {};
+  const defs = (V.n > 0 ? [345, 270, 195, 120] : V.n < 0 ? [300, 170] : [330, 235, 140]).map(y => { const x = rnd(70, 290); return { x, y, hx: x, hy: y, st: 'jog', tm: 0, cd: rnd(.8, 1.3), dx: 0, dy: 0 }; });
+  const wind = .48 - o.oppQ * .16 + o.skill * .08 + ((o.pk || {}).bilek ? .09 : 0), dashV = (290 + o.oppQ * 90) * o.hard * (V.sp || 1), lr = 70 + o.oppQ * 18, jog = sp * (.42 + o.oppQ * .2) * o.hard * (V.sp || 1), lead = .08 + o.oppQ * .1;
+  let tl = 9 * (V.t || 1), t = 0, dash = 0, dcd = 0;
   const lose = () => { m.burst(me.x, me.y, 10, ['#fff', o.co], 120); m.shake(7); sfx.save(); sfx.ooh(); m.finish({ out: 'kaptirdi' }); };
   return {
     _s: { me, defs },
@@ -369,7 +377,7 @@ function dribGame(m, o) {
 // ---------- savunma: analogla önünü kes, KAY tuşuyla kayarak gir ----------
 function defGame(m, o) {
   const pk = o.pk || {}, at = { x: rnd(90, 270), y: 45, vx: 0 }, me = { x: 180, y: 318, vx: 0, vy: 0, st: 'run', tm: 0, dx: 0, dy: -1 }, trail = [];
-  const sa = (92 + o.oppQ * 42) * o.hard, sp = 118 + o.speed * 48, rc = 11 + o.skill * 6, turn = 3.5 + o.oppQ * 3;
+  const sa = (92 + o.oppQ * 42) * o.hard * ((o.vr || {}).sp || 1), sp = 118 + o.speed * 48, rc = 11 + o.skill * 6, turn = 3.5 + o.oppQ * 3;
   const slideV = 330, slideT = pk.makas ? .36 : .3, react = .215 - o.oppQ * .13;
   let zt = rnd(0, 6), seen = 0;
   const ballP = () => ({ x: at.x + at.vx * .04, y: at.y + 13 });
@@ -421,8 +429,8 @@ function crossGame(m, o) {
   const keeper = { x: 180, y: 56 };
   const mates = [0, 1, 2].map(i => { const x = 105 + i * 75 + rnd(-14, 14), y = rnd(225, 290); return { x, y, tx: clamp(x + rnd(-70, 70), 80, 280), ty: rnd(84, 160), sp: rnd(72, 104), d: rnd(0, .7) }; });
   const defs = mates.map(a => ({ x: a.x + rnd(-22, 22), y: a.y - rnd(16, 30), a, sp: a.sp * (.86 + o.oppQ * .28) }));   // adam adama markaj
-  const flyT = .9 - o.skill * .15, rr = 21 + o.skill * 8 + (pk.gorus ? 5 : 0), sg = (15 - o.skill * 9) * o.hard;
-  let ball = null, tl = 6, t = 0, hold = null;
+  const V = o.vr || {}, flyT = .9 - o.skill * .15, rr = 21 + o.skill * 8 + (pk.gorus ? 5 : 0), sg = (15 - o.skill * 9) * o.hard * (V.acc || 1);
+  let ball = null, tl = 6 * (V.t || 1), t = 0, hold = null;
   const end = (out, x) => { if (out === 'ok') { m.burst(ball.to.x, ball.to.y, 14, ['#fff', '#5dff9e'], 130); sfx.up(); } else { m.shake(4); sfx.ooh(); } m.finish({ out, ...x }); };
   return {
     _s: { me, mates, defs, keeper, flyT },
@@ -462,7 +470,7 @@ function crossGame(m, o) {
 function keepGame(m, o) {
   const { gx, gy, gw, gh } = GOAL, gb = gy + gh, glove = { x: 180, y: gy + 56 }, crowd = mkCrowd(o), trail = [];
   // pen: penaltı düellosu (çok hızlı, hep köşe). wall: kurduğun baraj [köşe olasılığı, hız çarpanı]
-  const W2 = o.wall || null, T = clamp(0.54 - o.oppQ * 0.2, .3, .56) / o.hard * (o.pen ? .62 : W2 ? W2[1] : 1), R = 20 + o.skill * 14 + (o.pen ? 6 : 0), gs = (330 + o.skill * 260) * ((o.pk || {}).refleks ? 1.2 : 1) * (o.pen ? 1.25 : 1);
+  const W2 = o.wall || null, T = clamp(0.54 - o.oppQ * 0.2, .3, .56) / o.hard * (o.pen ? .62 : W2 ? W2[1] : 1) / ((o.vr || {}).sp || 1), R = 20 + o.skill * 14 + (o.pen ? 6 : 0), gs = (330 + o.skill * 260) * ((o.pk || {}).refleks ? 1.2 : 1) * (o.pen ? 1.25 : 1);
   const corner = o.pen ? true : Math.random() < (W2 ? W2[0] : .6);
   const tx = corner ? (Math.random() < .5 ? gx + rnd(14, 64) : gx + gw - rnd(14, 64)) : gx + rnd(40, gw - 40);
   const ty = gy + rnd(14, gh - 14);
@@ -501,14 +509,140 @@ function keepGame(m, o) {
   };
 }
 
+// Zamanlama oyunu. kosu: savunma arkasına koşu (pas çıkınca, imleç yeşildeyken dokun). cikis: kalecinin yan topa çıkışı.
+function timeGame(m, o) {
+  const V = o.vr || {}, gk = o.variant === 'cikis';
+  const zw = clamp((.17 + o.skill * .1 - o.oppQ * .05) / o.hard, .08, .3), z0 = rnd(.48, .76), spd = (.6 + o.oppQ * .4) * o.hard * (V.sp || 1);
+  const side = Math.random() < .5 ? -1 : 1, line = [62, 132, 228, 298];
+  let wait = rnd(.7, 1.7), p = 0, phase = 'wait', t = 0, okEnd = false;
+  const end = (out, ok) => { phase = 'end'; okEnd = ok; if (ok) { m.burst(180, gk ? 96 : 150, 16, ['#fff', '#5dff9e'], 140); sfx.up(); if (gk) sfx.save(); } else { m.shake(6); if (gk) { m.flash(.2); sfx.conceded(); } else sfx.whistle(1); } m.finish({ out }); };
+  const press = () => {
+    if (phase === 'wait' || (phase === 'go' && p < z0)) return end(gk ? 'yedi' : 'ofsayt', false);   // erken: ofsayt ya da boşa çıkış
+    if (phase !== 'go') return;
+    if (p <= z0 + zw) end(gk ? 'kurtardi' : 'kacti', true); else end(gk ? 'yedi' : 'gec', false);
+  };
+  return {
+    _s: { zone: () => [z0, z0 + zw], p: () => (phase === 'go' ? p : -1) },
+    down() { press(); }, act() { press(); },
+    update(dt) {
+      t += dt;
+      if (phase === 'wait') { wait -= dt; if (wait <= 0) { phase = 'go'; sfx.kick(); } }
+      else if (phase === 'go') { p += spd * dt; if (p >= 1) end(gk ? 'yedi' : 'gec', false); }
+    },
+    after(dt) { t += dt; },
+    draw(g) {
+      pitch(g);
+      g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 2; g.strokeRect(80, 8, 200, 96); g.strokeRect(134, 8, 92, 34);
+      g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(140, 2, 80, 6);
+      const q = phase === 'wait' ? 0 : Math.min(1, p);
+      if (gk) {   // yan top: kale ağzına süzülüyor
+        const bx = lerp(side < 0 ? 20 : 340, 180, q), by = lerp(150, 62, q) - Math.sin(q * Math.PI) * 40;
+        for (const x of [120, 160, 205, 245]) { man(g, x + Math.sin(t * 2 + x) * 4, 78, o.co, false); man(g, x + 14 + Math.cos(t * 2 + x) * 4, 96, o.cu, false); }
+        man(g, 180, okEnd ? 60 : 30, '#ffd23f', true);
+        man(g, side < 0 ? 22 : 338, 154, o.co, false);
+        ballD(g, bx, by, 6 + Math.sin(q * Math.PI) * 4);
+      } else {    // savunma hattı, pasör ve koşu
+        const ly = 176 + Math.sin(t * 1.4) * 5;
+        g.setLineDash([6, 6]); g.strokeStyle = 'rgba(255,210,63,.55)'; g.beginPath(); g.moveTo(10, ly); g.lineTo(350, ly); g.stroke(); g.setLineDash([]);
+        for (const x of line) man(g, x, ly, o.co, false);
+        man(g, 180, 60, '#ffd23f', false);
+        man(g, 150, 372, o.cu, false);
+        const my = phase === 'end' ? (okEnd ? ly - 60 : ly - 18) : ly + 12 - q * 4;
+        man(g, 214, my, o.cu, true);
+        ballD(g, lerp(160, 226, q), lerp(362, ly - 70, q) - Math.sin(q * Math.PI) * 18, 6);
+      }
+      // zamanlama çubuğu
+      const bx0 = 40, bw = 280, by0 = 418;
+      g.fillStyle = 'rgba(0,0,0,.55)'; rr(g, bx0 - 4, by0 - 4, bw + 8, 26, 6); g.fill();
+      g.fillStyle = '#7a1f1f'; g.fillRect(bx0, by0, bw, 18);
+      g.fillStyle = '#2fbf71'; g.fillRect(bx0 + z0 * bw, by0, zw * bw, 18);
+      if (phase !== 'wait') { g.fillStyle = '#fff'; g.fillRect(bx0 + Math.min(1, p) * bw - 2, by0 - 5, 4, 28); }
+      head(g, phase === 'wait' ? tt('BEKLE') : phase === 'go' ? tt('ŞİMDİ!') : '', 180, 396, 20, phase === 'go' ? '#ffd23f' : 'rgba(255,255,255,.8)');
+    },
+  };
+}
+
+// Dönen top: kaleciden seken topa savunmacıdan önce dokun. Çabuk dokunursan kaleci toparlanamaz.
+function tapGame(m, o) {
+  const V = o.vr || {}, T = clamp((1.85 - o.oppQ * .6) / o.hard * (V.t ? .5 + V.t * .5 : 1), .8, 2.2), R = 25 + o.skill * 11;
+  const b = { x: 180, y: 62, vx: rnd(-150, 150), vy: rnd(150, 230) }, d = { x: rnd(60, 300), y: rnd(250, 320) }, me = { x: 180, y: 392 };
+  let t = 0, miss = 0, done = false, shot = null;
+  const end = (out, ok) => { done = true; if (ok) { m.burst(180, 20, 26, ['#fff', o.cu, '#ffd23f'], 190); m.shake(9); m.flash(.5); sfx.net(); sfx.goal(); } else { m.shake(5); sfx.ooh(); if (out === 'kurtaris') sfx.save(); } m.finish({ out }); };
+  return {
+    _s: { b, R, T },
+    down(x, y) {
+      if (done) return;
+      if (Math.hypot(x - b.x, y - b.y) <= R + 6) { sfx.kick(); shot = { x: b.x, y: b.y, t: 0, ok: t / T < .55 }; end(shot.ok ? 'gol' : 'kurtaris', shot.ok); }
+      else if (++miss >= 2) end('iska', false);
+    },
+    update(dt) {
+      t += dt;
+      b.x += b.vx * dt; b.y += b.vy * dt; b.vx *= Math.exp(-1.6 * dt); b.vy *= Math.exp(-1.9 * dt);
+      if (b.x < 30 || b.x > 330) { b.vx *= -1; b.x = clamp(b.x, 30, 330); }
+      const dx = b.x - d.x, dy = b.y - d.y, L = Math.hypot(dx, dy) || 1, s = L / Math.max(.05, T - t) * 1.02;
+      d.x += dx / L * Math.min(s * dt, L); d.y += dy / L * Math.min(s * dt, L);
+      if (t >= T || L < 12) end('blok', false);
+    },
+    after(dt) { if (shot) shot.t += dt; },
+    draw(g) {
+      pitch(g);
+      g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 2; g.strokeRect(70, 8, 220, 130); g.strokeRect(130, 8, 100, 44);
+      g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(132, 2, 96, 6);
+      man(g, 180 + Math.sin(t * 3) * 3, 34, '#ffd23f', false, 1.2, .7);   // yerdeki kaleci
+      man(g, d.x, d.y, o.co, false); man(g, me.x, me.y, o.cu, true);
+      if (shot) { const q = Math.min(1, shot.t / .25); ballD(g, lerp(shot.x, shot.ok ? 180 + (shot.x < 180 ? 30 : -30) : 180, q), lerp(shot.y, shot.ok ? 10 : 34, q), 6); }
+      else {
+        const f = 1 - t / T; g.beginPath(); g.arc(b.x, b.y, R * (.55 + f * .9), 0, 7); g.lineWidth = 3; g.strokeStyle = f > .38 ? '#2fbf71' : '#ffd23f'; g.stroke();
+        ballD(g, b.x, b.y, 7);
+      }
+      timer(g, 1 - t / T);
+    },
+  };
+}
+
+// Markaj: analogla adamının dibinde kal. Yakın geçen süre barı doldurur.
+function trackGame(m, o) {
+  const V = o.vr || {}, at = { x: rnd(110, 250), y: 130, vx: 0, vy: 0 }, me = { x: 180, y: 260, vx: 0, vy: 0 };
+  const sp = 124 + o.speed * 46, sa = (72 + o.oppQ * 40) * o.hard * (V.sp || 1), R = 42 + o.skill * 14, T = 5.2, need = clamp(.4 + o.oppQ * .16, .4, .62);
+  let t = 0, near = 0, turn = 0, boost = 0, cd = 0, inR = false;
+  return {
+    _s: { me, at, R },
+    act() { if (cd > 0) return; boost = .24; cd = 1.3; sfx.swoosh(); },
+    update(dt) {
+      t += dt; cd -= dt; turn -= dt;
+      if (turn <= 0) {   // adam yön değiştirir: kenara yakınsa içeri döner
+        let a = rnd(0, Math.PI * 2); if (at.x < 70) a = rnd(-1, 1); else if (at.x > 290) a = Math.PI + rnd(-1, 1); if (at.y < 80) a = Math.PI / 2 + rnd(-1, 1); else if (at.y > 330) a = -Math.PI / 2 + rnd(-1, 1);
+        at.vx = Math.cos(a) * sa; at.vy = Math.sin(a) * sa; turn = rnd(.45, .95) - o.oppQ * .18;
+      }
+      at.x = clamp(at.x + at.vx * dt, 30, 330); at.y = clamp(at.y + at.vy * dt, 50, 360);
+      const v = sp * (boost > 0 ? 2 : 1), k = Math.min(1, 12 * dt); if (boost > 0) boost -= dt;
+      me.vx += (m.sx * v - me.vx) * k; me.vy += (m.sy * v - me.vy) * k;
+      me.x = clamp(me.x + me.vx * dt, 14, 346); me.y = clamp(me.y + me.vy * dt, 40, 446);
+      inR = Math.hypot(me.x - at.x, me.y - at.y) <= R; if (inR) near += dt;
+      if (near >= T * need) { m.burst(at.x, at.y, 14, ['#fff', '#5dff9e'], 130); m.shake(5); sfx.save(); sfx.up(); return m.finish({ out: 'kapildi' }); }
+      if (t >= T) { m.shake(7); sfx.ooh(); m.finish({ out: 'gecildi' }); }
+    },
+    draw(g) {
+      pitch(g);
+      g.beginPath(); g.arc(at.x, at.y, R, 0, 7); g.fillStyle = inR ? 'rgba(47,191,113,.22)' : 'rgba(255,77,77,.12)'; g.fill(); g.lineWidth = 2.5; g.strokeStyle = inR ? '#2fbf71' : '#ff4d4d'; g.stroke();
+      man(g, at.x, at.y, o.co, false); ballD(g, at.x + at.vx * .05, at.y + 13, 5);
+      man(g, me.x, me.y, o.cu, true);
+      g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, 60, 16, 240, 14, 5); g.fill();
+      g.fillStyle = '#2fbf71'; g.fillRect(62, 18, 236 * clamp(near / (T * need), 0, 1), 10);
+      timer(g, 1 - t / T);
+    },
+  };
+}
+
 export const GAMES = {
   sut: (m, o) => shotGame(m, { ...o, variant: 'sut' }), kafa: (m, o) => shotGame(m, { ...o, variant: 'kafa' }),
   frikik: (m, o) => shotGame(m, { ...o, variant: 'frikik' }), penalti: (m, o) => shotGame(m, { ...o, variant: 'penalti' }),
   vole: (m, o) => shotGame(m, { ...o, variant: 'vole' }), rovesata: (m, o) => shotGame(m, { ...o, variant: 'rovesata' }),
   orta: (m, o) => crossGame(m, { ...o, variant: 'orta' }), korner: (m, o) => crossGame(m, { ...o, variant: 'korner' }),
   pas: passGame, calim: dribGame, savunma: defGame, kurtaris: keepGame, duvar: keepGame, penkurtar: (m, o) => keepGame(m, { ...o, pen: 1 }),
+  kosu: (m, o) => timeGame(m, { ...o, variant: 'kosu' }), cikis: (m, o) => timeGame(m, { ...o, variant: 'cikis' }), ribaund: tapGame, markaj: trackGame,
 };
-const PADS = { calim: tt('ÇALIM'), savunma: tt('KAY') };   // analog + eylem tuşu kullanan oyunlar
+const PADS = { calim: tt('ÇALIM'), savunma: tt('KAY'), markaj: tt('PRES') };   // analog + eylem tuşu kullanan oyunlar
 
 export class Mini {
   constructor(cv) {

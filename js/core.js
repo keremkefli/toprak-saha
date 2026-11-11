@@ -1,6 +1,6 @@
 // Toprak Saha — oyun çekirdeği: durum, lig simülasyonu, sezon, transfer, ekonomi
 import { tt, LC, NLOC, DSEP } from './i18n.js';
-import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData } from './data.js';
+import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR } from './data.js';
 
 export let S = null;
 export const WEEKS = 38;
@@ -847,9 +847,9 @@ export const tourTable = () => { const T = S.nt.tour; return T ? tbSort(T.tb, [m
 
 
 // ---------- maç ----------
-const MATTR = { sut: ['sut'], kafa: ['kafa'], frikik: ['sut', 'teknik'], penalti: ['sut', 'zihin'], pas: ['pas'], calim: ['teknik'], savunma: ['savunma'], kurtaris: ['kaleci'], vole: ['sut', 'teknik'], rovesata: ['teknik', 'kafa'], orta: ['pas', 'teknik'], korner: ['pas', 'teknik'], duvar: ['kaleci', 'zihin'], penkurtar: ['kaleci', 'zihin'] };
-const XP = { sut: ['sut', 'zihin'], kafa: ['kafa', 'guc'], frikik: ['sut', 'teknik'], penalti: ['zihin', 'sut'], pas: ['pas', 'zihin'], calim: ['teknik', 'hiz'], savunma: ['savunma', 'guc'], kurtaris: ['kaleci', 'zihin'], vole: ['sut', 'teknik'], rovesata: ['teknik', 'kafa'], orta: ['pas', 'teknik'], korner: ['pas', 'teknik'], duvar: ['kaleci', 'zihin'], penkurtar: ['kaleci', 'zihin'] };
-export const GOOD = ['gol', 'ok', 'gecti', 'kapildi', 'kurtardi'];
+const MATTR = { sut: ['sut'], kafa: ['kafa'], frikik: ['sut', 'teknik'], penalti: ['sut', 'zihin'], pas: ['pas'], calim: ['teknik'], savunma: ['savunma'], kurtaris: ['kaleci'], vole: ['sut', 'teknik'], rovesata: ['teknik', 'kafa'], orta: ['pas', 'teknik'], korner: ['pas', 'teknik'], duvar: ['kaleci', 'zihin'], penkurtar: ['kaleci', 'zihin'], kosu: ['hiz', 'zihin'], ribaund: ['sut', 'zihin'], markaj: ['savunma', 'zihin'], cikis: ['kaleci', 'zihin'] };
+const XP = { sut: ['sut', 'zihin'], kafa: ['kafa', 'guc'], frikik: ['sut', 'teknik'], penalti: ['zihin', 'sut'], pas: ['pas', 'zihin'], calim: ['teknik', 'hiz'], savunma: ['savunma', 'guc'], kurtaris: ['kaleci', 'zihin'], vole: ['sut', 'teknik'], rovesata: ['teknik', 'kafa'], orta: ['pas', 'teknik'], korner: ['pas', 'teknik'], duvar: ['kaleci', 'zihin'], penkurtar: ['kaleci', 'zihin'], kosu: ['hiz', 'zihin'], ribaund: ['sut', 'zihin'], markaj: ['savunma', 'zihin'], cikis: ['kaleci', 'zihin'] };
+export const GOOD = ['gol', 'ok', 'gecti', 'kapildi', 'kurtardi', 'kacti'];
 export function skillFor(k) { const a = MATTR[k]; return a.reduce((s, x) => s + S.at[x], 0) / a.length + (has('krampon') ? 2 : 0); }
 
 export function buildMatch(fxt, rl) {
@@ -859,41 +859,45 @@ export function buildMatch(fxt, rl) {
   const hb = fxt.final || fxt.tour || (nat && !fxt.q) ? 0 : fxt.home ? 2 : fxt.eu ? -3.5 : -2, def = S.pos === 'DF' || S.pos === 'KL';
   const tac = nat ? null : coach().st, T = tac ? TACT[tac] : { lu: 1, lo: 1, st: 1 }, fit = nat ? 50 : tacFit(), wx = wxFor(nat);
   const mk = nat ? null : sqName(fxt.opp, { FV: 'DF', KN: 'DF', OS: 'OS', DF: 'FV', KL: 'FV' }[S.pos]), gk = nat ? null : squad(fxt.opp)[0];
-  const lu = 1.3 * Math.exp((usR + hb - oppR) * 0.05) * (def ? 0.95 : 0.6) * T.lu;
-  const lo = 1.2 * Math.exp((oppR - hb - usR) * 0.05) * (S.pos === 'KL' ? 0.25 : def ? 0.55 : 0.95) * T.lo;
+  const derby = !nat && isDerby(S.clubId, fxt.opp), scn = pickScn(usR + hb, oppR, derby, wx, fxt), Z = SCN[scn], lh = leagueHard(fxt);
+  const lu = 1.3 * Math.exp((usR + hb - oppR) * 0.05) * (def ? 0.95 : 0.6) * T.lu * (Z.lu || 1);
+  const lo = 1.2 * Math.exp((oppR - hb - usR) * 0.05) * (S.pos === 'KL' ? 0.25 : def ? 0.55 : 0.95) * T.lo * (Z.lo || 1);
   const tl = [];
   for (let i = poisson(clamp(lu, .1, 4)); i > 0; i--) tl.push({ min: ri(2, 90), t: 'bg', us: true });
   for (let i = poisson(clamp(lo, .1, 4)); i > 0; i--) tl.push({ min: ri(2, 90), t: 'bg', us: false });
-  const derby = !nat && isDerby(S.clubId, fxt.opp);
-  const from = rl === 'yedek' ? ri(58, 70) : 1, n = (rl === 'yedek' ? ri(1, 2) : ri(3, 5)) + (derby ? 1 : 0);
+  const from = rl === 'yedek' ? ri(58, 70) : 1, n = Math.max(rl === 'yedek' ? 1 : 3, (rl === 'yedek' ? ri(1, 2) + (chance(.4) ? 1 : 0) : ri(3, 5) + (chance(.4) ? 1 : 0)) + (derby ? 1 : 0) + (Z.mom || 0));
   const tasks = nat ? [] : pickTasks(tac, rl), need = tasks.flatMap(t => TASKS[t].need || []);
-  for (let i = 0; i < Math.max(n, need.length); i++) tl.push({ min: ri(from + 1, 90), t: 'mom', k: need[i] || wpick(momW(tac)), fix: !!need[i] });
+  for (let i = 0; i < Math.max(n, need.length); i++) tl.push({ min: ri(from + 1, 90), t: 'mom', k: need[i] || wpick(momW(tac, scn)), fix: !!need[i] });
   if (rl === '11' && !nat && chance(.5)) tl.push({ min: ri(56, 72), t: 'tac' });
   shuffle([...FILL]).slice(0, 4).forEach(x => tl.push({ min: ri(3, 88), t: 'txt', s: x }));
   if (rl === '11' && !nat) { tl.push({ min: 45, t: 'dec', k: 'ht' }); if (chance(.4)) tl.push({ min: ri(50, 84), t: 'dec', k: pick(['pen', 'ref', 'knock']) }); }
   if (rl === 'yedek') tl.push({ min: from, t: 'txt', s: tt('Hoca seni çağırdı. Oyuna giriyorsun!') });
   tl.sort((a, b) => a.min - b.min || (a.t === 'txt' ? -1 : 1));
   return { fxt, nat, cup: !!fxt.cup, ko: (!!fxt.cup && !fxt.lg && fxt.leg !== 1) || !!fxt.kof, agg: fxt.agg || [0, 0], awayEu: !!fxt.eu && !fxt.home && !fxt.final, eu: fxt.eu || null, role: rl, usR, oppR, tl, usG: 0, oppG: 0, pg: 0, pa: 0, rt: 6 + clamp((fit - 50) / 120, -.25, .3), yel: 0, red: false, mom: 0, ok: 0,
-    tac, tac0: tac, fit, tasks, drain: T.st * WX[wx][3], wx, mark: mk, gk, lu, lo, cnt: { pas: 0, orta: 0, calim: 0, sav: 0, kurt: 0, bad: 0, on: 0 },
+    tac, tac0: tac, fit, tasks, drain: T.st * WX[wx][3], wx, mark: mk, gk, lu, lo, scn, lh, cnt: { pas: 0, orta: 0, calim: 0, sav: 0, kurt: 0, bad: 0, on: 0 },
     big: perk('buyuk') && (derby || !!fxt.eu || !!fxt.final || !!fxt.po), adapt: !nat && S.adapt > 0,
     derby, stam, stam0: stam, mode: 'n', calls: 2, crowd: !nat && fxt.home ? 1 : 0, ref, bias: ref ? clamp(refBias(ref, S.clubId) - refBias(ref, fxt.opp) * .5 + ref.me, -1.2, 1.2) : 0 };
 }
 
-export function simMoment(k, M) {
-  const base = { sut: .2, kafa: .17, frikik: .08, penalti: .76, pas: .62, calim: .45, savunma: .58, kurtaris: .74, vole: .15, rovesata: .07, orta: .48, korner: .45, duvar: .7, penkurtar: .26 }[k];
-  const shot = k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'vole' || k === 'rovesata';
-  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (M.big ? .04 : 0) - (M.adapt ? .03 : 0) - (M.awayEu ? .02 : 0) - (M.wx && WX[M.wx][4].includes(k) ? .03 : 0) - (S.diff === 'gercek' ? .03 : 0) + (S.diff === 'kolay' ? .04 : S.diff === 'zor' ? -.04 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0), .05, shot ? .42 : .92));
+export function simMoment(k, M, v) {
+  const base = { sut: .2, kafa: .17, frikik: .08, penalti: .76, pas: .62, calim: .45, savunma: .58, kurtaris: .74, vole: .15, rovesata: .07, orta: .48, korner: .45, duvar: .7, penkurtar: .26, kosu: .42, ribaund: .26, markaj: .6, cikis: .7 }[k];
+  const shot = k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'vole' || k === 'rovesata' || k === 'ribaund';
+  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (M.big ? .04 : 0) - (M.adapt ? .03 : 0) - (M.awayEu ? .02 : 0) - ((M.lh || 1) - 1) * .2 - (v && MVAR[v] ? MVAR[v].dif : 0) - (M.wx && WX[M.wx][4].includes(k) ? .03 : 0) - (S.diff === 'gercek' ? .03 : 0) + (S.diff === 'kolay' ? .04 : S.diff === 'zor' ? -.04 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0), .05, shot ? .42 : .92));
   switch (k) {
     case 'pas': return ok ? { out: 'ok', adv: chance(.5) } : { out: pick(['kesildi', 'bos']) };
     case 'orta': case 'korner': return ok ? { out: 'ok', adv: true } : { out: pick(['kesildi', 'bos']) };
     case 'calim': return { out: ok ? 'gecti' : 'kaptirdi' };
     case 'savunma': return { out: ok ? 'kapildi' : chance(.2) ? 'faul' : 'gecildi' };
+    case 'markaj': return { out: ok ? 'kapildi' : 'gecildi' };
+    case 'kosu': return { out: ok ? 'kacti' : pick(['ofsayt', 'gec']) };
+    case 'cikis': return { out: ok ? 'kurtardi' : 'yedi' };
+    case 'ribaund': return { out: ok ? 'gol' : pick(['kurtaris', 'blok', 'blok']) };
     case 'kurtaris': case 'duvar': case 'penkurtar': return { out: ok ? 'kurtardi' : 'yedi' };
     default: return { out: ok ? 'gol' : pick(['kurtaris', 'kurtaris', 'aut', 'direk']) };
   }
 }
 
-export function applyMoment(M, k, res) {
+export function applyMoment(M, k, res, v) {
   const out = res.out, me = S.name.split(' ').slice(-1)[0], lines = []; let chain = null;
   const good = GOOD.includes(out);
   M.mom++; if (good) M.ok++;
@@ -901,10 +905,26 @@ export function applyMoment(M, k, res) {
   if (out === 'ok') { cn.pas++; if (k !== 'pas') cn.orta++; }
   if (out === 'gecti') cn.calim++; if (out === 'kapildi') cn.sav++; if (out === 'kurtardi') cn.kurt++;
   if (out === 'gol' || out === 'kurtaris' || out === 'direk') cn.on++;
-  if (['kesildi', 'bos', 'kaptirdi', 'gec', 'iska'].includes(out)) cn.bad++;
+  if (['kesildi', 'bos', 'kaptirdi', 'gec', 'iska', 'ofsayt'].includes(out)) cn.bad++;
+  if (good && v && MVAR[v]) M.rt += MVAR[v].rt;   // zor koşulda başarı daha çok yazar
   XP[k].forEach(a => grow(a, good ? 0.04 : 0.02));
   const mate = !M.nat && S.sc[S.clubId] ? pick(S.sc[S.clubId])[0] : tt('takım arkadaşın');
-  if (k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'penalti' || k === 'vole' || k === 'rovesata') {
+  if (k === 'ribaund') {
+    if (out === 'gol') { M.usG++; M.pg++; M.rt += 1.05; lines.push({ s: tt`GOL! ${me} dönen topu tamamladı!`, c: 'g' }); }
+    else if (out === 'kurtaris') { M.rt += .05; lines.push({ s: tt('Geç kaldın; kaleci toparlandı ve çıkardı.') }); }
+    else if (out === 'blok') { M.rt -= .15; lines.push({ s: tt('Savunma senden önce davrandı.') }); }
+    else { M.rt -= .2; lines.push({ s: tt('Topa dokunamadın.') }); }
+  } else if (k === 'kosu') {
+    if (out === 'kacti') { M.rt += .3; chain = 'sut'; lines.push({ s: tt('Savunmanın arkasına sarktın, kaleciyle karşı karşıyasın!') }); }
+    else if (out === 'ofsayt') { M.rt -= .15; lines.push({ s: tt('Erken çıktın: yardımcı hakem bayrağı kaldırdı.') }); }
+    else { M.rt -= .2; lines.push({ s: tt('Geç kaldın, pas arkanda kaldı.') }); }
+  } else if (k === 'markaj') {
+    if (out === 'kapildi') { M.rt += .45; duel(M, 1); lines.push({ s: M.mark ? tt`${M.mark} bir türlü top alamadı; atak söndü.` : tt('Adamına top aldırmadın; atak söndü.') }); }
+    else { M.rt -= .35; duel(M, 0); lines.push({ s: M.mark ? tt`${M.mark} senden kurtuldu.` : tt('Adamın senden kurtuldu.') }); if (chance(.38)) { M.oppG++; M.rt -= .2; lines.push({ s: tt('Boş kalan adam golü attı.'), c: 'b' }); } }
+  } else if (k === 'cikis') {
+    if (out === 'kurtardi') { M.rt += .45; lines.push({ s: tt('Kalabalığın üstünden topu aldın.') }); }
+    else { M.rt -= .45; if (chance(.6)) { M.oppG++; lines.push({ s: tt('Topu ıskaladın; arka direkte tamamladılar.'), c: 'b' }); } else lines.push({ s: tt('Topu ıskaladın ama savunma uzaklaştırdı.') }); }
+  } else if (k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'penalti' || k === 'vole' || k === 'rovesata') {
     if (out === 'gol') {
       M.usG++; M.pg++; M.rt += k === 'penalti' ? 0.8 : 1.2;
       lines.push({ s: tt`GOL! ${me} ${k === 'kafa' ? tt('kafayla ağları buldu') : k === 'frikik' ? tt('frikikten harika attı') : k === 'penalti' ? tt('penaltıyı gole çevirdi') : k === 'vole' ? tt('gelişine vurdu, top ağlarda') : k === 'rovesata' ? tt('röveşatayla stadı ayağa kaldırdı') : tt('topu ağlara gönderdi')}!`, c: 'g' });
@@ -1165,7 +1185,7 @@ export function decide(M, k, c, min) {
       if (chance(.3 + (S.trait === 'lider' ? .2 : 0) + (perk('kaptan') ? .1 : 0) + S.rel.takim / 500)) { add.push({ min: ri(50, 88), t: 'bg', us: true }); fx({ takim: 3 }); L.push({ s: tt('Konuşman soyunma odasını ayağa kaldırdı.') }); }
       else { fx({ takim: -1 }); L.push({ s: tt('Sözlerin havada kaldı.') }); }
     } else if (c === 1) { M.focus = 1; M.rt += .15; L.push({ s: tt('Nefesini topladın. Kalan anlar daha sakin akacak.') }); }
-    else { M.risk = Math.max(M.risk || 1, 2); add.push({ min: ri(50, 88), t: 'mom', k: wpick(momW(M.tac)) }); L.push({ s: tt('Her topa gireceksin: fazladan pozisyon, fazladan risk.') }); }
+    else { M.risk = Math.max(M.risk || 1, 2); add.push({ min: ri(50, 88), t: 'mom', k: wpick(momW(M.tac, M.scn)) }); L.push({ s: tt('Her topa gireceksin: fazladan pozisyon, fazladan risk.') }); }
   } else if (k === 'pen') {
     if (c === 0) { add.push({ min, t: 'mom', k: 'penalti' }); fx({ ego: 2 }); L.push({ s: tt('Topu aldın. Stat sustu.') }); }
     else if (chance(.72)) { M.usG++; L.push({ s: tt('GOL! Penaltı ağlarda.'), c: 'g' }); } else L.push({ s: tt('Penaltı kaçtı.') });
@@ -1568,22 +1588,25 @@ function coachTurn(pos, n, lines) {
   if (!S.mgr && ((pos > n * .7 && chance(.6)) || chance(.1))) { const c = newCoach(pos > n * .7 ? tt('ile yollar ayrıldı') : tt('başka bir kulübe gitti')); lines.push(tt`Yeni hoca: ${c.n} (${TACT[c.st].n})`); }
 }
 // Maç anı ağırlıkları: mevki tabanı, hocanın taktiğiyle şekillenir
-export function momW(tac) {
-  const m = { ...POS[S.pos].m }, T = TACT[tac]; if (!T) return m;
-  for (const k in T.m) if (m[k]) m[k] *= T.m[k];
-  if (S.pos !== 'KL') for (const k in T.add || {}) if (!m[k]) m[k] = T.add[k];
+export function momW(tac, scn) {
+  const m = { ...POS[S.pos].m };
+  for (const X of [TACT[tac], SCN[scn]]) {
+    if (!X) continue;
+    for (const k in X.w || X.m || {}) if (m[k]) m[k] *= (X.w || X.m)[k];
+    if (S.pos !== 'KL') for (const k in X.add || {}) if (!m[k]) m[k] = X.add[k];
+  }
   return m;
 }
-export const momPick = M => wpick(momW(M && M.tac));
+export const momPick = M => wpick(momW(M && M.tac, M && M.scn));
 // Maç içinde hoca sistemi değiştirir: kalan anlar yeni taktiğe göre şekillenir
 export function tacShift(M, min) {
   const d = M.usG - M.oppG, nt = pick(d < 0 ? ['hucum', 'kanat'] : d > 0 ? ['otobus', 'kontra'] : ['pres', 'top', 'kanat']), add = [], cn = coach().n;
   if (nt === M.tac) return { line: tt`${cn} kenardan bağırıyor: "Aynen devam!"`, add };
   M.tac = nt; M.drain = TACT[nt].st;
-  for (const e of M.tl) if (e.t === 'mom' && e.min > min && !e.fix) e.k = wpick(momW(nt));
+  for (const e of M.tl) if (e.t === 'mom' && e.min > min && !e.fix) { e.k = wpick(momW(nt, M.scn)); delete e.v; }
   if (nt === 'hucum' || nt === 'kanat') {
     if (chance(.5)) add.push({ min: ri(min + 1, 90), t: 'bg', us: chance(.6) });
-    if (S.pos !== 'KL' && chance(.5)) add.push({ min: ri(min + 1, 89), t: 'mom', k: wpick(momW(nt)) });
+    if (S.pos !== 'KL' && chance(.5)) add.push({ min: ri(min + 1, 89), t: 'mom', k: wpick(momW(nt, M.scn)) });
   } else if (nt === 'otobus') { const i = M.tl.findIndex(e => e.t === 'bg' && !e.us && e.min > min); if (i >= 0 && chance(.5)) M.tl.splice(i, 1); }
   return { line: tt`${cn} sistemi değiştirdi: ${TACT[nt].n}. ${TACT[nt].d}`, add };
 }
@@ -2253,7 +2276,7 @@ export function extraTime(M) {
   const out = [{ min: 91, t: 'txt', s: tt('Uzatmalar başladı. Bacaklar ağır, kafalar yorgun.') }];
   for (let i = poisson(clamp((M.lu || 1) * .3, .05, 1.5)); i > 0; i--) out.push({ min: ri(93, 119), t: 'bg', us: true });
   for (let i = poisson(clamp((M.lo || 1) * .3, .05, 1.5)); i > 0; i--) out.push({ min: ri(93, 119), t: 'bg', us: false });
-  if ((M.role === '11' || M.role === 'yedek') && !M.red && !M.off) out.push({ min: ri(101, 117), t: 'mom', k: wpick(momW(M.tac)), kader: 1 });
+  if ((M.role === '11' || M.role === 'yedek') && !M.red && !M.off) out.push({ min: ri(101, 117), t: 'mom', k: wpick(momW(M.tac, M.scn)), kader: 1 });
   M.et = 1;
   return out.sort((a, b) => a.min - b.min);
 }
@@ -2284,3 +2307,26 @@ export function setAgent(i) {
   return { fee, old };
 }
 export const kidAge = () => (S.kid ? S.season - S.kid.born : 0);
+
+// ---------- lig seviyesi, maçın havası, an çeşitlemeleri ----------
+// Lig yükseldikçe her an zorlaşır: en zayıf lig 0,86, en güçlü lig 1,18; Avrupa ve milli turnuvalar daha da sert.
+export function leagueHard(fxt) {
+  if (fxt && fxt.nat) return fxt.tour ? 1.16 : fxt.q ? 1.1 : 1.02;
+  if (!S.clubId) return .88;
+  const av = Object.keys(S.lg).map(l => lavg(l)), mn = Math.min(...av), mx = Math.max(...av), me = lavg(leagueOf(S.clubId));
+  return +(0.86 + (mx > mn ? (me - mn) / (mx - mn) : .5) * .32 + (fxt && fxt.eu ? { cl: .07, el: .05, ko: .03 }[fxt.eu] : 0)).toFixed(3);
+}
+export const hardStars = h => clamp(Math.round((h - .86) / .32 * 4) + 1, 1, 5);
+// Her maçın bir havası olur: güç farkı, derbi, hava ve şans belirler
+function pickScn(usR, oppR, derby, wx, fxt) {
+  const d = oppR - usR, big = derby || !!fxt.final || !!fxt.po || (!!fxt.cup && !fxt.lg);
+  return wpick({ denge: 4, acik: 3, kilit: 2 + (big ? 3 : 0), pres: 2 + (d > 3 ? 2 : 0), duran: 2 + (wx === 'ruzgar' || wx === 'yagmur' || wx === 'camur' ? 2 : 0), kontra: 2 + (d < -3 || fxt.home === false ? 1.5 : 0), kusatma: d > 4 ? 4 : .5, duello: fxt.nat ? 0 : 1.5 + (OVR() > usR + 2 ? 2 : 0) });
+}
+// Bu an hangi koşulda geliyor? e.v bir kez belirlenir: çeşitleme anahtarı ya da null
+export function momVar(M, e, k) {
+  if (e.v !== undefined && e.vk === k) return e.v;
+  const hot = (SCN[M.scn] || {}).vars || [], w = {};
+  for (const id in MVAR) { const V = MVAR[id]; if (V.k.includes(k) && (!V.from || e.min >= V.from)) w[id] = id === 'sondk' ? 4 : hot.includes(id) ? 3 : 1; }
+  e.vk = k; e.v = Object.keys(w).length && chance(hot.some(x => w[x]) ? .72 : .5) ? wpick(w) : null;
+  return e.v;
+}

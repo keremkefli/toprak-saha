@@ -1,7 +1,7 @@
 // Toprak Saha — arayüz ve oyun akışı
 import { tt, lang, LC, NLOC, DSEP, LANGS, setLang } from './i18n.js';
 import * as G from './core.js';
-import { LEAGUES, LMAP, POS, ATTR, ORIGINS, TRAITS, PROV, SHOP, TRAIN, COUNTRIES, ROLE, MOM, TSTAT, STANCE, PERKS, HANG, POSTS, ACH, DEC, HT, BUILD, STYLES, CELE, NET, MACT, DIFF, TACT, PERKS2, FREE, NATN, NATC, WX, INV } from './data.js';
+import { LEAGUES, LMAP, POS, ATTR, ORIGINS, TRAITS, PROV, SHOP, TRAIN, COUNTRIES, ROLE, MOM, TSTAT, STANCE, PERKS, HANG, POSTS, ACH, DEC, HT, BUILD, STYLES, CELE, NET, MACT, DIFF, TACT, PERKS2, FREE, NATN, NATC, WX, INV, SCN, MVAR } from './data.js';
 import { pickEvent, resolve } from './events.js';
 import { Mini, Pitch, PSLOT } from './mini.js';
 import { ic, avatar, persona, crestSvg, radar, ring, PERS, SKIN, HAIRC, HAIRS, euLogo } from './art.js';
@@ -549,10 +549,10 @@ async function playMini(kind, oppR, label, x = {}) {
   if (!mini) mini = new Mini($mini.querySelector('canvas'));
   const ovr = G.OVR(), oppQ = G.clamp(0.5 + (oppR - ovr) / 28, .08, 1);
   const sk = a => G.clamp((a - (oppR - 12)) / 30, 0, 1);
-  const hard = (1 + (s.en < 30 ? .16 : s.en < 50 ? .07 : 0) + (50 - s.mo) / 350) * (s.trait === 'sakin' ? .92 : 1) * (DIFF[s.diff] || DIFF.normal)[1];
+  const hard = (1 + (s.en < 30 ? .16 : s.en < 50 ? .07 : 0) + (50 - s.mo) / 350) * (s.trait === 'sakin' ? .92 : 1) * (DIFF[s.diff] || DIFF.normal)[1] * (x.lh || G.leagueHard(null));   // lig yükseldikçe zorlaşır
   const cu = x.nat ? '#d81e2c' : s.clubId ? G.club(s.clubId).c1 : '#ff6a2b';
   let co = x.opp ? G.club(x.opp).c1 : '#5a6470'; if (co === cu) co = x.opp ? G.club(x.opp).c2 : '#f2f2f2';
-  const res = await mini.play(kind, { skill: sk(G.skillFor(kind)), speed: sk(s.at.hiz), oppQ, hard: hard * (x.focus ? .88 : 1) * (x.tired || 1) * (x.crowd ? .85 : 1) * (x.big ? .9 : 1) * (x.adapt ? 1.07 : 1) * (x.wxh || 1), wall: x.wall || null, bonus: !!x.bonus, cu, co, pk: Object.fromEntries(s.perks.map(p => [p, 1])) });
+  const res = await mini.play(kind, { skill: sk(G.skillFor(kind)), speed: sk(s.at.hiz), oppQ, hard: hard * (x.focus ? .88 : 1) * (x.tired || 1) * (x.crowd ? .85 : 1) * (x.big ? .9 : 1) * (x.adapt ? 1.07 : 1) * (x.wxh || 1), wall: x.wall || null, vr: x.vr || null, bonus: !!x.bonus, cu, co, pk: Object.fromEntries(s.perks.map(p => [p, 1])) });
   $mini.hidden = true;
   return res;
 }
@@ -713,6 +713,9 @@ async function transferWindow(kind) {
   }
 }
 
+// Maçın havası ve lig seviyesi: soyunma odasında görünür
+const scnHTML = M => `<div class="stn st-acik">${ic(SCN[M.scn].i, 16)}<span><b>${SCN[M.scn].n}</b><small>${SCN[M.scn].d}</small></span></div><div class="kv">${ic('chart', 16)}<span>${tt('Lig seviyesi')}</span><b>${stars(G.hardStars(M.lh))}</b></div>`;
+
 async function runMatch(fxt, rl, mode) {
   const s = G.S, M = G.buildMatch(fxt, rl), nat = M.nat; let sim = mode === 'sim' || AUTO; mSim = false;
   const usN = nat ? fxt.usN : G.club(s.clubId).n, opN = nat ? fxt.opp.n : G.club(fxt.opp).n, home = nat ? fxt.home !== false : fxt.home;
@@ -728,7 +731,7 @@ async function runMatch(fxt, rl, mode) {
   const taskChips = () => G.taskState(M).map(t => tt`<span class="tk ${t.ok ? 'ok' : ''}">${ic(t.ok ? 'check' : 'target', 13)}${t.t}${t.pr ? ' ' + t.pr : ''}</span>`).join('');
   if (!sim && M.tac) await dialog({
     art: art('hoca', TACT[M.tac].i, 'club'), k: tt('Soyunma odası'), t: TACT[M.tac].n,
-    body: tt`<p><b>${esc(G.coach().n)}:</b> "${TACT[M.tac].d}"</p><div class="kv">${ic('target', 16)}<span>Bu sisteme uyumun</span><b>%${M.fit}</b></div><div class="kv">${ic(WX[M.wx][1], 16)}<span>${WX[M.wx][0]}: ${WX[M.wx][2]}</span></div>${M.tasks.length ? tt`<div class="sub">${ic('whistle', 16)}Hocanın senden istediği</div>${G.taskState(M).map(t => tt`<div class="pc">${ic('target', 14)}<span>${t.t}</span></div>`).join('')}<p class="mut sm">Görevler hoca güvenini belirler; maçta karşına çıkacak anlar da bu plana göre şekillenir.</p>` : ''}`,
+    body: scnHTML(M) + tt`<p><b>${esc(G.coach().n)}:</b> "${TACT[M.tac].d}"</p><div class="kv">${ic('target', 16)}<span>Bu sisteme uyumun</span><b>%${M.fit}</b></div><div class="kv">${ic(WX[M.wx][1], 16)}<span>${WX[M.wx][0]}: ${WX[M.wx][2]}</span></div>${M.tasks.length ? tt`<div class="sub">${ic('whistle', 16)}Hocanın senden istediği</div>${G.taskState(M).map(t => tt`<div class="pc">${ic('target', 14)}<span>${t.t}</span></div>`).join('')}<p class="mut sm">Görevler hoca güvenini belirler; maçta karşına çıkacak anlar da bu plana göre şekillenir.</p>` : ''}`,
     opts: [{ t: tt('Sahaya çık'), i: 'ball' }], auto: 0, cls: 'ev',
   });
   if (!AUTO) {
@@ -767,6 +770,7 @@ async function runMatch(fxt, rl, mode) {
   const wait = ms => sleep(sim ? Math.min(ms, 90) : ms);
   put(1, rl === 'yedek' ? tt('Maç başladı. Yedek kulübesindesin.') : tt('İlk düdük! Sahadasın.'), '', 'whistle');
   if (M.awayEu) put(1, tt('Deplasman tribünü ıslıkla karşıladı. Bu gece her top zor.'), '', 'users');
+  if (M.scn !== 'denge') put(1, `${SCN[M.scn].n}: ${SCN[M.scn].d}`, '', SCN[M.scn].i);
   if (M.wx !== 'acik') put(1, `${WX[M.wx][0]}: ${WX[M.wx][2]}`, '', WX[M.wx][1]);
   if (M.mark && rl !== 'yedek') { const d = G.duelOf(M.mark, fxt.opp); put(1, (s.pos === 'DF' || s.pos === 'KL' ? tt`Bugün karşında ${M.mark} var.` : tt`Seni bugün ${M.mark} tutuyor.`) + (d ? tt` Aranızdaki hesap: ${d[0]}-${d[1]}.` : ''), '', 'eye'); }
   if (capLine) put(1, capLine, 'm', 'crown');
@@ -811,13 +815,18 @@ async function runMatch(fxt, rl, mode) {
       let k = e.k, bonus = false;
       for (;;) {
         if (e.kader && !bonus) put(e.min, tt('KADER ANI: turun anahtarı senin ayağında.'), 'm', 'star');
-        put(e.min, MOM[k].i, 'm', 'target'); if (pitch) pitch.focus(); await wait(sim ? 620 : 1100);
+        const vk = bonus ? null : G.momVar(M, e, k), VR = vk ? MVAR[vk] : null;
+        put(e.min, MOM[k].i, 'm', 'target'); if (VR) put(e.min, `${VR.n}: ${VR.d}`, 'm', 'alert'); if (pitch) pitch.focus(); await wait(sim ? 620 : 1100);
+        if (vk === 'kontra' && k === 'sut' && !sim) {   // önün açık: nasıl bitireceğine sen karar verirsin
+          const ch = await dialog({ art: art('takim', 'right', 'club'), k: tt`${e.min}. dakika`, t: tt('Kontra: önün açık'), body: tt('<p>Savunma geride kaldı. Yanında bir arkadaşın koşuyor, kaleci çizgisinde.</p>'), opts: [{ t: tt('Kendin bitir'), s: tt('Şut: gol senin olur'), i: 'target' }, { t: tt('Boştaki arkadaşa ver'), s: tt('Pas: asist şansı yüksek'), i: 'swap' }, { t: tt('Kaleciyi de geç'), s: tt('Çalım: tutarsa boş kaleye'), i: 'bolt' }], cls: 'ev' });
+          k = ['sut', 'pas', 'calim'][ch];
+        }
         let wall = null;
         if (k === 'duvar' && !sim) { const wc = await dialog({ art: art('takim', 'shield', 'club'), k: tt`${e.min}. dakika`, t: tt('Barajı kur'), body: tt('<p>Kaç kişi dizersen, vuruş ona göre gelir.</p>'), opts: [{ t: tt('Beş kişi'), s: tt('Düz vuruş kapanır; top köşeye, barajın üstünden gelir'), i: 'shield' }, { t: tt('Dört kişi'), s: tt('Dengeli'), i: 'users' }, { t: tt('Üç kişi'), s: tt('Topu iyi görürsün ama sert ve ortaya yakın gelir'), i: 'eye' }], cls: 'ev' }); wall = [[.88, 1.14], [.6, 1], [.3, .9]][wc]; }
         const g0 = M.usG, o0 = M.oppG, crowd = M.crowdOn; M.crowdOn = 0;
         if (!sim) { M.stam = Math.max(0, M.stam - (M.mode === 'o' ? 8 : M.mode === 'd' ? 5 : 6) * (M.drain || 1)); stamUpd(); }
-        const res = sim ? G.simMoment(k, M) : await playMini(k, M.oppR, `${e.min}' · ${e.kader ? tt('Kader anı') : MOM[k].n}`, { wall, wxh: WX[M.wx][4].includes(k) ? WX[M.wx][5] : 1, bonus, opp: nat ? null : fxt.opp, nat, focus: M.focus, crowd, big: M.big, adapt: M.adapt, tired: M.stam < 15 ? 1.3 : M.stam < 30 ? 1.15 : 1 });
-        const r = G.applyMoment(M, k, res);
+        const res = sim ? G.simMoment(k, M, vk) : await playMini(k, M.oppR, `${e.min}' · ${e.kader ? tt('Kader anı') : MOM[k].n}${VR ? ' · ' + VR.n : ''}`, { lh: M.lh, vr: VR && MVAR[vk].k.includes(k) ? VR.vr : null, wall, wxh: WX[M.wx][4].includes(k) ? WX[M.wx][5] : 1, bonus, opp: nat ? null : fxt.opp, nat, focus: M.focus, crowd, big: M.big, adapt: M.adapt, tired: M.stam < 15 ? 1.3 : M.stam < 30 ? 1.15 : 1 });
+        const r = G.applyMoment(M, k, res, vk);
         r.lines.forEach(l => put(e.min, l.s, l.c || '', l.c === 'g' || l.c === 'b' ? 'ball' : ''));
         if (M.usG > g0) { mark(e.min, 'g me'); bump(); if (sim && !AUTO) sfx.goal(); if (pitch) pitch.goal(true); }
         if (M.oppG > o0) { mark(e.min, 'b'); bump(); if (!AUTO) sfx.conceded(); if (pitch) pitch.goal(false); }
@@ -1214,7 +1223,7 @@ function chalWeek() { const d = new Date(), t = Date.UTC(d.getFullYear(), d.getM
 async function chalFlow() {
   const wk = chalWeek(); let h = 0; for (const ch of wk) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const rng = () => { h = (h + 0x6D2B79F5) >>> 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  const pool = ['sut', 'kafa', 'frikik', 'penalti', 'pas', 'calim', 'savunma', 'orta', 'vole', 'kurtaris'], kinds = Array.from({ length: 6 }, () => pool[Math.floor(rng() * pool.length)]), q = .3 + rng() * .35;
+  const pool = ['sut', 'kafa', 'frikik', 'penalti', 'pas', 'calim', 'savunma', 'orta', 'vole', 'kurtaris', 'kosu', 'ribaund', 'markaj'], kinds = Array.from({ length: 6 }, () => pool[Math.floor(rng() * pool.length)]), q = .3 + rng() * .35;
   let best = 0; try { const b = JSON.parse(localStorage.getItem(CKEY2)); if (b && b.wk === wk) best = b.best; } catch (e) { /* yok */ }
   const j = await dialog({ art: tt`<div class="art t-fame"><div class="art-ic">${ic('bolt', 150)}</div><span class="art-n">Hafta ${wk.split('-')[1]}</span></div>`, k: tt('Meydan okuma'), t: tt('Altı an, tek deneme'), body: tt`<p>Bu hafta herkes aynı altı anı, aynı zorlukta oynuyor: ${kinds.map(k => MOM[k].n).join(', ')}.</p><p>Her başarı 100 puan, üst üste başarılar seri primi kazandırır.</p>${best ? tt`<div class="kv">${ic('trophy', 16)}<span>Bu haftaki rekorun</span><b>${best}</b></div>` : ''}`, opts: [{ t: tt('Başla'), i: 'ball' }, { t: tt('Vazgeç'), c: 'ghost' }] });
   if (j !== 0) return;
@@ -1403,7 +1412,7 @@ document.addEventListener('change', e => {
 });
 
 // Geliştirici aracı: n haftayı rastgele kararlarla hızlı oynatır.
-window.__ts = { G, drawCard, chal: () => chalFlow(), heir: w => { heirW = w; ACT.heir(); }, mgr: role => mgrJobFlow(role), retire: () => retireFlow(), aw: r => awardFlow(r), tour: () => tourFlow(), rerender: () => render(), iv: (k, f, M) => ivFlow(k, f, M), club: id => clubFlow(id), start: async (o, auto = true) => { AUTO = auto; try { G.wipe(); G.newCareer({ ...o, wait: true }); await startFlow(); } finally { AUTO = false; render(); } }, auto: async n => { AUTO = true; try { for (let i = 0; i < n && G.S; i++) { if (G.S.mgr) { if (Math.random() < .5) G.mgrAct(G.pick(G.MACTS[G.S.mgr.role])[0]); await nextStep(); continue; } while (G.S.used < G.slots() && Math.random() < .8) { if (Math.random() < .5 && G.S.inj <= 0) await trainFlow(); else G.act(G.pick(['rest', 'aile', 'ark', 'rest'])); } if (Math.random() < .05) G.setStatus(G.pick(['mutlu', 'acik', 'kiralik'])); await nextStep(); } } finally { AUTO = false; busy = false; render(); } } };
+window.__ts = { G, drawCard, mini: (k, vr, lh) => playMini(k, G.S.rt[G.S.clubId], k, { vr, lh }), chal: () => chalFlow(), heir: w => { heirW = w; ACT.heir(); }, mgr: role => mgrJobFlow(role), retire: () => retireFlow(), aw: r => awardFlow(r), tour: () => tourFlow(), rerender: () => render(), iv: (k, f, M) => ivFlow(k, f, M), club: id => clubFlow(id), start: async (o, auto = true) => { AUTO = auto; try { G.wipe(); G.newCareer({ ...o, wait: true }); await startFlow(); } finally { AUTO = false; render(); } }, auto: async n => { AUTO = true; try { for (let i = 0; i < n && G.S; i++) { if (G.S.mgr) { if (Math.random() < .5) G.mgrAct(G.pick(G.MACTS[G.S.mgr.role])[0]); await nextStep(); continue; } while (G.S.used < G.slots() && Math.random() < .8) { if (Math.random() < .5 && G.S.inj <= 0) await trainFlow(); else G.act(G.pick(['rest', 'aile', 'ark', 'rest'])); } if (Math.random() < .05) G.setStatus(G.pick(['mutlu', 'acik', 'kiralik'])); await nextStep(); } } finally { AUTO = false; busy = false; render(); } } };
 
 // Ana ekrana eklenebilir uygulama: çevrimdışı açılış için hizmet işçisi
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { /* desteklenmiyor */ });

@@ -396,11 +396,11 @@ export const ATTR = { sut: tt('Şut'), pas: tt('Pas'), teknik: tt('Teknik'), hiz
 
 // w: genel güç ağırlıkları, m: maç anı ağırlıkları, b: başlangıç bonusu
 export const POS = {
-  KL: { n: tt('Kaleci'), w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 72, pas: 15, duvar: 8, penkurtar: 5 }, b: { kaleci: 24, zihin: 3 } },
-  DF: { n: tt('Defans'), w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 53, kafa: 12, pas: 22, orta: 13 }, b: { savunma: 9, guc: 5, kafa: 4 } },
-  OS: { n: tt('Orta Saha'), w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 30, sut: 15, calim: 12, savunma: 15, frikik: 7, orta: 11, korner: 8, vole: 2 }, b: { pas: 8, teknik: 5, zihin: 3 } },
-  KN: { n: tt('Kanat'), w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 28, pas: 15, sut: 21, kafa: 4, orta: 24, vole: 6, korner: 6 }, b: { hiz: 8, teknik: 6, pas: 2 } },
-  FV: { n: tt('Forvet'), w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 38, kafa: 13, calim: 15, pas: 11, penalti: 6, vole: 9, rovesata: 4, orta: 7 }, b: { sut: 8, kafa: 4, teknik: 3 } },
+  KL: { n: tt('Kaleci'), w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 62, pas: 14, duvar: 8, penkurtar: 5, cikis: 12 }, b: { kaleci: 24, zihin: 3 } },
+  DF: { n: tt('Defans'), w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 42, markaj: 14, kafa: 12, pas: 20, orta: 12 }, b: { savunma: 9, guc: 5, kafa: 4 } },
+  OS: { n: tt('Orta Saha'), w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 28, sut: 14, calim: 12, savunma: 12, markaj: 6, frikik: 7, orta: 10, korner: 7, vole: 2, ribaund: 3 }, b: { pas: 8, teknik: 5, zihin: 3 } },
+  KN: { n: tt('Kanat'), w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 26, pas: 14, sut: 19, kafa: 4, orta: 22, vole: 5, korner: 6, kosu: 9 }, b: { hiz: 8, teknik: 6, pas: 2 } },
+  FV: { n: tt('Forvet'), w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 32, kafa: 12, calim: 13, pas: 10, penalti: 5, vole: 8, rovesata: 4, orta: 6, kosu: 11, ribaund: 8 }, b: { sut: 8, kafa: 4, teknik: 3 } },
 };
 
 export const ORIGINS = {
@@ -473,6 +473,10 @@ export const MOM = {
   korner: { n: tt('Korner'), i: tt('Korner vuruşunu sen kullanıyorsun.') },
   duvar: { n: tt('Frikik savunması'), i: tt('Ceza yayı önünde rakip frikik. Barajı sen kuracaksın.') },
   penkurtar: { n: tt('Penaltı kurtarışı'), i: tt('Hakem beyaz noktayı gösterdi. Sen ve o; başka kimse yok.') },
+  kosu: { n: tt('Arkaya koşu'), i: tt('Savunma çizgisindesin. Pas çıktığı an arkaya sark!') },
+  ribaund: { n: tt('Dönen top'), i: tt('Kaleci topu elinden kaçırdı, top ceza sahasında sekiyor!') },
+  markaj: { n: tt('Markaj'), i: tt('Rakibin en tehlikeli adamı senin bölgende. Top aldırma!') },
+  cikis: { n: tt('Yan topa çıkış'), i: tt('Kanattan orta geliyor, ceza sahası kalabalık. Çık ve al!') },
 };
 
 export const FILL = [
@@ -659,3 +663,30 @@ export function setWorld(w) {
   for (const k in OTXT[w]) { ORIGINS[k].d = OTXT[w][k][0]; ORIGINS[k].tier = OTXT[w][k][1]; }
   MOM.calim.i = PTXT[w][0]; [...PERKS, ...PERKS2].find(p => p.id === 'taktik').n = PTXT[w][1];
 }
+
+// Maçın havası: her maç başka akar. w: an ağırlığı çarpanları, add: mevkide olmayan ana eklenen ağırlık,
+// mom: an sayısı farkı, lu/lo: atılan/yenen gol çarpanı, vars: bu maçta sık çıkan çeşitlemeler
+export const SCN = {
+  denge: { n: tt('Dengeli maç'), d: tt('İki takım da birbirini tartıyor.'), i: 'swap' },
+  acik: { n: tt('Açık maç'), d: tt('İki takım da gidip geliyor: bol pozisyon, bol gol.'), i: 'bolt', mom: 1, lu: 1.18, lo: 1.18, w: { sut: 1.3, vole: 1.3, kosu: 1.4, ribaund: 1.6 }, vars: ['kontra'] },
+  kilit: { n: tt('Kilit maç'), d: tt('Alan yok, pozisyon az. Her top altın değerinde.'), i: 'lock', mom: -1, lu: .78, lo: .78, vars: ['kalabalik', 'baski', 'sondk'] },
+  pres: { n: tt('Önde baskı'), d: tt('Rakip nefes aldırmıyor: top ayağında durmayacak.'), i: 'alert', w: { pas: 1.5, calim: 1.3 }, vars: ['baski'] },
+  duran: { n: tt('Duran top günü'), d: tt('Hakem düdüğü elinden bırakmıyor: frikik, korner, yan top.'), i: 'whistle', w: { frikik: 3, korner: 2.5, kafa: 1.7, duvar: 3, cikis: 2.5, penalti: 1.5 }, add: { frikik: 8, korner: 7, kafa: 8 } },
+  kontra: { n: tt('Kontra fırsatları'), d: tt('Rakip açık veriyor: arkaya koşu ve bire bir.'), i: 'right', w: { calim: 1.6, kosu: 2.2, sut: 1.15 }, add: { kosu: 8 }, vars: ['kontra', 'yorgun'] },
+  kusatma: { n: tt('Kuşatma'), d: tt('Rakip üstünüze geliyor. Bugün savunma günü.'), i: 'shield', lu: .88, lo: 1.15, w: { savunma: 2, markaj: 2.2, kurtaris: 1.3, kafa: 1.2 }, add: { savunma: 12, markaj: 8 }, vars: ['yildiz'] },
+  duello: { n: tt('Özel markaj'), d: tt('Rakibin en iyisi bugün senin peşinde.'), i: 'eye', w: { calim: 1.7, savunma: 1.4, markaj: 1.7 }, vars: ['yildiz'] },
+};
+
+// An çeşitlemeleri: aynı an her seferinde başka koşulda gelir. k: uyduğu anlar, vr: mini oyuna giden ayar
+// (t süre, sp rakip hızı, acc isabet dağılımı, n fazladan savunmacı, side dar açı), dif: simülasyonda zorluk, rt: başarırsan ek maç notu, from: en erken dakika
+export const MVAR = {
+  dar: { n: tt('Dar açı'), d: tt('Top kanatta kaldı, kale dar görünüyor.'), k: ['sut'], vr: { side: 1, acc: 1.12 }, dif: .04, rt: .2 },
+  kalabalik: { n: tt('Kalabalık'), d: tt('Önün insan dolu; bir kişi fazla basıyor.'), k: ['sut', 'pas', 'calim'], vr: { n: 1 }, dif: .04, rt: .15 },
+  kontra: { n: tt('Kontra atak'), d: tt('Savunma dağınık, önün açık. Çabuk ol.'), k: ['sut', 'calim', 'pas'], vr: { n: -1, t: .75 }, dif: -.03, rt: 0 },
+  baski: { n: tt('Baskı altında'), d: tt('Düşünecek vakit yok.'), k: ['pas', 'sut', 'orta', 'korner', 'ribaund'], vr: { t: .64 }, dif: .04, rt: .15 },
+  yildiz: { n: tt('Zorlu rakip'), d: tt('Karşındaki bugün gününde: daha hızlı, daha sert.'), k: ['calim', 'savunma', 'markaj'], vr: { sp: 1.15 }, dif: .05, rt: .25 },
+  yorgun: { n: tt('Yorgun savunma'), d: tt('Rakibin bacakları ağırlaştı.'), k: ['calim', 'sut', 'pas', 'kosu'], vr: { sp: .84 }, dif: -.04, rt: 0, from: 65 },
+  sondk: { n: tt('Son dakikalar'), d: tt('Bu top maçın kaderini belirler.'), k: ['sut', 'kafa', 'pas', 'calim', 'savunma', 'markaj', 'orta', 'korner', 'frikik', 'kurtaris', 'kosu'], vr: { t: .85, acc: 1.08, sp: 1.06 }, dif: .03, rt: .35, from: 82 },
+  uzak: { n: tt('Uzak mesafe'), d: tt('Kale uzak: isabet zor, kaleci hazır.'), k: ['sut', 'frikik'], vr: { acc: 1.28 }, dif: .05, rt: .3 },
+  sert: { n: tt('Yakın mesafe'), d: tt('Vuruş burnunun dibinden geliyor.'), k: ['kurtaris', 'cikis'], vr: { sp: 1.22 }, dif: .06, rt: .3 },
+};
