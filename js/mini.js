@@ -81,10 +81,15 @@ function stadium(g, t, crowd, net, bare) {
   if (EV.tier >= 2) {   // reklam panosu
     g.fillStyle = '#14110e'; g.fillRect(0, gb - 15, W, 15);
     g.font = '900 10px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillStyle = EV.tier >= 4 ? '#f5efe4' : '#ff6a2b';
-    const ads = EV.ads && EV.ads.length ? EV.ads : [tt('BURAYA SPONSORLUK ALABİLİRSİNİZ')], gap = 250, sc = GFX.calm ? 0 : t * 14, base = Math.floor(sc / gap);
-    for (let x = -gap + sc % gap + 16, i = 0; x < W; x += gap, i++) g.fillText(ads[(((i - base) % ads.length) + ads.length) % ads.length], x, gb - 7);
+    // LED pano gerçekteki gibi döner: önce logo, sonra yazı; her biri birkaç saniye kalır, yukarı kayarak değişir
+    const ads = EV.ads && EV.ads.length ? EV.ads : ['@BACKER', tt('BURAYA REKLAM VEREBİLİRSİNİZ')], col = g.fillStyle, per = 3.4, ph = Math.floor(t / per), k = (t % per) / per;
+    const drawAd = (a, dy) => { const lg = a[0] === '@'; for (let x = 14; x < W; x += lg ? 96 : 236) { if (lg) logoD(g, x, gb - 7.5 + dy, a.slice(1), 11); else { g.fillStyle = col; g.fillText(a, x, gb - 7 + dy); } } };
+    g.save(); g.beginPath(); g.rect(0, gb - 15, W, 15); g.clip();
+    if (GFX.calm) { for (let x = 14, i = 0; x < W; i++) { const a = ads[i % ads.length]; if (a[0] === '@') { logoD(g, x, gb - 7.5, a.slice(1), 11); x += 96; } else { g.fillStyle = col; g.fillText(a, x, gb - 7); x += 236; } } }
+    else { const sl = k > .88 ? (k - .88) / .12 : 0; drawAd(ads[ph % ads.length], -15 * sl); if (sl) drawAd(ads[(ph + 1) % ads.length], 15 * (1 - sl)); }
+    g.restore();
   } else {   // mahalle sahası: tel örgüye asılı bez afiş
-    g.fillStyle = '#efe7d6'; g.fillRect(W / 2 - 96, gb - 36, 192, 15); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillStyle = '#1b1712'; g.fillText(tt('BURAYA SPONSORLUK ALABİLİRSİNİZ'), W / 2, gb - 28, 184);
+    g.fillStyle = '#efe7d6'; g.fillRect(W / 2 - 96, gb - 36, 192, 15); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'center'; logoD(g, W / 2 - 90, gb - 28.5, 'BACKER', 9.5); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textAlign = 'left'; g.fillStyle = '#1b1712'; g.fillText(tt('BURAYA REKLAM VEREBİLİRSİNİZ'), W / 2 - 42, gb - 28, 132);
   }
   const [ta, tb] = turf(EV); let gr = g.createLinearGradient(0, gb, 0, H); gr.addColorStop(0, tb); gr.addColorStop(1, ta);
   g.fillStyle = gr; g.fillRect(0, gb, W, H - gb); patches(g, 0, gb, W, H - gb, EV);
@@ -103,6 +108,13 @@ function stadium(g, t, crowd, net, bare) {
   g.stroke();
   g.strokeStyle = '#f6f6f6'; g.lineWidth = 5; g.lineJoin = 'round'; g.lineCap = 'round';
   g.beginPath(); g.moveTo(gx, gb); g.lineTo(gx, gy); g.lineTo(gx + gw, gy); g.lineTo(gx + gw, gb); g.stroke();
+}
+// Pano logosu: beyaz kutu içinde koyu yazı markası, solunda turuncu işaret
+function logoD(g, x, y, name, size) {
+  g.save(); g.font = `900 ${size}px "Big Shoulders Display", "Arial Narrow", sans-serif`; g.textAlign = 'left'; g.textBaseline = 'middle';
+  const w = g.measureText(name).width + size * 1.5; g.fillStyle = '#f5efe4'; g.fillRect(x, y - size * .62, w, size * 1.24);
+  g.fillStyle = '#ff6a2b'; g.beginPath(); g.moveTo(x + size * .28, y - size * .34); g.lineTo(x + size * .82, y); g.lineTo(x + size * .28, y + size * .34); g.fill();
+  g.fillStyle = '#14110e'; g.fillText(name, x + size * 1.05, y + .5); g.restore();
 }
 function keeperD(g, x, base, col, lean, up = 0) {
   const mine = col === ME.c1, d = clamp(lean / 70, -1, 1);

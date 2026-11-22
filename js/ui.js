@@ -200,9 +200,10 @@ const sideArgs = (cf, r) => [cf && cf.key === 'cup' ? r : null, cf && cf.eu ? r 
 // ---------- merkez ----------
 function head() {
   const s = G.S, c = G.club(s.clubId), L = LMAP[G.leagueOf(s.clubId)];
-  return tt`<header class="top">${crest(s.clubId, 40)}
-    <div class="tc"><b>${esc(c.n)}</b><small>${L.name} · Hafta ${s.week}/${G.WEEKS}${s.loan ? tt(' · kiralık') : ''}</small></div>
-    <span class="pill">${ic('coin', 16)}${G.fmtS(s.mgr ? s.mgr.bud : s.money)}</span>
+  const bz = G.isBiz() ? bizLbl(s.mgr.role) : null;
+  return tt`<header class="top">${bz ? `<span class="bizc">${ic(bz[2], 24)}</span>` : crest(s.clubId, 40)}
+    <div class="tc"><b>${esc(bz ? bz[1] : c.n)}</b><small>${bz ? esc(s.prov) : L.name} · Hafta ${s.week}/${G.WEEKS}${s.loan ? tt(' · kiralık') : ''}</small></div>
+    <span class="pill">${ic('coin', 16)}${G.fmtS(s.mgr && !bz ? s.mgr.bud : s.money)}</span>
     <button class="icb" data-a="snd" aria-label="Ses">${ic(sfx.on ? 'vol' : 'mute', 20)}</button></header>`;
 }
 function roleText() {
@@ -270,7 +271,7 @@ function vHome() {
     ${fxt ? fixCard(fxt) : cf ? '' : tt`<section class="vsc off">${ic('cal', 26)}<div><b>Maçsız hafta</b><small>${s.inj > 0 || s.ban > 0 ? roleText() : tt('Bir eylem hakkın fazla.')}</small></div></section>`}
     ${nx.map(([c, n, k]) => tt`<div class="cupn${k === 'cup' || k === 'xc' ? '' : ' eu-' + k}">${k === 'cup' || k === 'xc' ? ic('trophy', 16) : euLogo(k, 18)}<span>${esc(c.name)} · ${n.round} · ${n.week}. hafta · ${esc(G.club(n.opp).n)}</span></div>`).join('')}
     ${cl(s.clubId, tt`${ic('whistle', 18)}<span><b>${esc(co.n)}</b> · ${TACT[co.st].n}</span><em class="${fit >= 60 ? 'hi' : fit < 40 ? 'lo' : ''}">uyum %${fit}</em>`, 'coachs')}
-    ${rv ? tt`<div class="coachs rvs">${ic('users', 18)}<span>Mevki rakibin <b>${esc(rv.n)}</b>${rv.inj ? tt` · sakat, ${rv.inj} hf` : ''}</span><em class="${rv.ahead ? 'hi' : 'lo'}">sen ${rv.me} · o ${rv.ovr}</em></div>` : ''}${prefBar()}${scenCard()}
+    ${rv ? tt`<div class="coachs rvs">${ic('users', 18)}<span>Mevki rakibin <b>${esc(rv.n)}</b>${rv.inj ? tt` · sakat, ${rv.inj} hf` : ''}</span><em class="${rv.ahead ? 'hi' : 'lo'}">sen ${rv.me} · o ${rv.ovr}</em></div>` : ''}${healthWarn() + prefBar()}${scenCard()}
     ${gp ? tt`<section class="card sgc">${tag(tt('Sezon hedefleri'))}<div class="kv">${ic('target', 16)}<span>${gp.t}</span><b>${gp.cur}/${gp.n}</b></div>${bar(gp.cur / gp.n * 100, gp.cur >= gp.n ? 'mo' : 'hot')}<div class="kv">${ic('chart', 16)}<span>Takım: en az ${gp.team}. sıra</span><b class="${gp.pos > gp.team ? 'neg' : ''}">${gp.pos}.</b></div></section>` : ''}
     <section><div class="sh"><h4>Bu hafta</h4><div class="dots">${dots}</div></div><div class="acts">${acts}</div></section>
     <section><div class="sh"><h4>Gündem</h4>${paperBtn()}</div><ul class="news">${news}</ul></section>
@@ -342,7 +343,7 @@ function devCard() {
   const sess = SESS.map(x => { const c = G.sessCost(x), used = G.sessUsed(x.id); return `<div class="shop ${used ? 'has' : ''}"><span class="aic">${ic(x.i, 22)}</span><div><b>${x.n}</b><small>${x.d}</small></div>${used ? `<span class="own">${ic('check', 16)}</span>` : `<button class="mini-b" data-a="sess" data-v="${x.id}" ${s.money < c || (x.id === 'ozel' && s.inj > 0) ? 'disabled' : ''}>${G.fmtS(c)}</button>`}</div>`; }).join('');
   return `<section class="card">${tag(tt('Gelişim'))}
     ${row('cal', tt('Yaş'), D.age, tt`${s.age} yaş`)}${row('train', tt('Kulüp tesisleri'), D.fac)}${row('cart', tt('Kişisel imkânlar'), D.gear, tt('antrenör, spor salonu'))}${row('users', tt('Akıl hocası'), D.mentor ? 1.1 : 1, D.mentor ? esc(D.mentor.n) : tt('kaptan ya da kıdemliyle bağ 60+'))}${D.trait !== 1 ? row('bolt', tt('Karakter'), D.trait) : ''}
-    <div class="kv tot">${ic('up', 16)}<span>${tt('Antrenman verimi')}</span><b>×${dec(D.total, 2)}</b></div>
+    <div class="kv tot">${ic('up', 16)}<span>${tt('Antrenman verimi')}</span><b>×${dec(D.total, 2)}</b></div>${healthRow()}
     <div class="sub">${ic('target', 16)}${tt('Sezon odağı')}</div><div class="chips">${[null, ...keys].map(k => `<button class="chip sm ${(D.focus || null) === k ? 'on' : ''}" data-a="dfocus" data-v="${k || ''}">${k ? ATTR[k] : tt('Dengeli')}</button>`).join('')}</div>
     <p class="note">${tt('Odak seçersen o özellik %50 hızlı, diğerleri %15 yavaş gelişir. Çıkış sezonu (23 yaş altı, 20 maç, 7,5 ortalama) potansiyelini yükseltir.')}</p>
     <div class="sub">${ic('coin', 16)}${tt('Ücretli seanslar · haftada birer kez, eylem hakkı harcamaz')}</div>${sess}</section>`;
@@ -502,20 +503,26 @@ function vLife() {
   const rel = [['anne', tt('Aile'), R.aile], ['ark', tt('Arkadaşlar'), R.ark], ...(R.par != null ? [['par', s.fl.evli ? tt('Eşin') : tt('Sevgilin'), R.par]] : []), ['hoca', tt('Hoca'), R.hoca], ['takim', tt('Soyunma odası'), R.takim], ['taraftar', tt('Taraftar'), R.taraf], ['basin', tt('Basın'), R.basin ?? 50]]
     .map(([p, n, v]) => tt`<div class="rel ${v < 25 ? 'low' : ''}"><div class="relr" style="--v:${Math.round(v)}"><div class="avw">${persona(p, c, G.KW)}</div></div><b>${Math.round(v)}</b><small>${n}</small></div>`).join('');
   const row = (n, v, i) => v ? tt`<div class="kv">${ic(i, 16)}<span>${n}</span><b class="${v < 0 ? 'neg' : ''}">${G.fmt(v)}</b></div>` : '';
-  const shop = SHOP.filter(i => !i.t2 || G.shopTier() >= 2).map(i => {
+  const shop0 = SHOP.filter(i => !i.t2 || G.shopTier() >= 2).map(i => {
     const own = G.has(i.id), cost = i.p || G.yrPrice(i), price = i.p ? G.fmtS(i.p) : tt`${G.fmtS(cost)}/sezon`;
     const btn = own ? tt`<span class="own">${ic('check', 16)}</span>` : tt`<button class="mini-b" data-a="buy" data-v="${i.id}" ${s.money < cost ? 'disabled' : ''}>${price}</button>`;
     return tt`<div class="shop ${own ? 'has' : ''}"><span class="aic">${ic(SIC[i.id] || 'cart', 22)}</span><div><b>${i.n}</b><small>${G.tl(i.d)}</small></div>${btn}</div>`;
-  }).join('') + shopExtra();
+  }).join(''), shop = s.mgr ? shop0 : shop0 + shopExtra();
   const send = G.nice(Math.max(1000, s.con.wage));
-  if (s.mgr) return tt`<div class="hvw" data-hv="ayar">
-    <section class="card hv-ayar">${tag(tt('Para birimi'))}<div class="seg">${Object.keys(G.CUR).map(k => tt`<button class="${G.curKey() === k ? 'on' : ''}" data-a="cur" data-v="${k}">${G.CUR[k][0]} ${G.CUR[k][2]}</button>`).join('')}</div></section>
-    <section class="card hv-ayar">${tag(tt('Tema'))}<div class="thm">${THEMES.map(([k, n, c2]) => tt`<button class="${theme() === k ? 'on' : ''}" data-a="theme" data-v="${k}"><i style="background:${c2 || 'conic-gradient(#d81e2c, #ffd21a, #0f8a4b, #1c57c4, #d81e2c)'}"></i>${n}</button>`).join('')}</div></section>
+  const invRows = Object.keys(INV).map(k => { const v = Math.round((s.inv || {})[k] || 0), stp = G.nice(Math.max(5000, s.money * .2)); return tt`<div class="shop ${v ? 'has' : ''}"><span class="aic">${ic(INV[k][4], 22)}</span><div><b>${INV[k][0]}</b><small>${INV[k][1]}${v ? tt` Şu an: ${G.fmtS(v)}` : ''}</small></div><div class="pbs"><button class="mini-b" data-a="inv" data-v="${k}" ${s.money < stp ? 'disabled' : ''}>+${G.fmtS(stp)}</button><button class="mini-b" data-a="div" data-v="${k}" ${v ? '' : 'disabled'}>Çek</button></div></div>`; }).join('');
+  if (s.mgr) {   // kenar ve iş kariyeri: kazandığın para senin; harcar, yatırıma çevirirsin
+    const hv = V.hv === 'para' ? 'para' : 'ayar';
+    return `<div class="hvw" data-hv="${hv}"><div class="seg">${[['para', tt('Para')], ['ayar', tt('Ayarlar')]].map(([k, l]) => `<button class="${hv === k ? 'on' : ''}" data-a="hv" data-v="${k}">${l}</button>`).join('')}</div>
+    ${mgrPay()}${lifeCard()}
+    <section class="card hv-para">${tag(tt('Yatırımlar'), 'ye')}<div class="kv">${ic('chart', 16)}<span>${tt('Portföy değeri')}</span><b>${G.fmtS(G.invTotal())}</b></div>${invRows}</section>
+    <section class="card hv-para">${tag(tt('Yaşam ve yatırım'))}${shop}</section>
+    <section class="card hv-ayar">${tag(tt('Para birimi'))}<div class="seg">${Object.keys(G.CUR).map(k => `<button class="${G.curKey() === k ? 'on' : ''}" data-a="cur" data-v="${k}">${G.CUR[k][0]} ${G.CUR[k][2]}</button>`).join('')}</div></section>
+    <section class="card hv-ayar">${tag(tt('Tema'))}<div class="thm">${THEMES.map(([k, n, c2]) => `<button class="${theme() === k ? 'on' : ''}" data-a="theme" data-v="${k}"><i style="background:${c2 || 'conic-gradient(#d81e2c, #ffd21a, #0f8a4b, #1c57c4, #d81e2c)'}"></i>${n}</button>`).join('')}</div></section>
     <section class="card hv-ayar">${tag(tt('Dil'))}<div class="seg">${langBtns()}</div></section>
-    <div class="kv">${ic('coin', 16)}<span>Kişisel birikimin</span><b>${G.fmtS(s.money)}</b></div>
-    <button class="opt sm hv-ayar" data-a="exp">${ic('down', 20)}<span><b>Kaydı dosyaya aktar</b></span></button>
-    <button class="opt sm hv-ayar" data-a="mquit">${ic('x', 20)}<span><b>Kenar kariyerini bitir</b><small>Özet ekranına gider, kayıt silinir</small></span></button>
-    <button class="link hv-ayar" data-a="menu">Ana menü</button></div>`;
+    <button class="opt sm hv-ayar" data-a="exp">${ic('down', 20)}<span><b>${tt('Kaydı dosyaya aktar')}</b></span></button>
+    ${mgrSetBtns()}
+    <button class="link hv-ayar" data-a="menu">${tt('Ana menü')}</button></div>`;
+  }
   return tt`<div class="hvw" data-hv="${V.hv}"><div class="seg">${[['cev', tt('Çevre')], ['para', tt('Para')], ['gor', tt('Görünüm')], ['ayar', tt('Ayarlar')]].map(([k, l]) => tt`<button class="${V.hv === k ? 'on' : ''}" data-a="hv" data-v="${k}">${l}</button>`).join('')}</div>
     <section class="card hv-cev">${tag(tt('Çevren'))}<div class="rels">${rel}</div></section>
     ${s.kid ? tt`<section class="card hv-cev">${tag(tt('Çocuğun'), 'ye')}<div class="ppl"><div class="avw sm">${avatar({ skin: s.look.skin, hair: 1, hc: s.look.hc }, c.c1, c.c2)}</div><div><b>${esc(s.kid.n)}</b><small>${G.kidAge()} yaşında · futbol yeteneği</small>${bar(s.kid.tal / 20 * 100, 'hot')}</div></div><p class="note">Ailenle geçirdiğin vakit ve ona ayırdığın zaman yeteneğini büyütür. Emekli olduğunda kariyere onunla, aynı dünyada devam edebilirsin.</p></section>` : ''}
@@ -532,7 +539,7 @@ function vLife() {
       <div class="stt">${ic('globe', 18)}<b>${Math.round(s.dil)}</b><small>Dil</small></div></div>
       ${s.spon.map(x => tt`<div class="kv">${ic('tag', 16)}<span>${esc(x.n)}</span><b>${G.fmtS(x.wk)}/hf</b></div>`).join('')}${bootRow()}</section>
     <section class="card hv-para">${tag(tt('Yatırımlar'), 'ye')}<div class="kv">${ic('chart', 16)}<span>Portföy değeri</span><b>${G.fmtS(G.invTotal())}</b></div>
-      ${Object.keys(INV).map(k => { const v = Math.round((s.inv || {})[k] || 0), stp = G.nice(Math.max(5000, s.money * .2)); return tt`<div class="shop ${v ? 'has' : ''}"><span class="aic">${ic(INV[k][4], 22)}</span><div><b>${INV[k][0]}</b><small>${INV[k][1]}${v ? tt` Şu an: ${G.fmtS(v)}` : ''}</small></div><div class="pbs"><button class="mini-b" data-a="inv" data-v="${k}" ${s.money < stp ? 'disabled' : ''}>+${G.fmtS(stp)}</button><button class="mini-b" data-a="div" data-v="${k}" ${v ? '' : 'disabled'}>Çek</button></div></div>`; }).join('')}
+      ${invRows}
       <p class="note">Değerler her hafta oynar. Mali müşavirin varsa kayıplar yarıya iner, ortağın seni batıramaz.</p></section>
     <section class="card hv-para">${tag(tt('Yaşam ve yatırım'))}${shop}</section>
     ${lookCard()}
@@ -568,10 +575,10 @@ function vSocial() {
 }
 
 function vHub() {
-  const mg = !!G.S.mgr;
-  const tabs = mg ? [['ev', tt('Kenar'), 'whistle'], ['kar', tt('Kulüp'), 'shield'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Ayarlar'), 'heart']] : [['ev', tt('Saha'), 'ball'], ['kar', tt('Kariyer'), 'user'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Hayat'), 'heart']];
+  const mg = !!G.S.mgr, bz = G.isBiz(), ag = bz && G.S.mgr.role === 'agent';
+  const tabs = bz ? [['ev', ag ? tt('Ofis') : tt('Okul'), ag ? 'pen' : 'book'], ['kar', ag ? tt('Oyuncular') : tt('Öğrenciler'), 'users'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Hayat'), 'heart']] : mg ? [['ev', tt('Kenar'), 'whistle'], ['kar', tt('Kulüp'), 'shield'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Hayat'), 'heart']] : [['ev', tt('Saha'), 'ball'], ['kar', tt('Kariyer'), 'user'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Hayat'), 'heart']];
   const nw = V.tab === 'sos' ? 0 : G.S.feedNew || 0;
-  const body = { ev: mg ? vMgrHome : vHome, kar: mg ? vMgrClub : vCareer, lig: vLeague, sos: vSocial, hay: vLife }[V.tab]();
+  const body = { ev: bz ? vBizHome : mg ? vMgrHome : vHome, kar: bz ? vBizList : mg ? vMgrClub : vCareer, lig: vLeague, sos: vSocial, hay: vLife }[V.tab]();
   return head() + tt`<main>${body}</main><nav class="tabs">${tabs.map(([k, n, i]) => tt`<button class="${V.tab === k ? 'on' : ''}" data-a="tab" data-v="${k}">${ic(i, 22)}<span>${n}</span>${k === 'sos' && nw ? tt`<em>${nw > 9 ? '9+' : nw}</em>` : ''}</button>`).join('')}</nav>`;
 }
 
@@ -806,6 +813,7 @@ async function runMatch(fxt, rl, mode) {
     const pc = nat ? '#d81e2c' : G.club(s.clubId).c1; let po = nat ? '#3b4754' : G.club(fxt.opp).c1; if (po === pc) po = nat ? '#f2f2f2' : G.club(fxt.opp).c2;
     pitch = new Pitch($('#pitch'), { cu: pc, co: po, me: rl === 'yedek' ? -1 : PSLOT[s.pos], flip: !home, wx: M.wx, env: ENVM });
     stad = new StadView($('#stad'), ENVM);
+    if (!M.on) { const mc = $('.mctl'); if (mc) mc.classList.add('off'); }   // kulübedeyken kontroller kapalı
   }
   curM = M;
   const tkUpd = () => { const e = $('#tks'); if (e && M.tac) { e.innerHTML = taskChips(); $('#tcn').textContent = TACT[M.tac].n; } };
@@ -841,14 +849,14 @@ async function runMatch(fxt, rl, mode) {
   await wait(700);
   for (let i = 0; i < M.tl.length; i++) {
     if (mSim) sim = true;
-    if (!sim && M.want && !M.red && !M.off) { M.want = 0; M.tl.splice(i, 0, { min: M.tl[i].min, t: 'mom', k: G.momPick(M) }); put(M.tl[i].min, tt('Elini kaldırdın, topu istedin.'), 'm', 'ball'); }
+    if (!sim && M.want && M.on && !M.red && !M.off) { M.want = 0; M.tl.splice(i, 0, { min: M.tl[i].min, t: 'mom', k: G.momPick(M) }); put(M.tl[i].min, tt('Elini kaldırdın, topu istedin.'), 'm', 'ball'); }
     const e = M.tl[i];
-    if (!sim) { M.stam = Math.max(0, M.stam - (M.mode === 'o' ? 1.3 : M.mode === 'd' ? .4 : .8) * (M.drain || 1)); stamUpd(); }
+    if (!sim && M.on) { M.stam = Math.max(0, M.stam - (M.mode === 'o' ? 1.3 : M.mode === 'd' ? .4 : .8) * (M.drain || 1)); stamUpd(); }
     upd(e.min); await wait(380);
     if (e.t === 'txt') {
       put(e.min, e.s); if (pitch) pitch.poss(G.chance(.5));
-      if (e.s.includes(tt('Oyuna giriyorsun')) && pitch) pitch.me = PSLOT[s.pos];
-      if (!sim && M.mode === 'o' && rl !== 'yedek' && !M.red && !M.off) {   // ofansif oyun: fazladan pozisyon, arkada boşluk
+      if (e.in) { M.on = true; if (pitch) pitch.me = PSLOT[s.pos]; const mc = $('.mctl'); if (mc) mc.classList.remove('off'); if (!sim) sfx.whistle(1); }   // artık sahadasın
+      if (!sim && M.mode === 'o' && M.on && !M.red && !M.off) {   // ofansif oyun: fazladan pozisyon, arkada boşluk
         if (G.chance(.22)) M.tl.splice(i + 1, 0, { min: e.min, t: 'mom', k: G.momPick(M) });
         else if (G.chance(.12)) M.tl.splice(i + 1, 0, { min: e.min, t: 'bg', us: false });
       }
@@ -858,7 +866,7 @@ async function runMatch(fxt, rl, mode) {
         if (r.add.length) { const tail = M.tl.splice(i + 1); tail.push(...r.add); tail.sort((a, b) => a.min - b.min); M.tl.push(...tail); }
         tkUpd(); await wait(900);
       }
-    } else if (e.t === 'bg' && !sim && M.mode === 'd' && G.chance(.3)) put(e.min, e.us ? tt('Geride bekliyorsunuz; atak sonuçsuz kaldı.') : tt('Kapalı savunma rakip atağı kesti.'), '', 'shield');
+    } else if (e.t === 'bg' && !sim && M.on && M.mode === 'd' && G.chance(.3)) put(e.min, e.us ? tt('Geride bekliyorsunuz; atak sonuçsuz kaldı.') : tt('Kapalı savunma rakip atağı kesti.'), '', 'shield');
     else if (e.t === 'bg') {
       if (pitch) { pitch.attack(e.us); if (!sim) await wait(750); pitch.goal(e.us); } roar(e.us);
       if (e.us) { M.usG++; const sn = !nat && s.sc[s.clubId] ? G.pick(s.sc[s.clubId])[0] : tt('Takım arkadaşın'); put(e.min, tt`GOL! ${sn}`, 'g', 'ball'); mark(e.min, 'g'); if (!sim) sfx.goal(); }
@@ -879,7 +887,7 @@ async function runMatch(fxt, rl, mode) {
         if (r.add.length) { const tail = M.tl.splice(i + 1); tail.push(...r.add); tail.sort((a, b) => a.min - b.min); M.tl.push(...tail); }
         upd(e.min); await wait(600);
       }
-    } else if (e.t === 'mom' && !M.red && !M.off) {
+    } else if (e.t === 'mom' && M.on && !M.red && !M.off) {
       let k = e.k, bonus = false, from = null;
       const lbl = () => `${e.min}' · ${MOM[k].n}`;
       const myGoal = () => { mark(e.min, 'g me'); bump(); if (!AUTO) sfx.goal(); if (pitch) pitch.goal(true); roar(true); };
@@ -953,6 +961,15 @@ async function runMatch(fxt, rl, mode) {
   curM = null; if (pitch) pitch.stop(); if (stad) stad.stop(); spiker.stop();
   const rep = G.postMatch(M), win = M.ko ? tu() > to() || pens === true : M.usG > M.oppG;
   if (!AUTO && fxt.final && win) sfx.trophy();
+  if (rep.unused) {   // kulübede kaldın: maç notu, röportaj, kutlama yok
+    await dialog({
+      art: `<div class="art res t-life"><div class="art-av">${avatar(s.look, nat ? '#d81e2c' : G.club(s.clubId).c1, nat ? '#f2f2f2' : G.club(s.clubId).c2, { age: s.age })}</div><div class="rate"><b>${ic('clock', 30)}</b><small>${tt('KULÜBEDE')}</small></div></div>`,
+      k: tt('Bugün forma şansı gelmedi'), t: `${home ? usN : opN} ${home ? M.usG : M.oppG} - ${home ? M.oppG : M.usG} ${home ? opN : usN}${pens != null ? tt(' (pen.)') : ''}`,
+      body: chips(rep.lines) + `<p class="mut sm">${tt('Kadro yerin idman temposuna ve maç notlarına göre belirlenir. Çalışmaya devam et.')}</p>`, opts: [{ t: tt('Devam') }], auto: 0,
+    });
+    if (nat) return { us: M.usG, opp: M.oppG, win: M.ko ? win : M.usG > M.oppG };
+    return fxt.cup ? { us: M.usG, opp: M.oppG, win } : { hg: home ? M.usG : M.oppG, ag: home ? M.oppG : M.usG, pg: 0 };
+  }
   const rj = await dialog({
     art: tt`<div class="art res ${win ? 't-club' : M.usG < M.oppG || pens === false ? 't-risk' : 't-life'}"><div class="art-av">${avatar(s.look, nat ? '#d81e2c' : G.club(s.clubId).c1, nat ? '#f2f2f2' : G.club(s.clubId).c2, { mood: rep.rt >= 7 ? 'joy' : rep.rt < 6 ? 'ang' : '', age: s.age, cap: !!s.fl.kaptan })}</div><div class="rate ${rep.rt >= 7 ? 'hi' : rep.rt < 6 ? 'lo' : ''}"><b>${dec(rep.rt, 1)}</b><small>MAÇ NOTU</small></div></div>`,
     t: `${home ? usN : opN} ${home ? M.usG : M.oppG} - ${home ? M.oppG : M.usG} ${home ? opN : usN}${pens != null ? tt(' (pen.)') : ''}`, k: fxt.leg === 2 ? tt`Toplam ${tu()}-${to()} · ${win ? tt('tur sizin') : tt('elendiniz')}` : fxt.leg === 1 ? tt('İlk maç bitti · rövanş bekliyor') : '',
@@ -1027,15 +1044,25 @@ async function retireFlow(reason) {
   const paths = [];
   if (s.at.zihin >= 65 || s.fl.kaptan || s.fl.uni) paths.push(['Antrenör', 'whistle', tt('Lisanslarını aldın. İlk işin, kariyerine başladığın ligde bir takım. Kenardan bağıran artık sensin.')]);
   if (s.fol >= 300000) paths.push([tt('Yorumcu'), 'mic', tt('Ekran seni sevdi. Her hafta milyonlar yorumunu bekliyor; eski takım arkadaşların ise tedirgin.')]);
-  if (s.rep >= 45) paths.push([tt('Menajer'), 'pen', tt('Telefon rehberin servet değerinde. İlk müşterin, mahallenden çıkan on altı yaşında bir çocuk.')]);
+  if (s.rep >= 25) paths.push([tt('Menajer'), 'pen', tt('Telefon rehberin servet değerinde. İlk müşterin, mahallenden çıkan on altı yaşında bir çocuk.'), 'agent']);
   if (s.money >= 30000000) paths.push(['Kulüp başkanı', 'crown', tt`${s.prov} futboluna yatırım yaptın. Tesisler yenilendi; tribünler adını haykırıyor.`]);
+  paths.push([tt('Futbol okulu sahibi'), 'book', tt('Memlekette bir futbol okulu açtın. Sabah çocuklara top sürdürüyor, akşam scoutlarla çay içiyorsun.'), 'school']);
   paths.push([tt('Halı saha işletmecisi'), 'ball', tt('Memlekette bir halı saha açtın. Duvarda formaların asılı; akşamları çocuklara şut çektiriyorsun.')]);
-  const i = await dialog({ t: reason ? tt('Kariyerin sona erdi') : tt('Jübile'), body: tt`<p>${esc(reason || tt('Son maçında tribünler ayakta. Futboldan sonra ne yapacaksın?'))}</p>`, opts: paths.map(p => ({ t: p[0], i: p[1], s: p[0] === 'Antrenör' || p[0] === 'Kulüp başkanı' ? tt('Aynı dünyada kenardan devam edebilirsin') : '' })), auto: paths.length - 1 });
+  const i = await dialog({ t: reason ? tt('Kariyerin sona erdi') : tt('Jübile'), body: tt`<p>${esc(reason || tt('Son maçında tribünler ayakta. Futboldan sonra ne yapacaksın?'))}</p>`, opts: paths.map(p => ({ t: p[0], i: p[1], s: p[0] === 'Antrenör' || p[0] === 'Kulüp başkanı' ? tt('Aynı dünyada kenardan devam edebilirsin') : p[3] ? tt('Aynı dünyada iş hayatına devam edebilirsin') : '' })), auto: paths.length - 1 });
   sfx.trophy();
   if (paths[i][0] === 'Antrenör' || paths[i][0] === 'Kulüp başkanı') {
     const role = paths[i][0] === 'Antrenör' ? 'coach' : 'pres';
     const j = await dialog({ art: art(role === 'coach' ? 'hoca' : 'baskan', role === 'coach' ? 'whistle' : 'crown', 'club'), k: tt`Efsane puanın ${num(r.score)} · ${r.title}`, t: tt('Hikâye burada bitmek zorunda değil'), body: tt`<p>${role === 'coach' ? tt('Lisansların hazır. Aynı liglerde, aynı kulüplerle bu kez kenarda yer alabilirsin: taktik, idman, devre arası kararları senin.') : tt('Birikiminle bir kulübün başına geçebilirsin: bütçe, tesis, hoca ve transfer kararları senin.')}</p>`, opts: [{ t: tt('Kenarda devam et'), i: 'right' }, { t: tt('Kariyeri burada bitir'), c: 'ghost' }], auto: 1 });
     if (j === 0 && await mgrJobFlow(role)) return;
+  }
+  if (paths[i][3]) {   // menajerlik ya da futbol okulu: aynı dünyada iş hayatı
+    const k = paths[i][3];
+    const j = await dialog({ art: art(k === 'agent' ? 'menajer' : 'hoca', k === 'agent' ? 'pen' : 'book', 'club'), k: tt`Efsane puanın ${num(r.score)} · ${r.title}`, t: tt('Hikâye burada bitmek zorunda değil'), body: `<p>${k === 'agent' ? tt('Ofisini açabilirsin: oyuncu keşfeder, sözleşme pazarlığı yapar, transferlerden komisyon alırsın. Aynı ligler, aynı kulüpler.') : tt('Okulunu açabilirsin: çocukları yetiştirir, tesisi büyütür, mezunların profesyonel olunca yetiştirme bedeli alırsın. Kenara çağrı da gelebilir.')}</p>`, opts: [{ t: tt('İşe başla'), i: 'right' }, { t: tt('Kariyeri burada bitir'), c: 'ghost' }], auto: 1 });
+    if (j === 0) {
+      G.bizStart(k); V = { scr: 'hub', tab: 'ev', lig: null, lv: 'tb', ck: 'cup', hv: 'para', kv: 'pro' };
+      if (!AUTO) { render(); window.scrollTo(0, 0); toast(k === 'agent' ? tt('Menajerlik ofisin açıldı.') : tt('Futbol okulun açıldı.'), 'pen'); }
+      return;
+    }
   }
   endHTML = tt`<div class="title end">${tag(tt('Kariyer özeti'))}
     <section class="hero big" style="--c1:${c.c1};--c2:${c.c2}"><div class="hero-l"><div class="ovr"><b>${s.peak}</b><span>ZİRVE</span></div><h2>${esc(s.name)}</h2><small>${s.hist.length} sezon</small><div class="rank">${r.title}</div></div><div class="hero-r">${avatar(s.look, c.c1, c.c2)}</div></section>
@@ -1116,8 +1143,8 @@ function vMgrHome() {
 }
 function vMgrClub() {
   const s = G.S, m = s.mgr, t = G.tot();
-  const hist = m.hist.slice().reverse().map(h => tt`<tr><td>${h.y}</td><td>${esc(h.c)}<small>${h.l}</small></td><td>${h.pos}.</td><td>${h.obj}.</td></tr>`).join('');
-  return tt`${mgrHero()}
+  const hist = m.hist.filter(h => !h.role).slice().reverse().map(h => tt`<tr><td>${h.y}</td><td>${esc(h.c)}<small>${h.l}</small></td><td>${h.pos}.</td><td>${h.obj}.</td></tr>`).join('');
+  return tt`${mgrHero() + mgrPocket()}
     <section class="card">${tag(tt('Kenar kariyeri'))}<div class="stts"><div class="stt">${ic('cal', 18)}<b>${m.hist.length}</b><small>Sezon</small></div><div class="stt">${ic('shield', 18)}<b>${m.jobs}</b><small>Kulüp</small></div><div class="stt">${ic('trophy', 18)}<b>${s.tro.filter(x => /teknik direktör|başkan|Teknik Direktörü/.test(x)).length}</b><small>Kupa</small></div><div class="stt">${ic('coin', 18)}<b>${G.fmtS(m.bud).replace(G.curSym(), '')}</b><small>Bütçe</small></div></div>
       <div class="kv">${ic('ball', 16)}<span>Futbolculuk</span><b>${t.apps} maç · ${t.g} gol · ${s.car.caps} milli</b></div></section>
     ${hist ? tt`<section class="card">${tag(tt('Sezonlar'))}<table class="tb hist"><tr><th>Sezon</th><th>Kulüp</th><th>Sıra</th><th>Hedef</th></tr>${hist}</table></section>` : ''}
@@ -1214,8 +1241,8 @@ function mgrFinish() {
 async function mgrSacked() {
   const s = G.S, role = s.mgr.role;
   sfx.bad();
-  const j = await dialog({ art: art('baskan', 'alert', 'risk'), k: role === 'coach' ? tt('Yönetim kararı') : tt('Olağanüstü kongre'), t: role === 'coach' ? tt('Görevden alındın') : tt('Başkanlığı kaybettin'), body: tt`<p>${role === 'coach' ? tt('Güven tükendi. Yönetim sözleşmeni feshetti.') : tt('Üyeler sandıkta başka bir isme döndü.')}</p>`, opts: [{ t: tt('Yeni bir kulüp ara'), i: 'right' }, { t: tt('Kenar kariyerini bitir'), c: 'ghost' }], auto: 0 });
-  if (j === 0 && await mgrJobFlow(role, true)) return;
+  const j = await dialog({ art: art('baskan', 'alert', 'risk'), k: role === 'coach' ? tt('Yönetim kararı') : tt('Olağanüstü kongre'), t: role === 'coach' ? tt('Görevden alındın') : tt('Başkanlığı kaybettin'), body: tt`<p>${role === 'coach' ? tt('Güven tükendi. Yönetim sözleşmeni feshetti.') : tt('Üyeler sandıkta başka bir isme döndü.')}</p>`, opts: [{ t: tt('Yeni bir yol seç'), s: tt('Kulüp, menajerlik ya da futbol okulu'), i: 'right' }, { t: tt('Kenar kariyerini bitir'), c: 'ghost' }], auto: 0 });
+  if (j === 0 && await sideCareerFlow()) return;
   mgrFinish();
 }
 async function mgrSeasonFlow() {
@@ -1253,6 +1280,130 @@ async function mgrStep() {
     busy = false; sfx.ambOff();
     if (G.S) { V.scr = 'hub'; V.tab = 'ev'; render(); if (!AUTO) window.scrollTo(0, 0); }
   }
+}
+
+// =====================================================================
+// Futbol sonrası iş hayatı: menajerlik ve futbol okulu arayüzü
+// =====================================================================
+const bizLbl = r => ({ agent: [tt('MNJ'), tt('Menajer'), 'pen'], school: [tt('OKUL'), tt('Futbol okulu sahibi'), 'book'] }[r]);
+const nh = n => [...String(n)].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+const sideAv = () => { const s = G.S; return avatar({ ...s.look, band: 0, beard: G.KW ? 0 : s.look.beard || 1 }, '#1b1b1f', '#e9e4da', { pat: 'duz', age: s.age }); };
+function bizHero() {
+  const s = G.S, I = G.bizInfo(), nm = s.name.split(' '), L = bizLbl(I.role);
+  return `<section class="hero mgr" style="--c1:#2a2f45;--c2:#ffd23f"><div class="hero-l"><div class="ovr"><b>${I.n}</b><span>${L[0]}</span></div><h2>${esc(nm.slice(0, -1).join(' ') || nm[0])}<br><span>${esc(nm.length > 1 ? nm[nm.length - 1] : '')}</span></h2><small>${tt`${s.age} yaş`} · ${L[1]}</small></div><div class="hero-r">${sideAv()}</div></section>`;
+}
+function vBizHome() {
+  const s = G.S, m = s.mgr, I = G.bizInfo(), sch = I.role === 'school';
+  const acts = G.BACTS[I.role].map(([k, n, d, i]) => { const c = G.bizCost(k), max = (k === 'hoca' && m.hc >= 5) || (k === 'tesis' && m.lv >= 5); return `<button class="act wide" data-a="bact" data-v="${k}" ${m.act || s.money < c || max ? 'disabled' : ''}><span class="aic">${ic(i, 24)}</span><b>${n}</b><span class="efx"><i class="${c && !max ? 'neg' : 'pos'}">${max ? tt('En üst düzey') : c ? ic('coin', 12) + '−' + G.fmtS(c).replace(G.curSym(), '') : esc(d)}</i></span></button>`; }).join('');
+  const news = s.news.slice(0, 4).map(n => `<li><span class="nic">${ic(n.ic || 'news', 18)}</span><div>${esc(n.s)}<small>${n.w}</small></div></li>`).join('');
+  const g = sch ? gauge(I.rp, 'star', tt('Okul itibarı'), 'mo') + gauge(I.n / I.cap * 100, 'users', tt('Doluluk'), 'ta') + gauge(I.lv * 20, 'train', tt('Tesis'), 'en') + gauge(I.hc * 20, 'whistle', tt('Antrenör'), 'ho')
+    : gauge(s.rep, 'star', tt('İtibar'), 'mo') + gauge(I.n / I.cap * 100, 'users', tt('Dosya'), 'ta') + gauge(I.mood, 'smile', tt('Memnuniyet'), I.mood < 35 ? 'low' : 'en') + gauge(I.best, 'chart', tt('En iyi oyuncu'), 'ho');
+  return `${bizHero()}<section class="gauges">${g}</section>
+    <section class="card">${tag(tt('Kasa'))}<div class="kv">${ic('coin', 16)}<span>${tt('Haftalık kazanç')}</span><b class="${I.inc < 0 ? 'neg' : ''}">${G.fmt(I.inc)}</b></div><div class="kv">${ic('chart', 16)}<span>${tt('Bu sezonki kazanç')}</span><b>${G.fmtS(I.earn)}</b></div><div class="kv">${ic('users', 16)}<span>${sch ? tt('Öğrenci') : tt('Oyuncu')}</span><b>${I.n}/${I.cap}</b></div><div class="kv tot">${ic('home', 16)}<span>${tt('Kişisel birikimin')}</span><b>${G.fmtS(s.money)}</b></div></section>
+    <section><div class="sh"><h4>${tt('Bu haftanın hamlesi')}</h4><div class="dots"><i class="${m.act ? 'u' : ''}"></i></div></div><div class="acts">${acts}</div></section>
+    <section><div class="sh"><h4>${tt('Gündem')}</h4></div><ul class="news">${news}</ul></section>
+    <div class="dock"><button class="cta" data-a="go">${tt('Haftayı bitir')} ${ic('right', 22)}</button></div>`;
+}
+function vBizList() {
+  const s = G.S, m = s.mgr, sch = m.role === 'school';
+  const rows = sch
+    ? m.kids.slice().sort((a, b) => b.tal - a.tal).map(k => `<div class="ppl"><div class="avw sm">${avatar({ skin: nh(k.n) % 4, hair: nh(k.n + 'h') % 4, hc: nh(k.n + 'c') % 3 }, '#2a2f45', '#ffd23f', { pat: 'duz' })}</div><div><b>${esc(k.n)}</b><small>${tt`${k.age} yaş · yetenek ${Math.round(k.tal)}`}</small>${bar(k.tal, k.tal >= 37 ? 'mo' : 'hot')}</div><span class="mini-b">${k.age >= 15 ? tt('Mezun oluyor') : tt`${16 - k.age} yıl`}</span></div>`).join('')
+    : m.cl.slice().sort((a, b) => b.ovr - a.ovr).map(c => `<div class="ppl">${crest(c.id, 38)}<div><b>${esc(c.n)}</b><small>${POS[c.pos].n} · ${tt`${c.age} yaş`} · ${esc(G.club(c.id).n)} · ${tt('güç')} ${Math.round(c.ovr)}${c.shop ? ' · ' + tt('pazarda') : ''}</small>${bar(c.mood, c.mood < 35 ? 'hot' : 'mo')}</div><span class="mini-b">${G.fmtS(Math.round(c.wage * .05))}${tt('/hf')}</span></div>`).join('');
+  const grads = sch && m.grads.length ? `<section class="card">${tag(tt('Mezunların'), 'ye')}${m.grads.map(g => `<div class="kv">${crest(g.id, 20)}<span>${esc(g.n)} · ${esc(G.club(g.id).n)}<small> · ${g.y}</small></span><b>${g.ovr}</b></div>`).join('')}</section>` : '';
+  const hist = m.hist.slice().reverse().map(h => `<tr><td>${h.y}</td><td>${esc(tt(h.c))}<small>${esc(h.l || '')}</small></td><td>${h.earn != null ? G.fmtS(h.earn) : (h.pos || '–') + '.'}</td></tr>`).join('');
+  return `${bizHero()}<section class="card">${tag(sch ? tt('Öğrencilerin') : tt('Oyuncuların'))}${rows || `<p class="mut sm">${sch ? tt('Okulda öğrenci yok. Yetenek taraması yap.') : tt('Dosyanda oyuncu yok. Oyuncu keşfine çık.')}</p>`}<p class="note">${sch ? tt('Çocuklar 16 yaşında mezun olur. Yeteneği 37 ve üstü olan bir kulüple imzalar; yetiştirme bedeli sana kalır. Mezunların yükseldikçe dayanışma payı alırsın.') : tt('Oyuncularının ücretinden %5 pay alırsın. Çubuk memnuniyeti gösterir; ilgisiz kalan oyuncu ofisini değiştirir. Transferlerde bonservisin %3\'ü senin.')}</p></section>
+    ${grads}${hist ? `<section class="card">${tag(tt('Sezonlar'))}<table class="tb hist"><tr><th>${tt('Sezon')}</th><th>${tt('İş')}</th><th>${tt('Kazanç')}</th></tr>${hist}</table></section>` : ''}
+    <button class="opt sm" data-a="mresign">${ic('right', 20)}<span><b>${tt('Bu işi bırak')}</b><small>${sch ? tt('Okulu devret, başka bir yola gir') : tt('Dosyaları kapat, başka bir yola gir')}</small></span></button>`;
+}
+async function agentWindow(title) {
+  const s = G.S;
+  for (const o of G.agentOffers()) {
+    const c = s.mgr.cl[o.ci]; if (!c) continue;
+    const j = await dialog({ art: clubArt(o.id, offerSub(o.id)), k: title, t: tt`${c.n} için teklif`, body: `<div class="tgrid"><div>${ic('swap', 16)}<small>${tt('Bonservis')}</small><b>${G.fmtS(o.fee)}</b></div><div>${ic('coin', 16)}<small>${tt('Yeni ücret')}</small><b>${G.fmtS(o.wage)}</b></div><div>${ic('shield', 16)}<small>${tt('Şu anki kulübü')}</small><b>${esc(G.club(c.id).n)}</b></div><div>${ic('pen', 16)}<small>${tt('Komisyonun')}</small><b>${G.fmtS(o.cut)}</b></div></div>`, opts: [{ t: tt('Transferi bitir'), s: tt('Oyuncu memnun, komisyon cebinde'), i: 'pen' }, { t: tt('Reddet'), s: tt('Oyuncu bozulur'), c: 'ghost' }], auto: 0 });
+    const ch = G.agentDeal(o, j === 0); if (j === 0) sfx.sign(); if (!AUTO && ch.length) toast(ch.join(' · '), j === 0 ? 'pen' : 'x');
+  }
+}
+function bizFinish() {
+  const s = G.S, r = G.bizEnd(), L = bizLbl(r.role);
+  endHTML = `<div class="title end">${tag(tt('İş hayatı özeti'))}
+    <section class="hero big" style="--c1:#2a2f45;--c2:#ffd23f"><div class="hero-l"><div class="ovr"><b>${r.seasons}</b><span>${tt('SEZON')}</span></div><h2>${esc(s.name)}</h2><small>${L[1]}</small></div><div class="hero-r">${sideAv()}</div></section>
+    <div class="rate hi wide"><b>${G.fmtS(r.total)}</b><small>${tt('TOPLAM KAZANÇ')}</small></div>
+    <div class="stts"><div class="stt">${ic('users', 18)}<b>${r.role === 'school' ? r.grads : r.clients}</b><small>${r.role === 'school' ? tt('Mezun') : tt('Oyuncu')}</small></div><div class="stt">${ic('star', 18)}<b>${r.bestGrad ? r.bestGrad.ovr : Math.round(s.rep)}</b><small>${r.bestGrad ? tt('En iyi mezun') : tt('İtibar')}</small></div><div class="stt">${ic('shirt', 18)}<b>${G.tot().apps}</b><small>${tt('Maç (oyuncu)')}</small></div><div class="stt">${ic('ball', 18)}<b>${G.tot().g}</b><small>${tt('Gol (oyuncu)')}</small></div></div>
+    ${r.bestGrad ? `<div class="card">${tag(tt('Gururun'), 'ye')}<div class="kv">${crest(r.bestGrad.id, 22)}<span>${esc(r.bestGrad.n)} · ${esc(G.club(r.bestGrad.id).n)}</span><b>${r.bestGrad.ovr}</b></div></div>` : ''}
+    <button class="cta" data-a="new">${tt('Yeni kariyer')}</button><button class="link" data-a="title">${tt('Ana menü')}</button></div>`;
+  G.wipe(); V.scr = 'end'; render();
+}
+async function bizSeasonFlow() {
+  const s = G.S;
+  G.initPlayoffs(); while (G.poPending()) { G.poRound(null); }
+  const r = G.seasonEnd(), bl = G.bizSeason(r); G.save();
+  await dialog({ art: `<div class="art res t-fame"><div class="art-av">${sideAv()}</div><div class="rate hi"><b>${s.mgr.hist.length}.</b><small>${tt('SEZON')}</small></div></div>`, k: tt`${r.label} bitti`, t: tt`Şampiyon: ${r.champ}`, body: chips(bl) + `<p class="mut">${tt`Artık ${s.age} yaşındasın.`}</p>`, opts: [{ t: tt('Yeni sezon'), i: 'right' }], auto: 0 });
+  await tourFlow();
+  if (s.age >= 70) { await info(tt('Zaman doldu'), tt('Yetmiş yaşına geldin. İşleri devretme vakti.')); bizFinish(); return; }
+  if (s.mgr.role === 'agent') await agentWindow(tt('Yaz dönemi'));
+  const so = G.sideOffer();   // iş hayatındayken de kenara çağrı gelebilir
+  if (so) {
+    const j = await dialog({ art: clubArt(so.id, offerSub(so.id)), k: tt('Kenara çağrı'), t: tt`${G.club(so.id).n} seni teknik direktör olarak istiyor`, body: `<p>${s.mgr.role === 'school' ? tt('Okulda yetiştirdiğin çocuklar adını duyurdu. Kabul edersen okulu devredersin; değeri hesabına geçer.') : tt('Oyuncuların senden övgüyle söz ediyor. Kabul edersen dosyalarını kapatırsın.')}</p>`, opts: [{ t: tt('Kabul et'), s: G.fmtS(so.wage) + tt('/hf'), i: 'whistle' }, { t: tt('İşime devam ediyorum'), c: 'ghost' }], auto: 1, cls: 'ev' });
+    if (j === 0) { G.mgrResign(); G.mgrStart('coach', so); sfx.sign(); if (!AUTO) toast(tt`${G.club(so.id).n}: göreve başladın.`, 'pen'); }
+  }
+}
+async function bizStep() {
+  if (busy) return; busy = true;
+  try {
+    const s = G.S, wk = G.absWeek();
+    if (s.fl.evw !== wk) {
+      s.fl.evw = wk; const e = G.bizEvent();
+      if (e) { const j = await dialog({ art: art(e.p, e.i, 'club'), t: e.t, body: `<p>${esc(e.d)}</p>`, opts: e.o.map(o => ({ t: o[0], s: o[1] })), cls: 'ev' }); const ch = e.o[j][2](); if (!AUTO && ch.length) toast(ch.join(' · '), 'check'); G.save(); }
+    }
+    const r = G.endWeek(null, null, null, null); G.save();
+    if (s.mgr.role === 'agent' && s.week === 20) await agentWindow(tt('Devre arası'));
+    if (r.over) await bizSeasonFlow();
+    if (G.S) G.save();
+  } finally {
+    busy = false;
+    if (G.S) { V.scr = 'hub'; V.tab = 'ev'; render(); if (!AUTO) window.scrollTo(0, 0); }
+  }
+}
+// Yeni sayfa: görevi bırakınca açılan yollar. true: yeni işe başlandı
+async function sideCareerFlow() {
+  const s = G.S, cur = s.mgr ? s.mgr.role : '';
+  for (;;) {
+    const o = [{ k: 'coach', t: tt('Teknik direktörlük'), s: tt('Seni isteyen kulüplere bak'), i: 'whistle' },
+      { k: 'pres', t: tt('Başkanlık'), s: tt('Birikiminle bir kulübün başına geç'), i: 'crown' },
+      { k: 'agent', t: tt('Menajerlik'), s: cur === 'agent' ? tt('Az önce bıraktın') : s.rep >= 25 ? tt('Oyuncu temsil et, komisyon kazan') : tt('İtibar 25 gerekir'), i: 'pen', dis: s.rep < 25 || cur === 'agent' },
+      { k: 'school', t: tt('Futbol okulu'), s: cur === 'school' ? tt('Az önce devrettin') : tt('Çocuk yetiştir, mezunların imzalasın'), i: 'book', dis: cur === 'school' },
+      { k: '', t: tt('Burada bitir'), s: tt('Özet ekranına geç'), i: 'x' }];
+    const i = await dialog({ art: `<div class="art t-club"><div class="art-ic">${ic('right', 150)}</div><div class="art-av">${sideAv()}</div><span class="art-n">${esc(s.name)}</span></div>`, k: tt('Yeni sayfa'), t: tt('Bundan sonra ne yapacaksın?'), body: `<div class="kv">${ic('coin', 16)}<span>${tt('Kişisel birikimin')}</span><b>${G.fmtS(s.money)}</b></div>`, opts: o, grid: true, auto: 4, cls: 'ev' });
+    const k = o[i].k; if (!k) return false;
+    if (k === 'coach' || k === 'pres') { if (await mgrJobFlow(k, true)) return true; continue; }
+    G.bizStart(k); sfx.sign(); V = { scr: 'hub', tab: 'ev', lig: null, lv: 'tb', ck: 'cup', hv: 'para', kv: 'pro' };
+    if (!AUTO) { render(); window.scrollTo(0, 0); toast(k === 'agent' ? tt('Menajerlik ofisin açıldı.') : tt('Futbol okulun açıldı.'), 'pen'); }
+    return true;
+  }
+}
+// Cebin: maaş, kâr payı ya da iş geliri kişisel birikime gider
+function mgrPay() {
+  const s = G.S, role = s.mgr.role, inc = G.income(), sh = G.mgrShare(), bz = G.isBiz() ? G.bizInfo().inc : 0;
+  const row = (n, v, i) => v ? `<div class="kv">${ic(i, 16)}<span>${n}</span><b class="${v < 0 ? 'neg' : ''}">${G.fmt(v)}</b></div>` : '';
+  return `<section class="card hv-para">${tag(tt('Cebin'))}${row(tt('Haftalık maaşın'), inc.wage, 'whistle')}${row(tt('Kâr payın'), sh, 'crown')}${row(role === 'agent' ? tt('Komisyonların') : tt('Okul geliri'), bz, role === 'agent' ? 'pen' : 'book')}${row(tt('Sponsorlar'), inc.spon, 'tag')}${row(tt('İşletmeler'), inc.biz, 'cart')}${row(tt('Giderler'), -inc.cost, 'down')}
+    <div class="kv tot">${ic('coin', 16)}<span>${tt('Haftalık net')}</span><b class="${inc.net + sh + bz < 0 ? 'neg' : ''}">${G.fmt(inc.net + sh + bz)}</b></div><div class="kv">${ic('home', 16)}<span>${tt('Kişisel birikimin')}</span><b>${G.fmtS(s.money)}</b></div>
+    <p class="note">${role === 'coach' ? tt('Maaşın ve galibiyet primlerin kendi hesabına geçer. Kulüp bütçesi ayrıdır; onu yalnızca kulüp için harcarsın.') : role === 'pres' ? tt('Kulüp bütçesi kulübündür; sana haftalık kâr payı kalır.') : tt('Bu işte kazandığın her kuruş doğrudan cebine girer.')}</p></section>`;
+}
+// Kulüp sekmesindeki kısa cep özeti ve istifa
+function mgrPocket() {
+  const s = G.S, coachR = s.mgr.role === 'coach';
+  return `<section class="card">${tag(tt('Cebin'))}<div class="kv">${ic('coin', 16)}<span>${coachR ? tt('Haftalık maaşın') : tt('Kâr payın')}</span><b>${G.fmt(coachR ? s.con.wage : G.mgrShare())}</b></div><div class="kv tot">${ic('home', 16)}<span>${tt('Kişisel birikimin')}</span><b>${G.fmtS(s.money)}</b></div><p class="note">${tt('Harcamak ve yatırım için: Hayat > Para.')}</p>
+    <button class="opt sm" data-a="mresign">${ic('right', 20)}<span><b>${tt('İstifa et')}</b><small>${tt('Başka bir yola gir: kulüp, menajerlik, futbol okulu')}</small></span></button></section>`;
+}
+const mgrSetBtns = () => `<button class="opt sm hv-ayar" data-a="mresign">${ic('right', 20)}<span><b>${G.isBiz() ? tt('Bu işi bırak') : tt('İstifa et')}</b><small>${tt('Başka bir yola gir: kulüp, menajerlik, futbol okulu')}</small></span></button><button class="opt sm hv-ayar" data-a="mquit">${ic('x', 20)}<span><b>${tt('Kenar kariyerini bitir')}</b><small>${tt('Özet ekranına gider, kayıt silinir')}</small></span></button>`;
+// Sağlık göstergesi (Kariyer > Profil)
+function healthRow() {
+  const h = Math.round(G.health());
+  return `<div class="sub">${ic('plus', 16)}${tt('Sağlık')}</div><div class="kv">${ic('heart', 16)}<span>${G.healthText()}</span><b class="${h < 40 ? 'neg' : ''}">%${h}</b></div>${bar(h, h < 40 ? 'hot' : '')}<p class="note">${tt('Yorgun oynamak, sakatken zorlamak ve ağır sakatlıklar sağlığını düşürür; dinlenmek ve kişisel ekip toparlar. Sağlık 40\'ın altındayken gelen ağır bir sakatlık kariyeri bitirebilir.')}</p>`;
+}
+function healthWarn() {
+  const h = Math.round(G.health()); if (h >= 40) return '';
+  return `<p class="warn hlw">${ic('alert', 16)} ${tt`Sağlığın %${h}: ${G.healthText()}.`} ${tt('Dinlen; bu hâlde ağır bir sakatlık kariyerini bitirebilir.')}</p>`;
 }
 
 // Kariyerin başı: kulübünü deneme antrenmanlarıyla bulursun
@@ -1347,6 +1498,7 @@ async function chalFlow() {
 }
 
 async function nextStep() {
+  if (G.isBiz()) return bizStep();
   if (G.S && G.S.mgr) return mgrStep();
   if (busy) return; busy = true; sfx.pre();
   try {
@@ -1363,15 +1515,16 @@ async function nextStep() {
     }
     const rl = G.role(), can = (rl === '11' || rl === 'yedek') && !s.fl.skip;
     const pre = async (f, back) => {
-      const rf = G.refInfo();
+      const rf = G.refInfo(), mr = G.matchRole(f), r2 = mr.r;
+      const why = (mr.why ? `<div class="stn st-${r2 === '11' ? 'acik' : 'liste'}">${ic('whistle', 16)}${esc(mr.why)}</div>` : '') + (r2 === 'yedek' ? `<div class="stn">${ic('clock', 16)}${tt('Oyuna girme ihtimalin')} <b>%${Math.round(G.subChance(f) * 100)}</b></div>` : '');
       const j = await dialog({
         art: f.eu ? tt`<div class="art euA eu-${f.eu}">${euLogo(f.eu, 96)}<div class="art-t"><b>${esc(G.club(f.opp).n)}</b><small>${esc(f.name)} · ${f.round} · ${f.final ? tt('tarafsız saha') : f.home ? tt('iç saha') : tt('deplasman')}</small></div></div>` : clubArt(f.opp, `${f.cup ? f.name + ' · ' + f.round : LMAP[f.lid].name} · ${f.final ? tt('tarafsız saha') : f.home ? tt('iç saha') : tt('deplasman')}`), k: f.eu ? tt('Avrupa gecesi') : tt('Maç günü'),
-        body: tt`<div class="tgrid"><div>${ic('shirt', 16)}<small>Görevin</small><b>${ROLE[rl]}</b></div><div>${ic('bolt', 16)}<small>Enerji</small><b>${Math.round(s.en)}</b></div><div>${ic('shield', 16)}<small>Takımın</small><b>${Math.round(s.rt[s.clubId])}</b></div><div>${ic('shield', 16)}<small>Rakip</small><b>${Math.round(s.rt[f.opp])}</b></div></div><div class="stn st-${rf.cold ? 'kilit' : 'acik'}">${ic('whistle', 16)}Hakem <b>${esc(rf.n)}</b> · ${rf.style} · ${rf.att}</div>${preExtra(f, rf)}<div class="stn">${ic(TACT[G.coach().st].i, 16)}Hoca <b>${esc(G.coach().n)}</b> · ${TACT[G.coach().st].n} · uyum %${G.tacFit()}</div>${s.adapt > 0 ? tt`<p class="warn">${ic('clock', 16)} Uyum sürecindesin (${s.adapt} hafta): anlar biraz zorlaşır.</p>` : ''}${s.en < 35 ? tt`<p class="warn">${ic('alert', 16)} Enerjin düşük: anlar zorlaşır, sakatlık riski artar.</p>` : ''}`,
+        body: tt`<div class="tgrid"><div>${ic('shirt', 16)}<small>Görevin</small><b>${ROLE[r2]}</b></div><div>${ic('bolt', 16)}<small>Enerji</small><b>${Math.round(s.en)}</b></div><div>${ic('shield', 16)}<small>Takımın</small><b>${Math.round(s.rt[s.clubId])}</b></div><div>${ic('shield', 16)}<small>Rakip</small><b>${Math.round(s.rt[f.opp])}</b></div></div><div class="stn st-${rf.cold ? 'kilit' : 'acik'}">${ic('whistle', 16)}Hakem <b>${esc(rf.n)}</b> · ${rf.style} · ${rf.att}</div>${why + preExtra(f, rf)}<div class="stn">${ic(TACT[G.coach().st].i, 16)}Hoca <b>${esc(G.coach().n)}</b> · ${TACT[G.coach().st].n} · uyum %${G.tacFit()}</div>${s.adapt > 0 ? tt`<p class="warn">${ic('clock', 16)} Uyum sürecindesin (${s.adapt} hafta): anlar biraz zorlaşır.</p>` : ''}${s.en < 35 ? tt`<p class="warn">${ic('alert', 16)} Enerjin düşük: anlar zorlaşır, sakatlık riski artar.</p>` : ''}`,
         opts: [{ t: tt('Maça çık'), s: tt('Kilit anları sen oynarsın'), i: 'ball' }, { t: tt('Simüle et'), i: 'right' }, ...(back && s.diff !== 'gercek' ? [{ t: tt('Geri dön'), s: tt('Hafta harcanmaz'), c: 'ghost' }] : [])],
       });
       if (j === 2) return 'back';
       if (!AUTO && G.ivDue() && G.bigMatch(f) && G.chance(.3)) await ivFlow('pre', f);
-      return runMatch(f, rl, j === 0 ? 'play' : 'sim');
+      return runMatch(f, r2, j === 0 ? 'play' : 'sim');
     };
     const cf = G.sideFixture(); let ownCup = null, first = true;
     if (cf && can) { ownCup = await pre(cf, true); if (ownCup === 'back') return; first = false; }
@@ -1416,10 +1569,11 @@ const scenStartBtn = () => `<button class="cta" data-a="start">${tt('Senaryoyu b
 // Ana sayfa parçaları
 function prefBar() {
   const s = G.S; if (!s.rv || s.inj > 0 || s.ban > 0) return '';
-  const R = G.roleScore(), v = G.clamp(R.s, 0, 100);
+  const R = G.roleScore(), v = G.clamp(R.s, 0, 100), ant = Math.round(G.clamp(((R.tr ?? 1.5) - 1.5) * 3, -5, 5)), frm = Math.round(G.clamp(((R.f ?? 6.6) - 6.6) * 5, -7, 7)), fs = x => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x);
   return `<div class="prefw"><div class="prefh">${ic('whistle', 14)}<span>${tt('Hocanın tercihi')}</span><small>${s.rv.f && s.lastR.length ? tt`form: sen ${dec(R.f, 1)} · o ${dec(s.rv.f, 1)}` : ''}</small></div>
     <div class="prefb ${v >= 50 ? 'hi' : v >= 30 ? '' : 'lo'}"><i style="width:${v.toFixed(0)}%"></i><u style="left:30%"></u><u style="left:50%"></u></div>
-    <div class="prefl"><span>${ROLE.yok}</span><span>${ROLE.yedek}</span><span>${ROLE['11']}</span></div></div>`;
+    <div class="prefl"><span>${ROLE.yok}</span><span>${ROLE.yedek}</span><span>${ROLE['11']}</span></div>
+    <div class="prefc"><span class="${ant >= 0 ? 'pos' : 'neg'}">${ic('train', 12)}${tt('İdman')} ${fs(ant)}</span><span class="${frm >= 0 ? 'pos' : 'neg'}">${ic('star', 12)}${tt('Form')} ${fs(frm)}</span><small>${tt('Kadro yerin her hafta idman temposuna ve maç notlarına göre yeniden belirlenir.')}</small></div></div>`;
 }
 function scenCard() {
   const X = G.scenInfo(); if (!X || !X.live) return '';
@@ -1636,7 +1790,7 @@ function gfxCard() {
 let lastMoney = null, lastOvr = null;
 function polish() {
   const s = G.S; if (!s || V.scr !== 'hub') { lastMoney = lastOvr = null; return; }
-  const p = $('.top .pill'), m = s.mgr ? s.mgr.bud : s.money;
+  const p = $('.top .pill'), m = s.mgr && !G.isBiz() ? s.mgr.bud : s.money;
   if (p && lastMoney != null && m !== lastMoney && !GFX.calm) {
     const a = lastMoney, t0 = performance.now(), node = p.lastChild;
     const step = () => { const k = Math.min(1, (performance.now() - t0) / 650); if (!node.isConnected) return; node.textContent = G.fmtS(a + (m - a) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
@@ -1788,7 +1942,7 @@ const ACT = {
   look: v => { const [k, x] = v.split(':'); grab(); C.look[k] = +x; render(); },
   theme: v => { try { localStorage.setItem(TKEY, v); } catch (e) { /* yok */ } render(); },
   mmode: (v, el) => { if (!curM) return; curM.mode = v; el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); },
-  mcall: (v, el) => { if (!curM || curM.calls <= 0 || curM.stam < 12 || curM.want) return; curM.calls--; curM.stam -= 12; curM.want = 1; el.innerHTML = tt`${ic('ball', 14)} Topu iste (${curM.calls})`; if (!curM.calls) el.disabled = true; },
+  mcall: (v, el) => { if (!curM || !curM.on || curM.calls <= 0 || curM.stam < 12 || curM.want) return; curM.calls--; curM.stam -= 12; curM.want = 1; el.innerHTML = tt`${ic('ball', 14)} Topu iste (${curM.calls})`; if (!curM.calls) el.disabled = true; },
   mcrowd: (v, el) => { if (!curM || !curM.crowd) return; curM.crowd = 0; curM.crowdOn = 1; el.disabled = true; sfx.goal(); G.fx({ taraf: 1 }); },
   start: async () => {
     if (busy) return;
@@ -1830,9 +1984,24 @@ const ACT = {
     busy = true; try { sfx.pop(); const a = MGR().find(x => x[0] === v); await dialog({ art: art(G.S.mgr.role === 'coach' ? 'takim' : 'baskan', a[3], 'club'), t: a[1], body: tt`<p>${esc(r[0])}</p>${chips(r[1])}`, opts: [{ t: tt('Devam') }], auto: 0, cls: 'ev' }); } finally { busy = false; }
     G.save(); render();
   },
+  mresign: async () => {
+    if (busy || !G.S.mgr) return; busy = true;
+    try {
+      const biz = G.isBiz(), role = G.S.mgr.role, v = G.resignValue();
+      const j = await dialog({ art: art(role === 'agent' ? 'menajer' : 'baskan', 'right', 'risk'), k: tt('Dikkat'), t: biz ? tt('Bu işi bırakıyor musun?') : tt('İstifa ediyor musun?'), body: `<p>${role === 'school' ? tt`Okulu devredersin; değeri (${G.fmtS(v)}) hesabına geçer.` : role === 'agent' ? tt('Oyuncuların başka ofislere geçer.') : role === 'pres' ? tt`Kulübü devredersin; ${G.fmtS(v)} hesabına geçer.` : tt('Sözleşmen biter; kazandığın para sende kalır.')} ${tt('Ardından yeni bir yol seçersin.')}</p>`, opts: [{ t: biz ? tt('Bırak') : tt('İstifa et'), i: 'alert' }, { t: tt('Vazgeç'), c: 'ghost' }], auto: 1 });
+      if (j !== 0) return;
+      G.mgrResign();
+      if (!(await sideCareerFlow())) (biz ? bizFinish : mgrFinish)();
+    } finally { busy = false; if (G.S && V.scr === 'hub') render(); }
+  },
+  bact: async v => {
+    if (busy || !G.isBiz()) return; const r = G.bizAct(v); if (!r) return;
+    busy = true; try { sfx.pop(); const a = G.BACTS[G.S.mgr.role].find(x => x[0] === v); await dialog({ art: art(G.S.mgr.role === 'agent' ? 'menajer' : 'hoca', a[3], 'club'), t: a[1], body: `<p>${esc(r[0])}</p>${chips(r[1])}`, opts: [{ t: tt('Devam') }], auto: 0, cls: 'ev' }); } finally { busy = false; }
+    G.save(); render();
+  },
   mquit: async () => {
     if (busy || !G.S.mgr) return; busy = true;
-    try { const j = await dialog({ k: tt('Dikkat'), t: tt('Kenar kariyeri bitsin mi?'), body: tt('<p>Özet ekranına geçilir ve kayıt silinir.</p>'), opts: [{ t: tt('Bitir'), i: 'alert' }, { t: tt('Vazgeç'), c: 'ghost' }], auto: 1 }); if (j === 0) mgrFinish(); } finally { busy = false; }
+    try { const j = await dialog({ k: tt('Dikkat'), t: tt('Kenar kariyeri bitsin mi?'), body: tt('<p>Özet ekranına geçilir ve kayıt silinir.</p>'), opts: [{ t: tt('Bitir'), i: 'alert' }, { t: tt('Vazgeç'), c: 'ghost' }], auto: 1 }); if (j === 0) (G.isBiz() ? bizFinish : mgrFinish)(); } finally { busy = false; }
   },
   cur: v => { G.setCur(v); render(); },
   lang: v => {
@@ -1914,7 +2083,7 @@ document.addEventListener('change', e => {
 });
 
 // Geliştirici aracı: n haftayı rastgele kararlarla hızlı oynatır.
-window.__ts = { G, sign: o => signFlow(o), clip: (cv, o) => recordClip(cv, o), agent: () => agentFlow(), paper: () => paperFlow(), camp: () => campFlow(), replay: (M, f) => replayFlow(M, f), nego: o => negoFlow(o), drawCard, mini: (k, vr, lh) => playMini(k, G.S.rt[G.S.clubId], k, { vr, lh }), chal: () => chalFlow(), heir: w => { heirW = w; ACT.heir(); }, mgr: role => mgrJobFlow(role), retire: () => retireFlow(), aw: r => awardFlow(r), tour: () => tourFlow(), rerender: () => render(), iv: (k, f, M) => ivFlow(k, f, M), club: id => clubFlow(id), start: async (o, auto = true) => { AUTO = auto; try { G.wipe(); G.newCareer({ ...o, wait: true }); await startFlow(); } finally { AUTO = false; render(); } }, auto: async n => { AUTO = true; try { for (let i = 0; i < n && G.S; i++) { if (G.S.mgr) { if (Math.random() < .5) G.mgrAct(G.pick(G.MACTS[G.S.mgr.role])[0]); await nextStep(); continue; } while (G.S.used < G.slots() && Math.random() < .8) { if (Math.random() < .5 && G.S.inj <= 0) await trainFlow(); else G.act(G.pick(['rest', 'aile', 'ark', 'rest'])); } if (Math.random() < .05) G.setStatus(G.pick(['mutlu', 'acik', 'kiralik'])); await nextStep(); } } finally { AUTO = false; busy = false; render(); } } };
+window.__ts = { G, biz: k => { G.bizStart(k); V = { scr: 'hub', tab: 'ev', lig: null, lv: 'tb', ck: 'cup', hv: 'para', kv: 'pro' }; render(); }, side: () => sideCareerFlow(), bizStep: () => bizStep(), sign: o => signFlow(o), clip: (cv, o) => recordClip(cv, o), agent: () => agentFlow(), paper: () => paperFlow(), camp: () => campFlow(), replay: (M, f) => replayFlow(M, f), nego: o => negoFlow(o), drawCard, mini: (k, vr, lh) => playMini(k, G.S.rt[G.S.clubId], k, { vr, lh }), chal: () => chalFlow(), heir: w => { heirW = w; ACT.heir(); }, mgr: role => mgrJobFlow(role), retire: () => retireFlow(), aw: r => awardFlow(r), tour: () => tourFlow(), rerender: () => render(), iv: (k, f, M) => ivFlow(k, f, M), club: id => clubFlow(id), start: async (o, auto = true) => { AUTO = auto; try { G.wipe(); G.newCareer({ ...o, wait: true }); await startFlow(); } finally { AUTO = false; render(); } }, auto: async n => { AUTO = true; try { for (let i = 0; i < n && G.S; i++) { if (G.S.mgr) { if (Math.random() < .5) G.mgrAct(G.pick(G.MACTS[G.S.mgr.role])[0]); await nextStep(); continue; } while (G.S.used < G.slots() && Math.random() < .8) { if (Math.random() < .5 && G.S.inj <= 0) await trainFlow(); else G.act(G.pick(['rest', 'aile', 'ark', 'rest'])); } if (Math.random() < .05) G.setStatus(G.pick(['mutlu', 'acik', 'kiralik'])); await nextStep(); } } finally { AUTO = false; busy = false; render(); } } };
 
 // Ana ekrana eklenebilir uygulama: çevrimdışı açılış için hizmet işçisi
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { /* desteklenmiyor */ });
