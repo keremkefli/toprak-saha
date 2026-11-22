@@ -625,3 +625,12 @@ em.pen { font: 800 11px/1 var(--fh); font-style: normal; color: var(--rd); margi
 main.fin > * { animation: fin .24s ease both; } @keyframes fin { from { opacity: 0; transform: translateY(6px); } }
 :root[data-calm] *, :root[data-calm] *::before, :root[data-calm] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 :root[data-cb] { --gr: #4aa3ff; --rd: #ffb000; }
+
+/* ---------- ikon kartları ve soyunma odası geçişi ---------- */
+.opts.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); gap: 7px; }
+.opts.grid .opt { display: grid; grid-template-columns: 1fr; justify-items: center; align-content: start; text-align: center; gap: 6px; padding: 12px 6px 11px; }
+.opts.grid .opt > .ic { width: 32px; height: 32px; color: var(--or); background: var(--p2); border-radius: 50%; padding: 6px; box-sizing: content-box; }
+.opts.grid .opt b { font-size: 13.5px; line-height: 1.1; } .opts.grid .opt small { font-size: 11px; line-height: 1.2; }
+.opts.grid .opt:disabled > .ic { color: var(--mu); }
+.sheet.locker { animation: lockin .55s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes lockin { 0% { clip-path: inset(0 50% 0 50%); filter: brightness(.3); } 60% { filter: brightness(.7); } 100% { clip-path: inset(0 0 0 0); filter: none; } }
