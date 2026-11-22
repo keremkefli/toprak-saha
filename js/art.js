@@ -81,25 +81,51 @@ const HAIR = [
 export const HAIRS = HAIR.length;
 export const HAIRK = [4, 7, 8, 9, 10, 11];   // kadın kariyerinde üretilen portrelerin saçları
 
+// Forma deseni iki renkten türetilir (js/scene.js ile aynı kural): iç saha ve deplasmanda aynı desen
+const KPAT = ['duz', 'cubuk', 'yatay', 'yarim', 'capraz'];
+const hx = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+const KITS = {
+  duz: c => `<path d="M24 110 35 80l9-3-12 33z" fill="${c}" opacity=".9"/>`,
+  cubuk: c => `<path d="M16 110V88l8-4v26zM32 110V80.5l8-2.6V110zM60 110V77.9l8 2.6V110zM76 110V84l8 4v22z" fill="${c}" opacity=".92"/>`,
+  yatay: c => `<path d="M17 87.5h66q4 2.6 6 6H11q2-3.4 6-6zM9 101h82q1 3 1 6H8q0-3 1-6z" fill="${c}" opacity=".92"/>`,
+  yarim: c => `<path d="M50 90 61 77.2c15 2 31 11 31 32.8H50z" fill="${c}" opacity=".92"/>`,
+  capraz: c => `<path d="M22 84.5 35 79l44 31H57z" fill="${c}" opacity=".92"/>`,
+};
+const mixc = (a, b, t) => { const f = c => { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }, A = f(a), B = f(b); return '#' + A.map((v, k) => Math.round(v + (B[k] - v) * t).toString(16).padStart(2, '0')).join(''); };
+// x: { num, beard, glasses, pat forma deseni, mood 'joy'|'ang'|'tir', age yaş, cap kaptan bandı, hurt sargı }
 export function avatar(look = {}, c1 = '#3a3f47', c2 = '#f2f2f2', x = {}) {
-  const sk = SKIN[look.skin ?? 1], hc = HAIRC[look.hc ?? 0], hr = HAIR[look.hair ?? 0] || HAIR[0], hair = Array.isArray(hr) ? hr[0] : hr, back = Array.isArray(hr) ? hr[1](hc) : '', bd = x.beard ? 2 : look.beard || 0;
+  const sk = SKIN[look.skin ?? 1], age = x.age || 0, hci = look.hc ?? 0, hc = age >= 35 && hci < 3 ? mixc(HAIRC[hci], '#d8d2c8', .38) : HAIRC[hci], hr = HAIR[look.hair ?? 0] || HAIR[0], hair = Array.isArray(hr) ? hr[0] : hr, back = Array.isArray(hr) ? hr[1](hc) : '', bd = x.beard ? 2 : look.beard || 0;
+  const m = x.mood || '', kit = (KITS[x.pat || KPAT[hx([c1, c2].sort().join('')) % 5]] || KITS.duz)(c2);
+  const brow = m === 'ang' ? 'M37.5 35.5l8.5 3M62.5 35.5l-8.5 3' : m === 'joy' ? 'M38 36q4-3 8 0M54 36q4-3 8 0' : m === 'tir' ? 'M38 38.5q4-1 8 .5M54 39q4-1.5 8-.5' : 'M38 37.5q4-2.5 8 0M54 37.5q4-2.5 8 0';
+  const eyes = x.glasses ? '<path d="M34 40h13v8H34zM53 40h13v8H53z" fill="#101010"/><path d="M47 43h6" stroke="#101010" stroke-width="2"/>'
+    : m === 'tir' ? '<path d="M39.5 44h5M55.5 44h5" stroke="#191512" stroke-width="2.2" stroke-linecap="round"/>'
+    : m === 'joy' ? '<path d="M39.5 44.6q2.5-3.2 5 0M55.5 44.6q2.5-3.2 5 0" stroke="#191512" stroke-width="2.2" fill="none" stroke-linecap="round"/>'
+    : '<circle cx="42" cy="43.5" r="2.3" fill="#191512"/><circle cx="58" cy="43.5" r="2.3" fill="#191512"/>';
+  const mouth = m === 'joy' ? '<path d="M42 56q8 9.5 16 0z" fill="#5a2a22"/><path d="M44.2 56.4h11.6v1.7H44.2z" fill="#fff" opacity=".92"/>'
+    : m === 'ang' ? '<path d="M44 59.5q6-4 12 0" stroke="#5a2a22" stroke-width="2.2" fill="none" stroke-linecap="round"/>'
+    : m === 'tir' ? '<path d="M45 58.5h10" stroke="#5a2a22" stroke-width="2.2" fill="none" stroke-linecap="round"/>'
+    : '<path d="M43.5 57.5q6.5 4 13 0" stroke="#5a2a22" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
   return tt`<svg class="av" viewBox="0 0 100 110" aria-hidden="true">
     ${back}
     <path d="M8 110C8 88 24 79 40 77h20c16 2 32 11 32 33z" fill="${c1}"/>
-    <path d="M24 110 35 80l9-3-12 33z" fill="${c2}" opacity=".9"/>
+    ${kit}
     <path d="M39 77 50 90l11-13" fill="none" stroke="${c2}" stroke-width="4" stroke-linejoin="round"/>
+    ${x.cap ? '<path d="M77.5 86.5l11.5 8-1.6 6.5-12.4-7.5z" fill="#ffd23f" stroke="rgba(0,0,0,.35)" stroke-width="1"/>' : ''}
     <rect x="42" y="58" width="16" height="22" rx="6" fill="${sk}"/><rect x="42" y="64" width="16" height="9" fill="#000" opacity=".13"/>
     <circle cx="29" cy="45" r="4.5" fill="${sk}"/><circle cx="71" cy="45" r="4.5" fill="${sk}"/>
     <ellipse cx="50" cy="42" rx="21" ry="25" fill="${sk}"/>
     <path d="M50 17c12 0 21 11 21 25s-9 25-21 25z" fill="#000" opacity=".07"/>
+    ${age >= 34 ? '<path d="M41 30.5q9-2.2 18 0M36 49.5q2 1.6 4 1.2M64 49.5q-2 1.6-4 1.2" stroke="#000" opacity=".17" stroke-width="1.4" fill="none" stroke-linecap="round"/>' : ''}
     ${bd ? `<path d="M30 46c1 16 9 23 20 23s19-7 20-23c-3 8-6 11-10 12-6-3-14-3-20 0-4-1-7-4-10-12z" fill="${hc}" opacity="${bd === 1 ? .3 : .9}"/>` : ''}
     ${hair(hc)}
-    ${look.band ? '<path d="M29.6 33q20.4-9.5 40.8 0v5.5q-20.4-9.5-40.8 0z" fill="#f2f2f2"/>' : ''}
+    ${age >= 31 && (look.hair ?? 0) !== 5 ? '<path d="M29.4 41c0-5 1-9.5 3.2-13l1.8 3.4c-1.2 3-1.9 6-2 9.6zM70.6 41c0-5-1-9.5-3.2-13l-1.8 3.4c1.2 3 1.9 6 2 9.6z" fill="#d8d2c8" opacity=".6"/>' : ''}
+    ${look.band || x.hurt ? '<path d="M29.6 33q20.4-9.5 40.8 0v5.5q-20.4-9.5-40.8 0z" fill="#f2f2f2"/>' : ''}${x.hurt ? '<path d="M60.5 27.6l5.5 8.4M63.8 26.6l5 8.2" stroke="#d63b3b" stroke-width="1.8" stroke-linecap="round"/>' : ''}
     ${x.num ? tt`<text x="64" y="104" text-anchor="middle" font-family="'Big Shoulders Display','Arial Narrow',sans-serif" font-weight="900" font-size="17" fill="${c2}" stroke="rgba(0,0,0,.35)" stroke-width="1.5" paint-order="stroke">${x.num}</text>` : ''}
-    <path d="M38 37.5q4-2.5 8 0M54 37.5q4-2.5 8 0" stroke="#000" opacity=".55" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-    ${x.glasses ? '<path d="M34 40h13v8H34zM53 40h13v8H53z" fill="#101010"/><path d="M47 43h6" stroke="#101010" stroke-width="2"/>' : '<circle cx="42" cy="43.5" r="2.3" fill="#191512"/><circle cx="58" cy="43.5" r="2.3" fill="#191512"/>'}
+    <path d="${brow}" stroke="#000" opacity=".55" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    ${eyes}
     <path d="M50 46v6l-2.5 1.5" stroke="#000" opacity=".25" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-    <path d="M43.5 57.5q6.5 4 13 0" stroke="#5a2a22" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    ${mouth}
+    ${m === 'tir' ? '<path d="M74.5 27q3.4 5.4 0 8.4q-3.4-3 0-8.4z" fill="#8fd0ff"/>' : ''}
   </svg>`;
 }
 
@@ -127,7 +153,8 @@ export const PERS = {
 const PERSK = { takim: { hair: 9 }, rakip: { hair: 8 }, par: { hair: 0, beard: 1 } };
 export function persona(k, club, kw) {
   const p = PERS[k] || PERS.ark, o = kw ? PERSK[k] : null;
-  return avatar(o ? { ...p.l, hair: o.hair } : p.l, p.club && club ? club.c1 : p.c1 || '#444', p.club && club ? club.c2 : p.c2 || '#fff', o ? { ...p, beard: o.beard || 0 } : p);
+  const kit = p.club && club ? {} : { pat: 'duz' };   // kulüp forması giymeyenlerde desen yok
+  return avatar(o ? { ...p.l, hair: o.hair } : p.l, p.club && club ? club.c1 : p.c1 || '#444', p.club && club ? club.c2 : p.c2 || '#fff', o ? { ...p, ...kit, beard: o.beard || 0 } : { ...p, ...kit });
 }
 
 // ---------- arma ----------
@@ -195,3 +222,13 @@ export function euLogo(k, s = 40) {
     <path d="M35 24h30v9c0 13-6 22-15 22s-15-9-15-22z" fill="#fff"/><path d="M35 28c-11-1-11 15 3 17M65 28c11-1 11 15-3 17" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
     <path d="M46.5 54h7v9h-7zM37 70l3-7h20l3 7z" fill="#fff"/><path d="${starP(50, 37, 6)}" fill="#c2410c"/></svg>`;
 }
+
+// ---------- kupa siluetleri: lig kalkanı, kupa, Avrupa kupası, altın krampon, bireysel ödül ----------
+const TRO = {
+  lig: '<path d="M8 6h24v14c0 9-5 14-12 17C13 34 8 29 8 20z"/><path d="M14 38h12v3H14z"/><path d="M20 12l2.4 5 5.4.6-4 3.8 1.1 5.4-4.9-2.7-4.9 2.7 1.1-5.4-4-3.8 5.4-.6z" fill="#14110e" opacity=".35"/>',
+  kupa: '<path d="M12 4h16v11c0 6-3 10-8 11-5-1-8-5-8-11z"/><path d="M12 7H6c0 6 2 9 6 10M28 7h6c0 6-2 9-6 10" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M18 26h4v7h-4zM12 33h16v4H12zM10 37h20v3H10z"/>',
+  avrupa: '<path d="M13 3h14l-1 15c0 5-2 8-6 9-4-1-6-4-6-9z"/><path d="M13 5C5 5 4 10 6 15c1 4 4 6 8 6M27 5c8 0 9 5 7 10-1 4-4 6-8 6" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M17 27h6l1 8h-8zM11 35h18v5H11z"/>',
+  gol: '<path d="M6 30c0-5 3-8 8-9l3-14h8l-1 12c6 2 11 5 11 11v3H6z"/><path d="M9 36h3v4H9zM17 36h3v4h-3zM25 36h3v4h-3z"/>',
+  odul: '<path d="M20 3l4.6 9.6 10.4 1.2-7.7 7.2 2.1 10.4L20 26.2l-9.4 5.2 2.1-10.4L5 13.8l10.4-1.2z"/><path d="M15 34h10v3H15zM12 37h16v3H12z"/>',
+};
+export const trophySvg = (k, s = 40) => `<svg class="tro-s" width="${s}" height="${s * 1.1}" viewBox="0 0 40 44" fill="currentColor" aria-hidden="true">${TRO[k] || TRO.kupa}</svg>`;

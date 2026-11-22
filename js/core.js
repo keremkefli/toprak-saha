@@ -2859,3 +2859,20 @@ export function slotList() {
   });
 }
 export function wipeSlot(n) { try { localStorage.removeItem(KEYS[n - 1]); } catch (e) { /* yok */ } if (KEYS[n - 1] === KEY) S = null; }
+
+// ---------- maç ortamı: stadyum kademesi, günün saati, doluluk, pankart ----------
+export const stadTier = id => { const r = S.rt[id] || 30; return r < 38 ? 1 : r < 50 ? 2 : r < 63 ? 3 : r < 75 ? 4 : 5; };
+export function matchEnv(fxt, wx) {
+  const s = S, nat = !!fxt.nat, host = nat ? null : (fxt.home || fxt.final ? s.clubId : fxt.opp), hc = host ? club(host) : null;
+  const tier = nat ? 5 : fxt.final ? Math.max(4, stadTier(host)) : stadTier(host), h = hsh((nat ? fxt.name || 'milli' : fxt.opp) + ':' + absWeek());
+  const derby = !nat && isDerby(s.clubId, fxt.opp), big = !nat && bigMatch(fxt), mine = !nat && !!fxt.home;
+  const tod = fxt.eu ? 'gece' : tier <= 2 ? (h % 4 ? 'gun' : 'aksam') : ['gun', 'aksam', 'gece', 'gece'][h % 4];
+  const fill = clamp(.3 + (mine ? s.rel.taraf : 50) / 220 + (big ? .2 : 0) + (derby ? .25 : 0) + (tier >= 4 ? .12 : 0) + (nat ? .3 : 0), .12, 1);
+  const nm = s.name.split(' ').slice(-1)[0].toLocaleUpperCase(LC), love = mine && s.rel.taraf >= 70, boo = mine && s.rel.taraf < 22;
+  return { tier, tod, wx: wx || 'acik', fill, c1: hc ? hc.c1 : '#d81e2c', c2: hc ? hc.c2 : '#f2f2f2', derby, eu: fxt.eu || null, home: mine, banner: love ? `${nm} ${s.num}` : boo ? tt('BU FORMA EMEK İSTER') : '', boo };
+}
+// Antrenman sahası: kulübün tesis düzeyi kadar gelişmiş, tribünler boş
+export function trainEnv() { const c = S.clubId ? club(S.clubId) : null; return { tier: S.clubId ? facOf(S.clubId) : 1, tod: 'gun', wx: 'acik', fill: .04, c1: c ? c.c1 : '#ff6a2b', c2: c ? c.c2 : '#f2f2f2' }; }
+// Krampon rengi: sponsor markasına göre
+const BOOTC = { Poyraz: '#3d7bff', Zirve: '#ffd23f', 'Akın': '#ff4d4d', 'Kıvılcım': '#ff6a2b' };
+export const bootColor = () => (S.boot ? BOOTC[S.boot.n] || '#f2f2f2' : has('krampon') ? '#e9e2d3' : '#15120f');

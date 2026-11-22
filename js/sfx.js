@@ -57,6 +57,20 @@ if (has) {
 const vib = p => { try { if (has && on && navigator.vibrate) navigator.vibrate(p); } catch (e) { /* desteklenmiyor */ } };
 
 // Spiker: tarayıcının konuşma sentezi (varsa). Ayrı bir anahtarla açılır.
+// Üretilmiş tribün kayıtları (snd/ klasörü). Yüklenemezse sentez sesi çalar.
+const SND = {}, SNDF = ['tribun1', 'tribun2', 'tribun3', 'gol'];
+function preload() {
+  const c = ac(); if (!c) return;
+  for (const k of SNDF) { if (k in SND) continue; SND[k] = null; fetch('snd/' + k + '.mp3').then(r => (r.ok ? r.arrayBuffer() : Promise.reject())).then(b => new Promise((res, rej) => c.decodeAudioData(b, res, rej))).then(buf => { SND[k] = buf; }).catch(() => { /* dosya yok: sentez */ }); }
+}
+// Dikişsiz döngü: kaydın sonu ile başı üst üste bindirilerek geçilir
+function loopBuf(c, buf, vol) {
+  const g = c.createGain(); g.gain.value = 0.0001; g.gain.exponentialRampToValueAtTime(Math.max(.002, vol), c.currentTime + 1); g.connect(master);
+  const X = .9, D = buf.duration; let alive = true, to = 0;
+  const play = at => { if (!alive) return; const s = c.createBufferSource(), e = c.createGain(); s.buffer = buf; e.gain.setValueAtTime(0.0001, at); e.gain.linearRampToValueAtTime(1, at + X); e.gain.setValueAtTime(1, at + D - X); e.gain.linearRampToValueAtTime(0.0001, at + D); s.connect(e); e.connect(g); s.start(at); s.stop(at + D + .05); to = setTimeout(() => play(at + D - X), Math.max(50, (at + D - X - c.currentTime - .3) * 1000)); };
+  play(c.currentTime + .02);
+  return { g, stop() { alive = false; clearTimeout(to); } };
+}
 const SKEY = 'toprak-saha-spiker'; let spk = false;
 try { spk = has && localStorage.getItem(SKEY) === '1'; } catch (e) { /* yok */ }
 export const spiker = {
@@ -81,7 +95,8 @@ export const sfx = {
   post() { tone(880, .5, { type: 'square', vol: .09 }); tone(1320, .45, { type: 'sine', vol: .14 }); vib(30); },
   save() { tone(120, .12, { vol: .35, to: 60 }); noise(.08, { f: 900, q: .8, vol: .2 }); },
   whistle(n = 1) { for (let i = 0; i < n; i++) { const at = i * .38, d = i === n - 1 && n > 1 ? .7 : .28; tone(2350, d, { type: 'square', vol: .05, at }); tone(2480, d, { type: 'square', vol: .05, at }); noise(d, { f: 2400, q: 6, vol: .1, at }); } },
-  goal() { noise(2.8, { f: 850, q: .5, vol: .55, a: .16 }); noise(2.4, { f: 2300, q: .8, vol: .2, a: .25 }); tone(392, .16, { type: 'triangle', vol: .12, at: .05 }); tone(523, .16, { type: 'triangle', vol: .12, at: .2 }); tone(659, .4, { type: 'triangle', vol: .14, at: .35 }); vib([40, 60, 120]); },
+  pre() { preload(); },
+  goal() { const c = ac(); if (c && SND.gol) { const s = c.createBufferSource(), g = c.createGain(); s.buffer = SND.gol; g.gain.value = .75; s.connect(g); g.connect(master); s.start(); } else { noise(2.8, { f: 850, q: .5, vol: .55, a: .16 }); noise(2.4, { f: 2300, q: .8, vol: .2, a: .25 }); } tone(392, .16, { type: 'triangle', vol: .12, at: .05 }); tone(523, .16, { type: 'triangle', vol: .12, at: .2 }); tone(659, .4, { type: 'triangle', vol: .14, at: .35 }); vib([40, 60, 120]); },
   ooh() { noise(.9, { f: 700, to: 320, q: .9, vol: .28, a: .05 }); },
   conceded() { noise(1.1, { f: 420, to: 200, q: .8, vol: .26, a: .08 }); tone(196, .5, { type: 'sawtooth', vol: .06, to: 130 }); },
   card() { tone(740, .1, { type: 'square', vol: .09 }); tone(554, .22, { type: 'square', vol: .09, at: .11 }); },
@@ -91,11 +106,22 @@ export const sfx = {
   sign() { noise(.25, { f: 3000, to: 1500, q: 2, vol: .1 }); [659, 784, 1047].forEach((f, i) => tone(f, .2, { type: 'triangle', vol: .12, at: .2 + i * .09 })); },
   trophy() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, .24, { type: 'triangle', vol: .15, at: i * .13 })); noise(2.6, { f: 900, q: .5, vol: .4, a: .3 }); },
   anthem() { [[262, 330, 392], [294, 370, 440], [330, 415, 494], [392, 494, 587]].forEach((ch, i) => ch.forEach(f => tone(f, i === 3 ? 1.2 : .44, { type: 'triangle', vol: .085, at: i * .42, a: .05 }))); noise(2.4, { f: 700, q: .5, vol: .11, a: .5 }); },
-  ambOn() {
+  // Tribün uğultusu stadyum kademesine göre: mahallede tek tük bağırış, büyük statta davul ve tezahürat dalgası
+  ambOn(tier = 3, fill = .6) {
     const c = ac(); if (!c || amb) return;
-    const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
-    s.buffer = nbuf(c); s.loop = true; fl.type = 'lowpass'; fl.frequency.value = 520; g.gain.value = 0.0001; g.gain.exponentialRampToValueAtTime(0.07, c.currentTime + 1);
-    s.connect(fl); fl.connect(g); g.connect(master); s.start(); amb = { s, g };
+    const T0 = Math.max(1, Math.min(5, tier | 0)), buf = SND['tribun' + (T0 <= 2 ? 1 : T0 === 3 ? 2 : 3)];
+    if (buf) { const L = loopBuf(c, buf, [0, .3, .5, .42, .5, .62][T0] * (.5 + fill * .6)); amb = { g: L.g, s: { stop() { L.stop(); } }, iv: 0 }; return; }   // kayıt hazırsa o çalar
+    preload();
+    const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(), T = Math.max(1, Math.min(5, tier | 0)), vol = [0, .012, .028, .05, .075, .1][T] * (.5 + fill * .6);
+    s.buffer = nbuf(c); s.loop = true; fl.type = 'lowpass'; fl.frequency.value = [0, 360, 420, 520, 620, 720][T]; g.gain.value = 0.0001; g.gain.exponentialRampToValueAtTime(Math.max(.002, vol), c.currentTime + 1);
+    s.connect(fl); fl.connect(g); g.connect(master); s.start();
+    const iv = setInterval(() => {
+      if (!amb || !on) return; const r = Math.random();
+      if (T === 1) { if (r < .5) noise(.25, { f: 900 + Math.random() * 600, q: 3, vol: .05, a: .03 }); }
+      else if (r < .45) { const n = T >= 4 ? 6 : 4; for (let i = 0; i < n; i++) { tone(92, .12, { vol: .1 + T * .02, to: 60, at: i * .34 }); if (T >= 3) noise(.2, { f: 700, q: .8, vol: .03 + T * .012, at: i * .34 + .17, a: .04 }); } }
+      else if (T >= 3 && r < .7) noise(1.6, { f: 600, to: 1000, q: .6, vol: .05 + T * .015, a: .5 });
+    }, T === 1 ? 5200 : 6800 - T * 500);
+    amb = { s, g, iv };
   },
-  ambOff() { if (!amb || !ctx) return; const a = amb; amb = null; try { a.g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + .6); a.s.stop(ctx.currentTime + .7); } catch (e) { /* zaten durdu */ } },
+  ambOff() { if (!amb || !ctx) return; const a = amb; amb = null; clearInterval(a.iv); try { a.g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + .6); a.s.stop(ctx.currentTime + .7); } catch (e) { /* zaten durdu */ } },
 };
