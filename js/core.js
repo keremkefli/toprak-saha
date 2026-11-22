@@ -346,7 +346,7 @@ export function roleScore() {
   const o = OVR(), v = S.rv, n = Math.min(3, S.lastR.length), f = n ? S.lastR.slice(-n).reduce((a, b) => a + b, 0) / n : 6.5;
   const th = S.trh || [], tr = th.length ? th.reduce((a, b) => a + b, 0) / th.length : 1.5;   // son haftaların antrenman ortalaması
   const p = { hoca: S.rel.hoca * 0.5 + 28, guc: (o - S.rt[S.clubId]) * 3.5, ant: clamp((tr - 1.5) * 3, -5, 5), form: n ? clamp((f - 6.6) * 5, -7, 7) : 0,
-    ek: (S.fl.kaptan ? 8 : 0) + (youngRule() ? 12 : 0) + (tacFit() - 50) * 0.1 + Math.min(4, (S.posx || []).length * 2) - (S.fl.pc ? 5 : 0) + (S.camp && S.camp.s === S.season && S.week <= 6 ? S.camp.pre || 0 : 0),
+    ek: (S.fl.kaptan ? 8 : 0) + (youngRule() ? 12 : 0) + (tacFit() - 50) * 0.1 + Math.min(4, (S.posx || []).length * 2) - (S.fl.pc ? 5 : 0) + (S.con.forma ? 6 : 0) + (S.camp && S.camp.s === S.season && S.week <= 6 ? S.camp.pre || 0 : 0),
     rakip: v ? clamp((o - v.ovr) * 1.1, -7, 7) + (v.inj > 0 ? 8 : 0) + (v.f && n ? clamp((f - v.f) * 3, -5, 5) : 0) : 0 };
   return { s: p.hoca + p.guc + p.ek + p.rakip + p.ant + p.form, p, f, tr };
 }
@@ -457,7 +457,7 @@ export function endWeek(own, ownCup, ownEuro, ownX) {
   s.rel.takim += (chem() * 100 - s.rel.takim) * .03;   // soyunma odası havası, yakın olduğun isimlere bağlı
   newQuest(); delete s.fl.rehabw;
   if (s.adapt > 0) s.adapt--;
-  rivalTick(); plusWeek(); healthWeek(); s.rel.basin += (50 - s.rel.basin) * .025;
+  rivalTick(); plusWeek(); healthWeek(); rumorWeek(); s.rel.basin += (50 - s.rel.basin) * .025;
   if (s.week === 19) coachCheck();
   if (s.week % 4 === 0) {
     if (s.mr.length >= 3 && s.mr.reduce((a, b) => a + b, 0) / s.mr.length >= 7.6) {
@@ -546,6 +546,7 @@ export function seasonEnd() {
     const lc = s.clubId; matesToNet(); s.clubId = s.loan.from; s.loan = null; genMates(); genRival();
     s.rel.hoca = clamp(42 + (avg - 6.5) * 14, 20, 80); s.rel.takim = 45; s.rel.taraf = 35; s.since = s.season + 1; delete s.fl.kaptan;
     lines.push(tt`Kiralık süren bitti: ${club(s.clubId).n} takımına döndün.`);
+    if (avg >= 7 && st.apps >= 12) { s.rel.hoca = clamp(s.rel.hoca + 8, 0, 100); lines.push(tt('Kiralıkta parladın: hoca seni kadroda düşünüyor.')); }
     if (avg >= 6.6 && !s.watch.some(w => w.id === lc)) s.watch.push({ id: lc, lv: clamp(50 + (avg - 6.5) * 25, 40, 90) });
   }
   s.car.apps += st.apps; s.car.g += st.g; s.car.a += st.a; s.car.rs += st.rs;
@@ -579,7 +580,10 @@ export function seasonEnd() {
   gainXp(2);
   for (const r of s.refs) r.me = clamp(r.me * .5, -1, .6);   // hakemler zamanla unutur
   addNews(tt`${label} sezonu bitti. ${L.name} şampiyonu ${champ}.`);
-  return { label, league: L.name, pos, n, champ, st, avg, tro, lines, moved, aw, xi };
+  if (!mg && tro.length) docAdd('kupa', tro[0], 8, 'trophy', 39);
+  if (!mg && st.apps) docAdd('ozet', tt`Sezon karnesi: ${st.apps} maç, ${st.g} gol, ${st.a} asist`, 1, 'chart', 39);
+  const doc = mg ? [] : docList(); s.doc = [];
+  return { label, league: L.name, pos, n, champ, st, avg, tro, lines, moved, aw, xi, doc };
 }
 
 // ---------- kupalar: 'cup' ülke kupası; 'cl' Şampiyonlar Ligi, 'el' Avrupa Ligi ----------
@@ -786,7 +790,8 @@ export function acceptOffer(o) {
   if (move) addNews(o.fee ? tt`${club(o.id).n}, bonservisin için ${fmtS(o.fee)} ödedi. ${o.len} yıllık imza.` : tt`${club(o.id).n} ile ${o.len} yıllık sözleşme imzaladın.`, 'swap');
   else { s.rel.hoca = clamp(s.rel.hoca + 5, 0, 100); s.hid.sad = clamp(s.hid.sad + 5, 0, 100); addNews(tt`${club(o.id).n} ile sözleşme yeniledin.`, 'pen'); }
   s.con = { wage: o.wage, until: s.season + o.len - 1, role: o.role, goalB: o.goalB || 0 };
-  if (o.img) s.con.img = 1; if (o.loy) s.con.loy = o.loy;
+  if (o.img) s.con.img = 1; if (o.loy) s.con.loy = o.loy; if (o.app) s.con.app = o.app; if (o.forma) s.con.forma = 1; if (o.kap) { s.con.kap = 1; s.fl.kaptan = 1; }
+  if (move) docAdd('transfer', tt`${club(o.id).n} ile imza`, 4, 'pen');
   s.con.rel = nice(value() * (o.relF || 4));
   if (move) newGoals();
 }
@@ -1034,10 +1039,12 @@ export function postMatch(M) {
   if (M.nat) {
     s.car.caps++; s.car.ng += M.pg;
     fx({ rep: 1.5 + M.pg, mo: win ? 6 : 0 });
-    lines.push(tt`${s.car.caps}. milli maçın.`);
+    lines.push(tt`${s.car.caps}. milli maçın.`); if (s.car.caps === 1) docAdd('milli', tt('Milli formayla ilk maç'), 6, 'flag');
   } else {
     s.st.apps++; s.st.g += M.pg; s.st.a += M.pa; s.st.rs += rt; if (!M.cup) s.st.lg += M.pg;
     const cs = s.cs[s.clubId] || (s.cs[s.clubId] = { apps: 0, g: 0 }); cs.apps++; cs.g += M.pg;
+    if (s.con.app) { s.money += s.con.app; lines.push(tt`Maç başı prim: ${fmt(s.con.app)}`); }
+    recTrack(M, lines); docMatch(M, rt, win);
     if (M.pg && !s.fl['lg_' + s.clubId] && legendRank(s.clubId).pos <= 3) { s.fl['lg_' + s.clubId] = 1; unlock('efsane'); fx({ taraf: 8, rep: 2 }); lines.push(tt`${club(s.clubId).n} tarihinin en golcü üç isminden birisin`); addFeed('c:' + s.clubId, club(s.clubId).n, tt`${s.name} artık kulüp tarihinin en golcü üç isminden biri.`, 'kulup'); }
     if (M.capFire) fx({ takim: win ? 2 : lose ? -3 : 0, mo: lose ? -3 : 0 });
     s.mr.push(rt); gainXp(rt >= 8.5 ? 2 : rt >= 7 ? 1 : 0);
@@ -1083,8 +1090,8 @@ export function postMatch(M) {
   if (chance((0.015 + tired) * (M.role === '11' ? 1 : .5) * (M.risk || 1) * (perk('celik') ? .6 : 1) * (1 - .04 * ((s.up || {}).ekip || 0)) * (s.fl.kronik ? 1.8 : 1) * (1 + Math.max(0, 60 - health()) / 60) * (s.diff === 'gercek' ? 1.5 : 1))) {
     const r = Math.random();
     if (r < .7) { s.inj = ri(1, 3); hurt(3); lines.push(tt`Maçta sakatlandın: ${s.inj} hafta yoksun.`); }
-    else if (r < .92) { s.inj = ri(4, 8); hurt(7); lines.push(tt`Kas yırtığı: ${s.inj} hafta yoksun.`); s.q.push({ id: 'kas', at: absWeek() + 1 }); }
-    else { s.inj = 6; s.fl.agir = 1; hurt(16); lines.push(tt('Dizinden ağır sakatlandın. Doktorlar seninle konuşmak istiyor.')); careerEnd(lines); }
+    else if (r < .92) { s.inj = ri(4, 8); hurt(7); lines.push(tt`Kas yırtığı: ${s.inj} hafta yoksun.`); s.q.push({ id: 'kas', at: absWeek() + 1 }); docAdd('sakat', tt`Kas yırtığı: ${s.inj} hafta saha dışında`, 3, 'plus'); }
+    else { s.inj = 6; s.fl.agir = 1; hurt(16); lines.push(tt('Dizinden ağır sakatlandın. Doktorlar seninle konuşmak istiyor.')); careerEnd(lines); if (!s.over) { s.q.push({ id: 'agir', at: absWeek() + 1 }); docAdd('sakat', tt('Ağır diz sakatlığı: sezonun en zor günü'), 5, 'plus'); } }
   }
   if (!M.nat) {   // basınla aran manşetlere yansır
     if (s.rel.basin < 30 && rt < 6.2) { fx({ taraf: -2 }); addFeed('basin', tt('Saha Kenarı'), tt`${s.name} yine kayıp. Bu forma ona ağır mı geliyor?`, 'manset'); }
@@ -1277,7 +1284,8 @@ export function decide(M, k, c, min) {
       else L.push({ s: tt('Hakem kararını değiştirmedi ama tribün seni alkışladı.') });
     } else { fx({ hoca: 1 }); if (M.ref) M.ref.me += .08; L.push({ s: tt('Başını sallayıp yerine döndün.') }); }
   } else if (k === 'knock') {
-    if (c === 0) { M.risk = 3; M.rt += .3; fx({ hoca: 2 }); L.push({ s: tt('Dişini sıktın. Sakatlık riskin arttı.') }); }
+    if (c === 0) { M.risk = 3; M.rt += .3; hurt(2); fx({ hoca: 2 }); L.push({ s: tt('Dişini sıktın. Sakatlık riskin arttı.') }); }
+    else if (c === 2) { M.risk = 1.5; M.stam = Math.max(0, (M.stam || 0) - 10); L.push({ s: tt('Saha kenarında bandaj yapıldı. Biraz aksıyorsun ama oyundasın.') }); }
     else { M.off = true; fx({ hoca: -1 }); L.push({ s: tt('Kenara geldin. Bu maçlık bu kadar.') }); }
   }
   return { lines: L, add };
@@ -2163,14 +2171,14 @@ function mgrTick() {
   if (isBiz()) return bizTick();
   const s = S, m = s.mgr, id = s.clubId, d = { denge: .012, hucum: .008, sav: .008, genc: .022 }[m.tr] || .012;
   if (m.role === 'coach') s.rt[id] = clamp(s.rt[id] + d * (m.tr === 'genc' ? (s.week > 20 ? 1 : .2) : 1), 15, 95);
-  m.bud += Math.round(mgrBud(id) * .008); m.act = 0;
+  m.bud += Math.round(mgrBud(id) * .008); m.act = 0; xiTick();
   if (m.role === 'pres') s.money += mgrShare();   // başkanın haftalık kâr payı
   m.conf = clamp(m.conf + (50 - m.conf) * .02, 0, 100);
   if (m.conf < 12) m.sacked = 1;
 }
 // Maç simülasyonu: önce ilk yarı, devre arası kararıyla ikinci yarı
 export function mgrMatch(fxt) {
-  const s = S, m = s.mgr, T = TACT[coach().st], usR = s.rt[s.clubId] + squadFit(coach().st) + (m.talk ? 1.5 : 0), oppR = s.rt[fxt.opp];
+  const s = S, m = s.mgr, T = TACT[coach().st], usR = s.rt[s.clubId] + squadFit(coach().st) + (m.talk ? 1.5 : 0) + xiBonus(), oppR = s.rt[fxt.opp];
   const hb = fxt.final ? 0 : fxt.home ? 2 : fxt.eu ? -3.5 : -2, f = m.tr === 'hucum' ? [1.08, 1.03] : m.tr === 'sav' ? [.96, .9] : [1, 1];
   const M = { fxt, usR, oppR, lu: 1.35 * Math.exp((usR + hb - oppR) * .05) * T.lu * f[0], lo: 1.2 * Math.exp((oppR - hb - usR) * .05) * T.lo * f[1], usG: 0, oppG: 0, tl: [], agg: fxt.agg || [0, 0], ko: (!!fxt.cup && !fxt.lg && fxt.leg !== 1) || !!fxt.po, eu: fxt.eu || null };
   mgrHalf(M, 1, 1, 0);
@@ -2188,6 +2196,7 @@ export function mgrAfter(M, win) {
   m.conf = clamp(m.conf + dv * (M.fxt.cup ? 1.3 : 1), 0, 100); m.talk = 0;
   lines.push(tt('Güven ') + (dv >= 0 ? '+' : '−') + Math.abs(Math.round(dv)));
   if (win && m.role === 'coach') { const b = nice(s.con.wage * .2); if (b) { s.money += b; lines.push(tt('Prim: ') + fmt(b)); } }
+  xiAfter(win, lose);
   const cn = club(s.clubId).n, on = club(M.fxt.opp).n;
   addFeed('c:' + s.clubId, cn, tt`MAÇ SONU | ${cn} ${M.usG}-${M.oppG} ${on}`, 'kulup');
   addFeed('taraftar', pick(FANS), win ? pick([tt`${s.name} ne dokunduysa oldu.`, tt('Bu takım oynuyor. Helal.'), tt('Pazartesi işe mutlu gidiyoruz.')]) : lose ? pick([tt`${s.name} bu kadroyla ne yapsın... ya da ne yapmasın?`, tt('Böyle olmaz. Bir şey değişmeli.'), tt('Tribün sabırsız.')]) : tt('Bir puan bir puandır. Ama yetmez.'));
@@ -2210,7 +2219,7 @@ export function mgrSeason(rep) {
   // kadro yaşlanır, yıldızlar gider: güçlü kadroyu korumak her yıl yeniden yatırım ister
   const lg = S.lg[leagueOf(id)].t, avg = lg.reduce((a, x) => a + s.rt[x], 0) / lg.length;
   s.rt[id] = clamp(s.rt[id] - 1.4 - Math.max(0, s.rt[id] - avg) * .14 + .35 * Math.min(3, s.fx[id] || 0), 15, 95);
-  m.bud += Math.round(mgrBud(id) * .7); m.obj = mgrObj(); m.act = 0; m.talk = 0;
+  m.bud += Math.round(mgrBud(id) * .7); m.obj = mgrObj(); m.act = 0; m.talk = 0; m.xi = null;
   if (m.role === 'coach') s.con.wage = nice(Math.max(s.con.wage, wageFor(s.rt[id], s.rt[id] + 4) * 1.4));
   if (m.conf < 20) m.sacked = 1;
   return lines;
@@ -2624,7 +2633,7 @@ function plusSeason(st, avg, pos, moved, lines) {
 export const negoInfo = o => o.ng || (o.ng = { pat: clamp(2 + Math.round((S.agent ? S.agent.pw : 0) * 2), 2, 4), n: 0, got: {} });
 export function negoAsk(o, k) {
   const g = negoInfo(o); if (g.got[k] || g.pat <= 0 || g.end) return null;
-  const base = { wage: .5, sign: .58, goalB: .7, rel: .45, img: .48, loy: .5, kisa: .8 }[k]; if (base == null) return null;
+  const base = { wage: .5, sign: .58, goalB: .7, rel: .45, img: .48, loy: .5, kisa: .8, app: .6, forma: o.role === '11' ? .5 : .3, kap: o.role === '11' ? .34 : .12 }[k]; if (base == null) return null;
   const p = clamp(base + (S.agent ? S.agent.pw * .22 : -.06) + (profile().lvl - o.r) * .03 - g.n * .17 + (o.renew ? .06 : 0), .06, .92);
   g.n++; o.neg = true;
   if (chance(p)) {
@@ -2635,6 +2644,9 @@ export function negoAsk(o, k) {
     if (k === 'rel') { o.relF = 2.4; return { ok: 1, text: tt('Kabul: serbest kalma bedelin düşük tutulacak.') }; }
     if (k === 'img') { o.img = 1; return { ok: 1, text: tt('Kabul: imaj hakların sende. Sponsor gelirin %25 artar.') }; }
     if (k === 'loy') { o.loy = nice(o.wage * 6); return { ok: 1, text: tt`Kabul: kulüpte kaldığın her sezon sonunda ${fmt(o.loy)}.` }; }
+    if (k === 'app') { o.app = nice(Math.max(o.wage * .06, 50)); return { ok: 1, text: tt`Kabul: oynadığın her maç için ${fmt(o.app)}.` }; }
+    if (k === 'forma') { o.forma = 1; return { ok: 1, text: tt('Kabul: hoca seni kadroda düşünmek zorunda. Yine de formun konuşur.') }; }
+    if (k === 'kap') { o.kap = 1; return { ok: 1, text: tt('Kabul: pazubent sözleşmeyle senin.') }; }
     o.len = Math.max(1, o.len - 1); return { ok: 1, text: tt`Kabul: sözleşme ${o.len} sezon.` };
   }
   g.pat--;
@@ -2997,7 +3009,7 @@ export function mgrResign() {
 // =====================================================================
 // Futbol sonrası iş hayatı: menajerlik ve futbol okulu. Kendi kulübün yok; gelir doğrudan cebine girer.
 // =====================================================================
-export const isBiz = () => !!S && !!S.mgr && (S.mgr.role === 'agent' || S.mgr.role === 'school');
+export const isBiz = () => !!S && !!S.mgr && (S.mgr.role === 'agent' || S.mgr.role === 'school' || S.mgr.role === 'pundit');
 const bizK = () => (KW ? .3 : 1);
 function mkClient(lo, hi) {
   const ovr = ri(Math.round(lo), Math.round(hi)), age = ri(17, 25), pool = [];
@@ -3013,14 +3025,27 @@ export function bizStart(role) {
   if (prev && s.co[s.clubId] && s.co[s.clubId].me) delete s.co[s.clubId];
   s.loan = null; s.watch = []; s.q = []; s.inj = 0; s.ban = 0; s.over = null; s.used = 0; s.tstat = 'mutlu'; s.agent = null; s.job = 0;
   s.con = { wage: 0, until: s.season + 99, role: '11', goalB: 0, rel: 0 };
-  s.mgr = { role, conf: 60, bud: 0, tr: 'denge', act: 0, talk: 0, obj: 1, since: s.season, hist: prev ? prev.hist : [], jobs: (prev ? prev.jobs : 0) + 1, sacked: 0, inc: 0, earn: 0 };
-  if (role === 'agent') { const b = clamp(34 + s.rep * .5, 34, 80); s.mgr.cl = [mkClient(b - 7, b), mkClient(b - 13, b - 4)]; addNews(tt('Menajerlik ofisini açtın. İlk iki oyuncun dosyanda.'), 'pen'); }
-  else { const cost = Math.min(s.money, nice(400000 * bizK())); s.money -= cost; s.mgr.lv = cost >= 300000 * bizK() ? 2 : 1; s.mgr.hc = 1; s.mgr.rp = clamp(8 + s.rep * .3, 5, 55); s.mgr.kids = Array.from({ length: 6 }, () => mkKid(s.mgr.rp)); s.mgr.grads = []; addNews(tt`${s.prov} futbol okulunun kapılarını açtın.`, 'book'); }
+  const m = s.mgr = { role, conf: 60, bud: 0, tr: 'denge', act: 0, talk: 0, obj: 1, since: s.season, hist: prev ? prev.hist : [], jobs: (prev ? prev.jobs : 0) + 1, sacked: 0, inc: 0, earn: 0 };
+  if (role === 'agent') {
+    const b = clamp(34 + s.rep * .5, 34, 80); m.cl = [mkClient(b - 7, b), mkClient(b - 13, b - 4)]; addNews(tt('Menajerlik ofisini açtın. İlk iki oyuncun dosyanda.'), 'pen');
+    const ka = kidAge();
+    if (s.kid && ka >= 16 && ka <= 32) {   // çocuğun ilk müşterin olur
+      const o = clamp(Math.round(40 + s.kid.tal * 1.5 + Math.min(8, ka - 16) * 1.5), 38, 82), c = mkClient(o, o);
+      Object.assign(c, { n: s.kid.n, age: ka, pot: clamp(o + 5 + Math.round(s.kid.tal * .5), o, 94), mood: 92, mine: 1 }); m.cl.unshift(c); addNews(tt`İlk imza evden: ${c.n} artık senin oyuncun.`, 'heart');
+    }
+    const g = prev && prev.grads && prev.grads.length ? [...prev.grads].sort((x, y) => y.ovr - x.ovr)[0] : null;
+    if (g && club(g.id)) { m.cl.push({ n: g.n, age: 18, pos: pick(['DF', 'OS', 'KN', 'FV']), ovr: g.ovr, pot: g.pot, id: g.id, wage: wageFor(S.rt[g.id], g.ovr), mood: 88, y: S.season, grad: 1 }); addNews(tt`Eski öğrencin ${g.n} menajeri olarak seni seçti.`, 'star'); }
+  } else if (role === 'school') {
+    const cost = Math.min(s.money, nice(400000 * bizK())); s.money -= cost; m.lv = cost >= 300000 * bizK() ? 2 : 1; m.hc = 1; m.rp = clamp(8 + s.rep * .3, 5, 55); m.kids = Array.from({ length: 6 }, () => mkKid(m.rp)); m.grads = []; addNews(tt`${s.prov} futbol okulunun kapılarını açtın.`, 'book');
+    const ka = kidAge();
+    if (s.kid && ka >= 8 && ka <= 15) { m.kids.unshift({ n: s.kid.n, age: ka, tal: clamp(16 + s.kid.tal * 1.6, 14, 30 + (ka - 8) * 4), pot: clamp(58 + s.kid.tal * 1.7, 50, 92), mine: 1 }); addNews(tt`${s.kid.n} da okulun öğrencisi: evde baba, sahada hoca.`, 'heart'); }
+  } else { m.rt = clamp(18 + Math.sqrt(s.fol) / 40 + s.rep * .25, 15, 72); m.cr = 60; m.ch = 0; addNews(tt('Ekrandasın: haftalık yorum programın başladı.'), 'mic'); }
   save();
 }
 export function bizInfo() {
   const s = S, m = s.mgr;
   if (m.role === 'agent') { const cl = m.cl, w = cl.reduce((a, c) => a + c.wage * .05, 0); return { role: 'agent', n: cl.length, cap: 5 + Math.floor(s.rep / 22), inc: Math.round(w), mood: cl.length ? cl.reduce((a, c) => a + c.mood, 0) / cl.length : 0, best: cl.length ? Math.max(...cl.map(c => c.ovr)) : 0, earn: m.earn || 0 }; }
+  if (m.role === 'pundit') return { role: 'pundit', n: Math.round(m.rt), cap: 100, inc: Math.round((1200 + m.rt * m.rt * 10 + (m.ch || 0) * 5000) * bizK()), rt: m.rt, cr: m.cr, ch: m.ch || 0, earn: m.earn || 0, best: 0 };
   const fee = (220 + m.rp * 12) * bizK(), cost = (m.hc * 1500 + m.lv * 1300) * bizK();
   return { role: 'school', n: m.kids.length, cap: schoolCap(), inc: Math.round(m.kids.length * fee - cost), lv: m.lv, hc: m.hc, rp: m.rp, grads: m.grads.length, earn: m.earn || 0, best: m.kids.length ? Math.max(...m.kids.map(k => Math.round(k.tal))) : 0 };
 }
@@ -3028,21 +3053,31 @@ function bizTick() {
   const s = S, m = s.mgr, I = bizInfo(); m.act = 0;
   s.money += I.inc; m.inc = I.inc; m.earn = (m.earn || 0) + I.inc;
   if (m.role === 'agent') {
-    for (const c of m.cl) { c.ovr = clamp(c.ovr + (c.pot - c.ovr) * (c.age <= 23 ? .014 : .007) + (c.age >= 31 ? -.05 : 0), 20, 95); c.mood = clamp(c.mood - .7 + (S.rt[c.id] <= c.ovr + 1 ? .15 : -.25), 0, 100); }
+    for (const c of m.cl) { c.ovr = clamp(c.ovr + (c.pot - c.ovr) * (c.age <= 23 ? .014 : .007) + (c.age >= 31 ? -.05 : 0), 20, 95); c.mood = clamp(c.mood - .7 + (S.rt[c.id] <= c.ovr + 1 ? .15 : -.25), c.mine || c.grad ? 55 : 0, 100); }
     for (const c of m.cl.filter(x => x.mood < 12)) addNews(tt`${c.n} seninle yollarını ayırdı: ilgisiz kaldığını söylüyor.`, 'alert');
     m.cl = m.cl.filter(x => x.mood >= 12);
-  } else for (const k of m.kids) k.tal = clamp(k.tal + (k.pot - k.tal) * (.005 + .0035 * m.hc + .0025 * m.lv) + rnd(-.1, .2), 5, 30 + (k.age - 8) * 4);   // yaşına göre tavan: 16'sında en çok 58-62
+  } else if (m.role === 'pundit') { m.rt = clamp(m.rt - (.3 + m.rt * .011) + (m.ch || 0) * .08, 5, 100); m.cr = clamp(m.cr + (55 - m.cr) * .02, 0, 100); s.fol = Math.round(s.fol * (1 + m.rt / 40000)); }
+  else for (const k of m.kids) k.tal = clamp(k.tal + (k.pot - k.tal) * (.005 + .0035 * m.hc + .0025 * m.lv) + rnd(-.1, .2), 5, 30 + (k.age - 8) * 4);   // yaşına göre tavan: 16'sında en çok 58-62
 }
 export const BACTS = {
   agent: [['kesif', tt('Oyuncu keşfi'), tt('Alt liglerde yeni bir yetenek ara'), 'eye'], ['ilgi', tt('Oyuncunla ilgilen'), tt('En mutsuz oyuncunun gönlünü al'), 'heart'], ['zam', tt('Sözleşme yenile'), tt('Bir oyuncun için zam iste'), 'coin'], ['pazar', tt('Oyuncu pazarla'), tt('Transfer döneminde teklif garantisi'), 'swap']],
-  school: [['tara', tt('Yetenek taraması'), tt('Mahalle sahalarında çocuk ara'), 'eye'], ['hoca', tt('Antrenör al'), tt('Çocuklar daha hızlı gelişir'), 'whistle'], ['tesis', tt('Tesisi büyüt'), tt('Kapasite ve gelişim artar'), 'train'], ['turnuva', tt('Turnuva düzenle'), tt('İtibar kazan, scoutları çağır'), 'trophy']],
+  school: [['tara', tt('Yetenek taraması'), tt('Mahalle sahalarında çocuk ara'), 'eye'], ['mac', tt('Maç günü'), tt('Öğrencilerinle sahaya çık, devre arasında konuş'), 'ball'], ['hoca', tt('Antrenör al'), tt('Çocuklar daha hızlı gelişir'), 'whistle'], ['tesis', tt('Tesisi büyüt'), tt('Kapasite ve gelişim artar'), 'train'], ['turnuva', tt('Turnuva düzenle'), tt('İtibar kazan, scoutları çağır'), 'trophy']],
+  pundit: [['yorum', tt('Maç yorumu'), tt('Haftanın maçını yorumla'), 'mic'], ['ozel', tt('Özel röportaj'), tt('Bir yıldızı stüdyoya getir'), 'star'], ['kanal', tt('Kanalını büyüt'), tt('Kalıcı reyting ve reklam geliri'), 'phone'], ['kitap', tt('Kitap yaz'), tt('Anılarını kaleme al; bir kez yapılır'), 'book']],
 };
-export const bizCost = k => nice(({ hoca: 70000 * Math.pow(S.mgr.hc || 1, 1.7), tesis: 280000 * Math.pow(S.mgr.lv || 1, 1.9), turnuva: 25000 + (S.mgr.rp || 0) * 900, kesif: 4000 + S.rep * 250 }[k] || 0) * bizK());
+// Hamle şu an yapılamıyor mu? max: en üst düzey, no: koşul yok
+export const bizMax = k => { const m = S.mgr; return (k === 'hoca' && m.hc >= 5) || (k === 'tesis' && m.lv >= 5) || (k === 'kanal' && (m.ch || 0) >= 5) || (k === 'kitap' && !!m.book); };
+export const bizNo = k => { const m = S.mgr; return (k === 'kesif' && m.cl.length >= bizInfo().cap) || ((k === 'ilgi' || k === 'zam' || k === 'pazar') && !m.cl.length) || (k === 'tara' && m.kids.length >= schoolCap()) || (k === 'mac' && m.kids.length < 5); };
+export const bizCost = k => nice(({ hoca: 70000 * Math.pow(S.mgr.hc || 1, 1.7), tesis: 280000 * Math.pow(S.mgr.lv || 1, 1.9), turnuva: 25000 + (S.mgr.rp || 0) * 900, kesif: 4000 + S.rep * 250, mac: 6000, ozel: 12000 + (S.mgr.rt || 0) * 300, kanal: 60000 * Math.pow((S.mgr.ch || 0) + 1, 1.6) }[k] || 0) * bizK());
 export function bizAct(k) {
   const s = S, m = s.mgr, cost = bizCost(k); if (m.act || s.money < cost) return null;
-  if ((k === 'hoca' && m.hc >= 5) || (k === 'tesis' && m.lv >= 5)) return null;
+  if (bizMax(k) || bizNo(k)) return null;
   m.act = 1; s.money -= cost;
   switch (k) {
+    case 'mac': return ['@mac', []];
+    case 'yorum': return ['@yorum', []];
+    case 'ozel': { if (!chance(clamp(.4 + s.rep / 200, .3, .9))) return [tt('Yıldız son anda iptal etti. Stüdyoda boş koltukla kaldın.'), []]; const up = Math.max(1, Math.round(ri(3, 6) * punF())); m.rt = clamp(m.rt + up, 5, 100); s.fol = Math.round(s.fol * 1.02); return [tt('Koltukta bir yıldız, karşısında sen. Röportaj günlerce konuşuldu.'), [tt('Reyting ') + sg(up), tt('Takipçi +%2')]]; }
+    case 'kanal': m.ch = (m.ch || 0) + 1; m.rt = clamp(m.rt + 2, 5, 100); return [tt('Yeni stüdyo, yeni ekip. Kanalın artık kendi ayakları üzerinde.'), [tt('Kanal düzeyi +1'), tt('Reyting ') + sg(2), tt('Haftalık gelir artar')]];
+    case 'kitap': { m.book = 1; const v = nice((40000 + s.fol * .25 + s.rep * 4000) * bizK()); s.money += v; m.earn = (m.earn || 0) + v; s.rep = clamp(s.rep + 1, 0, 100); return [tt('Kariyerini kâğıda döktün. İmza gününde kuyruk sokağa taştı.'), ['+' + fmt(v), tt('İtibar +1')]]; }
     case 'kesif': {
       if (m.cl.length >= bizInfo().cap) return [tt('Dosyan dolu. Yeni oyuncu almak için itibarın artmalı ya da biriyle yollarını ayırmalısın.'), []];
       if (!chance(clamp(.38 + s.rep / 220, .3, .85))) return [tt('Üç maç izledin, not defterin boş döndü.'), []];
@@ -3089,7 +3124,7 @@ export function agentOffers() {
     const cur = S.rt[c.id]; if (!(c.shop || c.ovr > cur + 2 || chance(.12))) return;
     const pool = []; for (const lid in S.lg) for (const id of S.lg[lid].t) { const r = S.rt[id]; if (id !== c.id && r >= Math.max(cur + 1, c.ovr - 2) && r <= c.ovr + 5) pool.push(id); }
     if (!pool.length) return; const id = pick(pool), fee = nice(baseW(c.ovr) * 300 * valF() * (c.age <= 23 ? 1.4 : c.age <= 28 ? 1 : .5) * rnd(.8, 1.3));
-    out.push({ ci, id, fee, wage: wageFor(S.rt[id], c.ovr), cut: nice(fee * .03) });
+    out.push({ ci, id, fee, wage: wageFor(S.rt[id], c.ovr), cut: nice(Math.min(fee * .03, 3000000 * bizK())) });
   });
   return out;
 }
@@ -3104,6 +3139,12 @@ export function agentDeal(o, yes) {
 // Sezon sonu: yaşlar ilerler, mezunlar imzalar, eski mezunlar büyür
 export function bizSeason(rep) {
   const s = S, m = s.mgr, lines = [];
+  if (m.role === 'pundit') {
+    lines.push(tt`Sezon reytingi: ${Math.round(m.rt)}`, tt`Sezonluk kazanç: ${fmt(m.earn || 0)}`);
+    if (m.rt >= 75 && m.cr >= 55 && !m.aw) { m.aw = 1; s.rep = clamp(s.rep + 3, 0, 100); s.tro.push(rep.label + ' · ' + tt('Yılın Yorumcusu')); lines.push(tt('Yılın Yorumcusu seçildin')); }
+    m.hist.push({ y: rep.label, c: tt('Yorumculuk'), l: tt`reyting ${Math.round(m.rt)}`, pos: Math.round(m.rt), obj: 0, role: 'pundit', earn: m.earn || 0 });
+    m.earn = 0; m.act = 0; return lines;
+  }
   if (m.role === 'agent') {
     for (const c of m.cl) { c.age++; if (c.age >= 30) c.pot = Math.max(c.ovr - 2, c.pot - 2); }
     const old = m.cl.filter(c => c.age >= 35); for (const c of old) lines.push(tt`${c.n} futbolu bıraktı`); m.cl = m.cl.filter(c => c.age < 35);
@@ -3126,6 +3167,14 @@ export function bizSeason(rep) {
 // İş hayatında karşına çıkanlar
 export function bizEvent() {
   const s = S, m = s.mgr; if (!chance(.14)) return null;
+  if (m.role === 'pundit') return pick([
+    { p: 'basin', i: 'alert', t: tt('Canlı yayında gaf'), d: tt('Mikrofon açıkken söylediğin bir söz sosyal medyada dönüyor.'), o: [
+      [tt('Özür dile'), tt('Güven toparlanır, reyting düşer'), () => { m.cr = clamp(m.cr + 4, 0, 100); m.rt = clamp(m.rt - 3, 5, 100); return [tt('Güvenilirlik ') + sg(4), tt('Reyting ') + sg(-3)]; }],
+      [tt('Arkasında dur'), tt('Reyting artar, güven düşer'), () => { m.rt = clamp(m.rt + 4, 5, 100); m.cr = clamp(m.cr - 6, 0, 100); return [tt('Reyting ') + sg(4), tt('Güvenilirlik ') + sg(-6)]; }]] },
+    { p: 'baskan', i: 'shield', t: tt('Eski kulübün rahatsız'), d: tt`${club(s.clubId).n} yönetimi yorumlarından şikâyetçi. Tonunu yumuşatmanı istiyorlar.`, o: [
+      [tt('Yumuşat'), tt('Kulüple köprü kalır'), () => { m.cr = clamp(m.cr - 3, 0, 100); s.rep = clamp(s.rep + 1, 0, 100); return [tt('Güvenilirlik ') + sg(-3), tt('İtibar +1')]; }],
+      [tt('Bildiğini söyle'), tt('İzleyici bunu sever'), () => { m.cr = clamp(m.cr + 4, 0, 100); m.rt = clamp(m.rt + 2, 5, 100); return [tt('Güvenilirlik ') + sg(4), tt('Reyting ') + sg(2)]; }]] },
+  ]);
   if (m.role === 'agent') {
     const c = m.cl.length ? pick(m.cl) : null; if (!c) return null;
     return pick([
@@ -3156,4 +3205,210 @@ export function sideOffer() {
 export function bizEnd() {
   const m = S.mgr, total = m.hist.reduce((a, h) => a + (h.earn || 0), 0), mt = meta(); mt.mgr = Math.max(mt.mgr || 0, m.hist.length); setMeta(mt);
   return { seasons: m.hist.length, role: m.role, total, grads: (m.grads || []).length, bestGrad: (m.grads || []).length ? [...m.grads].sort((a, b) => b.ovr - a.ovr)[0] : null, clients: (m.cl || []).length, hist: m.hist };
+}
+
+// =====================================================================
+// v14: değişiklik kararı, seri penaltılar, kaptan itirazı, rekorlar, belgesel, ilk 11, okul maçı, yorumculuk, tezahürat, dedikodu
+// =====================================================================
+export function heal(v) { hurt(-v); }
+
+// ---------- oyuncu değişikliği: yorulunca hoca sorar ----------
+export const subAskDue = (M, min) => !!M.on && !M.off && !M.red && !M.subQ && M.role === '11' && min >= 58 && min <= 84 && M.stam < 44;
+export function subAsk(M, c) {
+  M.subQ = 1;
+  if (c === 0) { M.risk = Math.max(M.risk || 1, 1.8); hurt(1); fx({ hoca: 1 }); return [{ s: tt('"İyiyim hocam." Sahada kaldın; bacakların ağır.') }]; }
+  M.off = true; hurt(-1); fx({ hoca: M.rt >= 6.8 ? 1 : 0 });
+  return [{ s: tt('Kendi isteğinle çıktın. Hoca omzuna vurdu: "Haftaya lazımsın."') }];
+}
+
+// ---------- seri penaltılar: beşer atış, sonra seri bitene kadar birer atış ----------
+export function shootStart(M) {
+  const d = clamp((M.usR - M.oppR) * .006, -.06, .06), kl = S.pos === 'KL';
+  return { us: [], opp: [], pu: .76 + d, po: .76 - d - (kl ? clamp((S.at.kaleci - 60) * .003, -.05, .08) : 0), mine: kl ? -1 : S.pos === 'FV' ? 4 : S.pos === 'KN' ? 3 : S.pos === 'OS' ? 2 : 1, kl };
+}
+export function shootState(P) {
+  const su = P.us.filter(Boolean).length, so = P.opp.filter(Boolean).length, a = P.us.length, b = P.opp.length;
+  let over = false;
+  if (a <= 5 && b <= 5) over = su > so + (5 - b) || so > su + (5 - a);
+  if (!over && a === b && a >= 5) over = su !== so;
+  return { su, so, over, win: su > so };
+}
+
+// ---------- kaptanın itirazı: VAR olmayan liglerde karar sahada döner ----------
+export const protestDue = M => !!S.fl.kaptan && !!M.on && !M.off && !M.red && !M.prot && !M.nat;
+export function capProtest(M, c) {
+  M.prot = 1;
+  if (c !== 0) { fx({ hoca: 1 }); return { ok: false, lines: [{ s: tt('Takımı sakinleştirdin. Oyun devam ediyor.') }] }; }
+  const p = clamp(.22 + S.rep / 400 + (M.bias || 0) * .08 + (S.at.zihin - 60) / 300, .08, .5);
+  if (chance(p)) { if (M.ref) M.ref.me -= .05; fx({ taraf: 3, takim: 2 }); return { ok: true, lines: [{ s: tt('Hakem yardımcısıyla konuştu ve kararından döndü: gol geçerli!'), c: 'g' }] }; }
+  M.yel++;
+  if (M.yel >= 2) { M.red = true; M.rt -= 1.5; return { ok: false, lines: [{ s: tt('İkinci sarı! Kırmızı kart.'), c: 'b' }] }; }
+  return { ok: false, lines: [{ s: tt('Hakem geri adım atmadı; itirazdan sarı kart gördün.'), c: 'b' }] };
+}
+
+// ---------- rekorlar: kulüp ve lig tarihindeki eşikler; kırınca haber olur ----------
+function recOf(key) { const R = S.rec || (S.rec = {}); return R[key] || (R[key] = { sg: 0, st: 0, cur: 0, yg: 0, mg: 0, br: {} }); }
+export function records(id = S.clubId) {
+  const c = club(id), lid = leagueOf(id), N = NAMES[lid ? LMAP[lid].c : 'TR'] || NAMES.TR, r = srnd(hsh(c.n + '#rekor')), rl = srnd(hsh(lid + '#rekor'));
+  const big = CLUBS[id] ? clamp((CLUBS[id].r - 40) / 50, 0, 1) : 0, kw = KW ? .8 : 1, me = recOf(id), L = recOf('L:' + lid);
+  const nm = f => N.f[Math.floor(f() * N.f.length)] + ' ' + N.l[Math.floor(f() * N.l.length)], yr = f => (KW ? 1996 : 1965) + Math.floor(f() * (KW ? 24 : 50));
+  const rows = S.pos === 'KL' ? [
+    { k: 'cl', t: tt('Tek sezonda gol yemeden maç'), v: Math.round(11 + r() * 5 + big * 5), n: nm(r), y: yr(r), me: me.cl || 0 },
+    { k: 'cst', t: tt('Üst üste gol yemeden maç'), v: 4 + Math.floor(r() * 3 + big * 2), n: nm(r), y: yr(r), me: me.cst || 0 },
+  ] : [
+    { k: 'sg', t: tt('Tek sezonda gol'), v: Math.round((15 + r() * 8 + big * 13) * kw), n: nm(r), y: yr(r), me: me.sg },
+    { k: 'mg', t: tt('Tek maçta gol'), v: 4 + (r() < .35 ? 1 : 0), n: nm(r), y: yr(r), me: me.mg },
+    { k: 'st', t: tt('Üst üste gol atılan maç'), v: 5 + Math.floor(r() * 3 + big * 2), n: nm(r), y: yr(r), me: me.st },
+    { k: 'yg', t: tt('En genç golcü (yaş)'), v: 16 + Math.floor(r() * 2), n: nm(r), y: yr(r), me: me.yg, low: 1 },
+    { k: 'lg', t: tt('Ligde tek sezonda gol'), v: Math.round((24 + rl() * 12) * kw), n: nm(rl), y: yr(rl), me: L.sg, lig: 1 },
+  ];
+  return rows.map(x => ({ ...x, broke: x.me ? (x.low ? x.me < x.v : x.me > x.v) : false }));
+}
+function recTrack(M, lines) {
+  const s = S, id = s.clubId, me = recOf(id), L = recOf('L:' + leagueOf(id));
+  if (M.pg > 0) { me.cur++; me.st = Math.max(me.st, me.cur); if (!me.yg || s.age < me.yg) me.yg = s.age; me.mg = Math.max(me.mg, M.pg); } else me.cur = 0;
+  me.sg = Math.max(me.sg, s.st.g); L.sg = Math.max(L.sg, s.st.lg);
+  if (s.pos === 'KL' && M.role === '11') {
+    if (me.cls !== s.season) { me.cls = s.season; me.cln = 0; }
+    if (M.oppG === 0) { me.cln++; me.ccur = (me.ccur || 0) + 1; me.cl = Math.max(me.cl || 0, me.cln); me.cst = Math.max(me.cst || 0, me.ccur); } else me.ccur = 0;
+  }
+  for (const x of records(id)) {
+    const b = x.lig ? L.br : me.br; if (!x.broke || b[x.k]) continue;
+    b[x.k] = 1; fx({ rep: 2, taraf: 4 }); s.pop.push(tt('Rekor kırdın')); lines.push(tt`REKOR: ${x.t}`);
+    addNews(tt`Rekor senin: ${x.t}. Eski sahibi ${x.n} (${x.y}).`, 'trophy'); addFeed('c:' + id, club(id).n, tt`TARİHE GEÇTİ | ${s.name}: ${x.t}`, 'kulup');
+    docAdd('rekor', tt`Rekor kırdın: ${x.t}`, 6, 'trophy');
+  }
+}
+
+// ---------- sezon belgeseli: sezonun anları birikir, sezon sonunda beşi gösterilir ----------
+export function docAdd(k, t, p = 3, i = 'star', w = S.week) { const d = S.doc || (S.doc = []); if (S.mgr || d.some(x => x.k === k)) return; d.push({ k, t, p, i, w }); }
+export const docList = () => [...(S.doc || [])].sort((a, b) => b.p - a.p).slice(0, 5).sort((a, b) => a.w - b.w);
+function docMatch(M, rt, win) {
+  const s = S, on = club(M.fxt.opp).n;
+  if (M.pg && s.st.g === M.pg) docAdd('ilk', tt`Sezonun ilk golü: ${on} ağlarına`, 2, 'ball');
+  if (M.pg >= 3) docAdd('hat', tt`${on} karşısında hat-trick`, 5, 'ball');
+  if (M.derby && win) docAdd('derbi', tt`Derbi senin: ${on} karşısında ${M.usG}-${M.oppG}`, 4, 'bolt');
+  if (rt >= 9) docAdd('zirve', tt`Sezonun performansı: ${on} maçında ${rt.toFixed(1).replace('.', DSEP)}`, 4, 'star');
+  if (M.fxt.final && win) docAdd('final', tt`${M.fxt.name}: final senin`, 7, 'trophy');
+}
+
+// ---------- teknik direktör: ilk 11, yedekler, form ve yorgunluk ----------
+const XIB = ['KL', 'DF', 'OS', 'OS', 'FV'];
+export function mgrXI() {
+  const s = S, m = s.mgr; if (!m || m.role !== 'coach') return null;
+  if (!m.xi || m.xi.id !== s.clubId) {
+    const q = squad(s.clubId), lid = leagueOf(s.clubId), c = lid ? LMAP[lid].c : 'TR', r = s.rt[s.clubId];
+    m.xi = { id: s.clubId, man: 0, p: [...SQP.map((pos, i) => ({ n: q[i], pos, q: +(r + rnd(-3, 4)).toFixed(1), en: ri(80, 96), fm: +rnd(6, 7.2).toFixed(1), on: 1, inj: 0 })), ...XIB.map(pos => ({ n: rname(c), pos, q: +(r + rnd(-7, 1)).toFixed(1), en: ri(88, 100), fm: +rnd(5.8, 6.8).toFixed(1), on: 0, inj: 0 }))] };
+  }
+  return m.xi.p;
+}
+const xiScore = x => x.q + (x.fm - 6.5) * 1.5 - Math.max(0, 72 - x.en) * .3 - (x.inj > 0 ? 50 : 0);
+export function xiBonus() {
+  const p = mgrXI(); if (!p) return 0;
+  const on = p.filter(x => x.on), r = S.rt[S.clubId], cnt = k => on.filter(x => x.pos === k).length; let b = 0;
+  for (const x of on) b += (x.q - r) * .12 + (x.fm - 6.5) * .35 - Math.max(0, 62 - x.en) * .035 - (x.inj > 0 ? 1.2 : 0);
+  const pen = (cnt('KL') !== 1 ? 3 : 0) + Math.max(0, 3 - cnt('DF')) * .8 + Math.max(0, 2 - cnt('OS')) * .6 + Math.max(0, 1 - cnt('FV') - cnt('KN')) * .8 + Math.abs(11 - on.length) * 2;
+  return clamp(b / 11 * 4 - pen, -4, 2.5);
+}
+// Yardımcı antrenör: her mevkiye en hazır oyuncuyu koyar
+export function mgrAutoXI(keep) {
+  const p = mgrXI(); if (!p) return; for (const x of p) x.on = 0;
+  for (const pos of SQP) {
+    const c = p.filter(x => !x.on && x.pos === pos && x.inj <= 0).sort((a, b) => xiScore(b) - xiScore(a))[0] || p.filter(x => !x.on && x.pos !== 'KL' && x.inj <= 0).sort((a, b) => xiScore(b) - xiScore(a))[0] || p.filter(x => !x.on).sort((a, b) => xiScore(b) - xiScore(a))[0];
+    if (c) c.on = 1;
+  }
+  if (!keep) S.mgr.xi.man = 0;
+}
+export function mgrSwap(i, j) {
+  const p = mgrXI(); if (!p || !p[i] || !p[j] || p[i].on === p[j].on) return false;
+  const a = p[i].on ? p[i] : p[j], b = p[i].on ? p[j] : p[i]; if (b.inj > 0) return false;
+  a.on = 0; b.on = 1; S.mgr.xi.man = 1; return true;
+}
+function xiAfter(win, lose) {
+  const p = mgrXI(); if (!p) return;
+  for (const x of p) {
+    if (x.on) { x.en = clamp(x.en - ri(9, 17), 5, 100); x.fm = +clamp(x.fm + ((win ? 7.3 : lose ? 5.8 : 6.5) - x.fm) * .3 + rnd(-.35, .35), 4.5, 9).toFixed(1); if (chance(.02 + Math.max(0, 55 - x.en) * .004)) { x.inj = ri(1, 4); addNews(tt`${x.n} sakatlandı: ${x.inj} hafta yok.`, 'plus'); } }
+    else x.fm = +clamp(x.fm + (6.3 - x.fm) * .1, 4.5, 9).toFixed(1);
+  }
+}
+function xiTick() {
+  const m = S.mgr; if (!m || m.role !== 'coach') return; const p = mgrXI();
+  for (const x of p) { x.en = clamp(x.en + (x.on ? 11 : 18), 5, 100); if (x.inj > 0) x.inj--; }
+  if (!m.xi.man || p.some(x => x.on && x.inj > 0)) mgrAutoXI(m.xi.man);   // elle seçmediysen ya da sakat ilk 11'deyse yardımcı düzeltir
+}
+export const xiInfo = () => { const p = mgrXI(); return p ? { p, bonus: xiBonus(), man: !!S.mgr.xi.man, tired: p.filter(x => x.on && x.en < 62).length } : null; };
+
+// ---------- futbol okulu: maç günü ----------
+export const KHT = [[tt('Cesaret ver'), 'bolt', tt('Daha çok gol, daha çok risk')], [tt('Taktik anlat'), 'target', tt('Daha derli toplu bir ikinci yarı')], [tt('Herkesi oynat'), 'users', tt('Sonuç ikinci planda; herkes gelişir')]];
+export function kidsMatch() {
+  const m = S.mgr, ks = m.kids, st = ks.reduce((a, k) => a + k.tal, 0) / Math.max(1, ks.length), opp = clamp(st + rnd(-7, 7), 10, 70), low = S.lg[TRT[TRT.length - 1]].t;
+  const K = { st, opp, oppN: club(pick(low)).n + ' U15', lu: 1.1 * Math.exp((st - opp) * .05), lo: 1.1 * Math.exp((opp - st) * .05), star: [...ks].sort((a, b) => b.tal - a.tal)[0].n };
+  K.us = poisson(K.lu); K.op = poisson(K.lo); K.h1 = [K.us, K.op];
+  return K;
+}
+export function kidsMatchEnd(K, c) {
+  const m = S.mgr, f = [[1.3, 1.15], [1.1, .75], [.85, 1.1]][c] || [1, 1], lines = [], cap = k => 30 + (k.age - 8) * 4;
+  K.us += poisson(K.lu * f[0]); K.op += poisson(K.lo * f[1]);
+  if (c === 2) { for (const k of m.kids) k.tal = clamp(k.tal + .35, 5, cap(k)); lines.push(tt('Bütün öğrenciler gelişti')); }
+  if (K.us > K.op) { const b = [...m.kids].sort((x, y) => y.tal - x.tal)[0]; b.tal = clamp(b.tal + .8, 5, cap(b) + 2); m.rp = clamp(m.rp + (c === 2 ? 3 : 2), 0, 100); lines.push(tt`Okul itibarı +${c === 2 ? 3 : 2}`, tt`Maçın yıldızı: ${b.n}`); }
+  else { if (c === 2) { m.rp = clamp(m.rp + 1, 0, 100); lines.push(tt`Okul itibarı +${1}`); } lines.push(K.us < K.op ? tt('Çocuklar üzgün ama ders çıkardılar') : tt('Dostluk kazandı')); }
+  save(); return lines;
+}
+
+// ---------- yorumculuk: haftanın maçı ----------
+const punF = () => clamp(1 - (S.mgr.rt || 0) / 125, .15, 1);   // reyting yükseldikçe her yeni puan zorlaşır
+export const PUND = [[tt('Kazananı öv'), 'star', tt('Güvenli; küçük artış')], [tt('Dengeli analiz'), 'chart', tt('Güvenilirlik artar')], [tt('Sert eleştir'), 'alert', tt('Reyting fırlar; tepki çekebilir')], [tt('İddialı tahmin'), 'target', tt('Tutarsa parlar, tutmazsa yakar')]];
+export function punditTopic() {
+  const lid = TRT[0], lg = S.lg[lid], last = lg.last && lg.last.length ? pick(lg.last) : null;
+  if (last) return { h: last[0], a: last[1], hg: last[2], ag: last[3] };
+  const [h, a] = shuffle([...lg.t]).slice(0, 2), [hg, ag] = simScore(S.rt[h], S.rt[a]); return { h, a, hg, ag };
+}
+export function punditSay(T, c) {
+  const s = S, m = s.mgr, up = (rt, cr) => { m.rt = clamp(m.rt + (rt > 0 ? rt * punF() : rt), 5, 100); m.cr = clamp(m.cr + cr, 0, 100); }, lose = club(T.hg >= T.ag ? T.a : T.h).n, wn = club(T.hg >= T.ag ? T.h : T.a).n;
+  const out = (t, rt, cr, x = []) => { const r0 = m.rt; up(rt, cr); const d = m.rt - r0; s.fol = Math.round(s.fol * (1 + Math.max(0, rt) / 400)); save(); return [t, [...(Math.round(d) ? [tt('Reyting ') + sg(d)] : []), ...(cr ? [tt('Güvenilirlik ') + sg(cr)] : []), ...x]]; };
+  if (c === 0) return out(tt`${wn} için övgü dolu konuştun. Kimse kırılmadı, kimse de hatırlamadı.`, 1.5, 1);
+  if (c === 1) return out(tt('Tahtaya çıktın, pozisyonları tek tek anlattın. Meslektaşların not aldı.'), .5, 4);
+  if (c === 2) { if (chance(.3)) { s.rep = clamp(s.rep - 1, 0, 100); return out(tt`${lose} taraftarı ayağa kalktı; kulüp açıklama yayınladı. Ama herkes seni konuşuyor.`, 5, -3, [tt('İtibar −1')]); } return out(tt`${lose} için acı ama doğru şeyler söyledin. Klip gece boyunca döndü.`, 4, -1); }
+  if (chance(.42)) return out(tt('Haftaya dair tahminin harfi harfine çıktı. "Demiştim" demene gerek bile kalmadı.'), 6, 5);
+  return out(tt('Tahminin tutmadı. Sosyal medyada kesitlerin dönüyor.'), 1, -7);
+}
+
+// ---------- tezahürat ----------
+export function chantOpts() { const p = S.name.trim().split(' '), ln = p[p.length - 1], fn = p[0]; return [tt`${ln}! ${ln}! Vur, vur, vur!`, tt`Oooo ${fn}, bizim ${fn}!`, tt`${S.num} numara, ${ln} başka!`]; }
+export function setChant(i) { S.chant = chantOpts()[i] || chantOpts()[0]; addFeed('taraftar', pick(FANS), tt`Yeni tezahüratımız hazır: "${S.chant}"`); }
+export function chantBoost(M) { if (!S.chant || S.mgr || M.nat || !M.fxt.home || !M.on) return null; M.stam = Math.min(100, (M.stam || 0) + 6); M.rt += .1; return S.chant; }
+
+// ---------- transfer dedikodusu ----------
+function rumorWeek() {
+  const s = S, w = absWeek(); if (s.mgr || s.loan || !((s.week >= 13 && s.week <= 20) || (s.week >= 29 && s.week <= 37))) return;
+  if ((s.rum && w - s.rum.w < 6) || !chance(.2)) return;
+  const hot = s.watch.filter(x => x.lv >= 35 && club(x.id)), real = hot.length > 0 && chance(.6); let id;
+  if (real) id = pick(hot).id;
+  else { const pool = [], cur = s.rt[s.clubId]; for (const lid in s.lg) for (const c of s.lg[lid].t) { const r = s.rt[c]; if (c !== s.clubId && r >= cur + 1 && r <= cur + 9) pool.push(c); } if (!pool.length) return; id = pick(pool); }
+  const n = club(id).n, t = pick([tt`${n}, ${s.name} için nabız yokluyor. Menajerler görüşmüş.`, tt`Bomba iddia: ${s.name} sezon sonunda ${n} yolcusu!`, tt`${n} scoutları ${s.name} için tribündeydi.`]);
+  s.rum = { id, real: real ? 1 : 0, w, t }; addFeed('basin', tt('Transfer Hattı'), t, 'haber');
+}
+export const rumorInfo = () => (S.rum && !S.rum.done && !S.mgr && absWeek() - S.rum.w <= 3 && club(S.rum.id) ? S.rum : null);
+export const RUMO = [[tt('Yalanla'), 'x'], [tt('Sessiz kal'), 'moon'], [tt('Göz kırp'), 'eye']];
+export function rumorAct(c) {
+  const s = S, r = rumorInfo(); if (!r) return null; r.done = 1; const n = club(r.id).n, w = s.watch.find(x => x.id === r.id);
+  if (c === 0) { addFeed('me', s.name, tt('Kulübüme odaklıyım. Yazılanların aslı yok.'), 'ben'); if (r.real && w) w.lv = clamp(w.lv - 10, 0, 100); return [...fx({ taraf: 3, hoca: 2 }), ...(r.real && w ? [tt`${n} ilgisi azaldı`] : [])]; }
+  if (c === 1) return [tt('Dedikodu kendiliğinden söndü')];
+  addFeed('me', s.name, tt('Futbolda her şey olur.'), 'ben');
+  if (r.real) { if (w) w.lv = clamp(w.lv + 12, 0, 100); return [...fx({ taraf: -4, hoca: -3 }), tt`${n} ilgisi arttı`]; }
+  s.fol = Math.round(s.fol * 1.01); return [...fx({ taraf: -3, hoca: -2 }), tt('Takipçi +%1')];
+}
+
+// ---------- hocanın kiralık önerisi ----------
+export function loanOffer() {
+  const s = S, o = OVR(), cur = s.rt[s.clubId], cc = LMAP[leagueOf(s.clubId)].c, pool = [];
+  for (const lid in s.lg) { if (LMAP[lid].c !== cc) continue; for (const id of s.lg[lid].t) { const r = s.rt[id]; if (id !== s.clubId && r < cur - 1 && r >= o - 6 && r <= o + 2) pool.push(id); } }
+  return pool.length ? makeOffer(pick(pool), { loan: true, len: 1, wage: s.con.wage, sign: 0, goalB: s.con.goalB || 0 }) : null;
+}
+// Ağır sakatlık sonrası tedavi kararı. 0 ameliyat, 1 iğneyle oyna, 2 koruyucu tedavi
+export function injPlan(c) {
+  const s = S; delete s.fl.agir;
+  if (c === 0) { s.inj = ri(12, 15); hurt(-14); delete s.fl.kronik; return tt`Ameliyat iyi geçti. ${s.inj} hafta yoksun ama diz yeniden sağlam.`; }
+  if (c === 1) { s.inj = 1; hurt(12); if (chance(.55)) s.fl.kronik = 1; return s.fl.kronik ? tt('İğneyle sahaya döndün. Doktor uyardı: bu diz artık her an nüksedebilir.') : tt('İğneyle sahaya döndün. Şimdilik ağrı yok; vücudun bunun bedelini ödeyecek.'); }
+  s.inj = ri(7, 9); hurt(-5); return tt`Bıçak altına yatmadın. ${s.inj} hafta rehabilitasyon; diz tam güven vermiyor ama idare eder.`;
 }

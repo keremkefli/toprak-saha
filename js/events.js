@@ -1,7 +1,7 @@
 // Toprak Saha — olay kartları. Her seçenek kısa ve uzun vadeli sonuç doğurur.
 // Alanlar: w ağırlık, cd bekleme (hafta), once tek sefer, must koşul oluşunca zorunlu, chain yalnızca kuyruktan
 import { tt } from './i18n.js';
-import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname, kidAge, myNat, KW, tierCfg, kx, kxAdd, klikAdj, tenAdj, newMate, bootMake, bootGoal } from './core.js';
+import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname, kidAge, myNat, KW, tierCfg, kx, kxAdd, klikAdj, tenAdj, newMate, bootMake, bootGoal, injPlan, loanOffer, acceptOffer, chantOpts, setChant } from './core.js';
 import { LMAP, AGENTS, SHOP, NATN, BOOTS } from './data.js';
 
 const inTR = () => LMAP[leagueOf(S.clubId)].c === 'TR';
@@ -540,6 +540,27 @@ export const EVENTS = [
     o: [
       { t: tt('Kabul et'), fx: { hoca: 8, takim: 4 }, run: () => { S.fl.pc = 1; S.con.wage = nice(S.con.wage * 1.15); addNews(tt('Oyuncu-antrenör oldun: ücretin %15 arttı, taktik uyumun yükseldi.'), 'whistle'); }, r: tt('Artık toplantılara sen de giriyorsun. Forma şansın biraz azalır ama kenardaki yolun açıldı.') },
       { t: tt('Sadece oyuncuyum'), fx: { hoca: -2 }, r: tt('"Daha oynayacak maçlarım var hocam." Hoca gülümsedi.') },
+    ] },
+  // ---------- ağır sakatlık kararı, kiralık önerisi, tezahürat ----------
+  { id: 'agir', chain: true, if: () => S.inj > 0 && !S.over,
+    t: tt('Ameliyat mı, iğne mi?'), d: tt('Doktor filmleri masaya koydu: "Üç yol var. Hangisini seçersen seç, bir bedeli olacak."'),
+    o: [
+      { t: tt('Ameliyat ol'), run: () => ({ r: injPlan(0) }) },
+      { t: tt('İğneyle oyna'), run: () => ({ r: injPlan(1) }) },
+      { t: tt('Koruyucu tedavi'), run: () => ({ r: injPlan(2) }) },
+    ] },
+  { id: 'kirala', w: 5, cd: 30, if: () => !S.loan && S.age <= 24 && (S.bench || 0) >= 4 && S.con.until > S.season && S.week >= 3 && S.week <= 21 && S.tstat !== 'kiralik' && !!loanOffer(), prep: () => { const o = loanOffer(); return { o, n: club(o.id).n }; },
+    t: tt('Hoca kiralık öneriyor'), d: c => tt`Hoca seni odasına çağırdı: "Burada süre bulamıyorsun. ${c.n} seni sezon sonuna kadar istiyor. Git, oyna, dön."`,
+    o: [
+      { t: tt('Kiralık git'), run: c => { acceptOffer(c.o); }, r: c => tt`Valizini topladın. ${c.n} forması seni bekliyor.` },
+      { t: tt('Kal ve savaş'), fx: { hoca: 2, prof: 2 }, r: tt('"Yerimi burada kazanacağım hocam." Hoca başını salladı.') },
+    ] },
+  { id: 'tezahurat', once: true, w: 9, cd: 99, if: () => !S.chant && S.rep >= 50 && S.rel.taraf >= 62 && !S.loan, prep: () => ({ c: chantOpts() }),
+    t: tt('Tribün sana tezahürat yazıyor'), d: c => tt`Taraftar grubu üç öneriyle geldi: "${c.c[0]}" · "${c.c[1]}" · "${c.c[2]}"`,
+    o: [
+      { t: tt('Soyadınla olan'), fx: { taraf: 4, mo: 5 }, run: () => { setChant(0); }, r: tt('İç saha maçlarında tribün artık adını söylüyor. Sahaya daha diri çıkarsın.') },
+      { t: tt('Adınla olan'), fx: { taraf: 4, mo: 5 }, run: () => { setChant(1); }, r: tt('İç saha maçlarında tribün artık adını söylüyor. Sahaya daha diri çıkarsın.') },
+      { t: tt('Forma numaranla olan'), fx: { taraf: 4, mo: 5 }, run: () => { setChant(2); }, r: tt('İç saha maçlarında tribün artık adını söylüyor. Sahaya daha diri çıkarsın.') },
     ] },
 ];
 

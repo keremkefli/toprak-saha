@@ -562,7 +562,7 @@ export const DEC = {
   ht: { t: tt('Devre arası'), p: 'hoca', i: 'whistle', ic: ['bolt', 'target', 'alert', 'whistle', 'x'], o: [tt('Takımı ateşle'), tt('Kendi oyununa odaklan'), tt('Riskli oyna'), tt('Hocaya plan sor'), tt('Hocaya itiraz et')], s: [tt('Tutarsa takım gol bulabilir'), tt('Kalan anlar daha sakin akar'), tt('Fazladan pozisyon, fazladan sakatlık riski'), tt('İstediği an ikinci yarıda karşına çıkar'), tt('Tutarsa sistem sana göre değişir; tutmazsa kenara gelebilirsin')] },
   pen: { t: tt('Penaltı!'), p: 'takim', i: 'target', ic: ['target', 'users'], o: [tt('Ben atarım'), tt('Ustası atsın')], s: [tt('Penaltıyı sen kullanırsın'), tt('Takımın penaltıcısı atar')] },
   ref: { t: tt('Tartışmalı karar'), p: 'fed', i: 'alert', ic: ['alert', 'right'], o: [tt('İtiraz et'), tt('Oyuna dön')], s: [tt('Tribün sever, kart riski var'), tt('Hoca takdir eder')] },
-  knock: { t: tt('Bir şey oldu'), p: 'doktor', i: 'plus', ic: ['shield', 'plus'], o: [tt('Devam et'), tt('Değişiklik iste')], s: [tt('Sakatlık riski artar'), tt('Maç senin için biter')] },
+  knock: { t: tt('Bir şey oldu'), p: 'doktor', i: 'plus', ic: ['shield', 'plus', 'heart'], o: [tt('Devam et'), tt('Değişiklik iste'), tt('Tedavi iste')], s: [tt('Sakatlık riski artar'), tt('Maç senin için biter'), tt('Bandajla dönersin; risk azalır, kondisyon düşer')] },
 };
 
 // Oyuncu yaratma ayrıntıları
@@ -784,6 +784,9 @@ export const NEGO = [
   { id: 'loy', n: tt('Sadakat primi'), d: tt('Kulüpte kaldığın her sezon sonunda toplu ödeme'), i: 'heart' },
   { id: 'rel', n: tt('Serbest kalma bedeli'), d: tt('Bedeli düşük tut: ayrılmak kolaylaşır'), i: 'lock' },
   { id: 'kisa', n: tt('Süreyi kısalt'), d: tt('Bir sezon erken serbest kalırsın'), i: 'clock' },
+  { id: 'app', n: tt('Maç başı prim'), d: tt('Oynadığın her maç için ek ödeme'), i: 'shirt' },
+  { id: 'forma', n: tt('Forma garantisi'), d: tt('Hocanın tercihinde öne geçersin'), i: 'shield' },
+  { id: 'kap', n: tt('Kaptanlık maddesi'), d: tt('Pazubent sözleşmeyle senin'), i: 'crown' },
 ];
 
 // ---------- menajerle konuşma ----------
