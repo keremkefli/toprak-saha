@@ -1,6 +1,6 @@
 // Toprak Saha — hizmet işçisi: önce ağ (güncel sürüm), ağ yoksa önbellek (çevrimdışı açılış)
-const CACHE = 'toprak-saha-3';
-const SHELL = ['./', 'index.html', 'css/style.css', 'js/boot.js', 'js/i18n.js', 'js/ui.js', 'js/core.js', 'js/data.js', 'js/kadin.js', 'js/events.js', 'js/mini.js', 'js/art.js', 'js/sfx.js', 'manifest.webmanifest', 'icon-192.png'];
+const CACHE = 'toprak-saha-4';
+const SHELL = ['./', 'index.html', 'css/style.css', 'js/boot.js', 'js/i18n.js', 'js/ui.js', 'js/core.js', 'js/data.js', 'js/kadin.js', 'js/events.js', 'js/mini.js', 'js/scene.js', 'js/art.js', 'js/sfx.js', 'manifest.webmanifest', 'icon-192.png', 'snd/tribun1.mp3', 'snd/tribun2.mp3', 'snd/tribun3.mp3', 'snd/gol.mp3'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
