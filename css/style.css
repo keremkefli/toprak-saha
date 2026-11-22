@@ -634,3 +634,13 @@ main.fin > * { animation: fin .24s ease both; } @keyframes fin { from { opacity:
 .opts.grid .opt:disabled > .ic { color: var(--mu); }
 .sheet.locker { animation: lockin .55s cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes lockin { 0% { clip-path: inset(0 50% 0 50%); filter: brightness(.3); } 60% { filter: brightness(.7); } 100% { clip-path: inset(0 0 0 0); filter: none; } }
+
+/* v13: kulübe, hocanın tercihi katkıları, sağlık, iş hayatı */
+.mctl.off { opacity: .45; pointer-events: none; filter: saturate(.4); }
+.prefc { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.prefc span { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 4px; background: var(--p2); }
+.prefc span.pos { color: var(--gr); } .prefc span.neg { color: var(--rd); }
+.prefc small { flex-basis: 100%; color: var(--mu); font-size: 11.5px; line-height: 1.3; }
+.warn.hlw { margin: 8px 0; }
+.top .bizc { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 8px; background: #2a2f45; color: #ffd23f; }
+.rate b svg { vertical-align: middle; }
