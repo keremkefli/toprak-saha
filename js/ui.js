@@ -4,7 +4,7 @@ import * as G from './core.js';
 import { LEAGUES, LMAP, POS, ATTR, ORIGINS, TRAITS, PROV, SHOP, TRAIN, COUNTRIES, ROLE, MOM, TSTAT, STANCE, PERKS, HANG, POSTS, ACH, DEC, HT, BUILD, STYLES, CELE, NET, MACT, DIFF, TACT, PERKS2, FREE, NATN, NATC, WX, INV, SCN, MVAR, UPG, SESS, PTAG, SCENS, COLK, CAMP, NEGO, AGTOP, AGBR } from './data.js';
 import { pickEvent, resolve } from './events.js';
 import { Mini, Pitch, PSLOT } from './mini.js';
-import { StadView, GFX, fig, POSE, backdrop } from './scene.js';
+import { StadView, GFX, fig, POSE, backdrop, lockerDraw, injuryDraw } from './scene.js';
 import { ic, avatar, persona, crestSvg, radar, ring, PERS, SKIN, HAIRC, HAIRS, euLogo, trophySvg } from './art.js';
 import { sfx, spiker } from './sfx.js';
 
@@ -29,12 +29,12 @@ const euCls = f => (f && f.eu ? ' eu-' + f.eu : '');
 const cl = (id, inner, cls = '') => tt`<button class="cl ${cls}" data-a="club" data-v="${id}">${inner}</button>`;   // tıklanınca kulüp profili
 function toast(s, icon = 'check') { $toast.innerHTML = ic(icon, 18) + tt`<span>${esc(s)}</span>`; $toast.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $toast.classList.remove('on'), 2800); }
 
-function dialog({ art = '', k = '', t = '', body = '', opts, auto, cls = '' }) {
+function dialog({ art = '', k = '', t = '', body = '', opts, auto, cls = '', grid = false }) {
   if (AUTO) { const en = opts.map((o, i) => o.dis ? -1 : i).filter(i => i >= 0); return Promise.resolve(auto != null ? auto : en[Math.floor(Math.random() * en.length)]); }
   return new Promise(res => {
     dres = res; sfx.pop();
     $modal.innerHTML = tt`<div class="sheet ${cls}">${art}<div class="sh-in">${k ? tag(k) : ''}${t ? tt`<h3>${esc(t)}</h3>` : ''}<div class="mbody">${body}</div>
-      <div class="opts">${opts.map((o, i) => tt`<button class="opt ${o.c || ''}" data-a="dlg" data-v="${i}" ${o.dis ? 'disabled' : ''}>${o.i ? ic(o.i, 20) : ''}<span><b>${esc(o.t)}</b>${o.s ? tt`<small>${esc(o.s)}</small>` : ''}</span></button>`).join('')}</div></div></div>`;
+      <div class="opts ${grid ? 'grid' : ''}">${opts.map((o, i) => tt`<button class="opt ${o.c || ''}" data-a="dlg" data-v="${i}" ${o.dis ? 'disabled' : ''}>${o.i ? ic(o.i, 20) : ''}<span><b>${esc(o.t)}</b>${o.s ? tt`<small>${esc(o.s)}</small>` : ''}</span></button>`).join('')}</div></div></div>`;
     $modal.hidden = false; $modal.scrollTop = 0;
   });
 }
@@ -539,7 +539,7 @@ function vLife() {
     <section class="card hv-ayar">${tag(tt('Para birimi'))}<div class="seg">${Object.keys(G.CUR).map(k => tt`<button class="${G.curKey() === k ? 'on' : ''}" data-a="cur" data-v="${k}">${G.CUR[k][0]} ${G.CUR[k][2]}</button>`).join('')}</div><p class="mut sm">Sabit kur: €1 = ₺${G.CUR.EUR[1]} · $1 = ₺${G.CUR.USD[1]}</p></section>
     <section class="card hv-ayar">${tag(tt('Tema'))}<div class="thm">${THEMES.map(([k, n, c]) => tt`<button class="${theme() === k ? 'on' : ''}" data-a="theme" data-v="${k}"><i style="background:${c || 'conic-gradient(#d81e2c, #ffd21a, #0f8a4b, #1c57c4, #d81e2c)'}"></i>${n}</button>`).join('')}</div></section>
     <section class="card hv-ayar">${tag(tt('Dil'))}<div class="seg">${langBtns()}</div></section>
-    ${gfxCard()}
+    ${gfxCard()}${ivCard()}
     ${spiker.ok ? tt`<button class="opt sm hv-ayar" data-a="spk">${ic('mic', 20)}<span><b>Spiker sesi: ${spiker.on ? tt('açık') : tt('kapalı')}</b><small>Maçta goller ve anlar sesli okunur</small></span></button>` : ''}
     <button class="opt sm hv-ayar" data-a="howto">${ic('book', 20)}<span><b>Nasıl oynanır?</b><small>Rehberi baştan göster</small></span></button>
     <button class="opt sm hv-ayar" data-a="kodal">${ic('swap', 20)}<span><b>Aktarım kodunu kopyala</b><small>Başka cihazda giriş ekranında "Kodla yükle"</small></span></button>
@@ -597,7 +597,7 @@ async function playMini(kind, oppR, label, x = {}) {
   const cu = x.nat ? '#d81e2c' : s.clubId ? G.club(s.clubId).c1 : '#ff6a2b';
   let co = x.opp ? G.club(x.opp).c1 : '#5a6470'; if (co === cu) co = x.opp ? G.club(x.opp).c2 : '#f2f2f2';
   const L = s.look || {}, cu2 = x.nat ? '#f2f2f2' : s.clubId ? G.club(s.clubId).c2 : '#f2f2f2', co2 = x.opp ? (co === G.club(x.opp).c2 ? G.club(x.opp).c1 : G.club(x.opp).c2) : '#1b1b1b';
-  const res = await mini.play(kind, { env: x.env || G.trainEnv(), cu2, co2, skin: SKIN[L.skin ?? 1], hair: HAIRC[L.hc ?? 0], long: (L.hair ?? 0) >= 8, num: s.num, boot: G.bootColor(), tired: x.tired || 1, skill: sk(G.skillFor(kind)), speed: sk(s.at.hiz), oppQ, hard: hard * (x.focus ? .88 : 1) * (x.tired || 1) * (x.crowd ? .85 : 1) * (x.big ? .9 : 1) * (x.adapt ? 1.07 : 1) * (x.wxh || 1) * (x.prep ? .93 : 1), wall: x.wall || null, vr: x.vr || null, bonus: !!x.bonus, cu, co, pk: Object.fromEntries(s.perks.map(p => [p, 1])) });
+  const res = await mini.play(kind, { env: x.env || G.trainEnv(), gkw: x.gkw || null, cu2, co2, skin: SKIN[L.skin ?? 1], hair: HAIRC[L.hc ?? 0], long: (L.hair ?? 0) >= 8, num: s.num, boot: G.bootColor(), tired: x.tired || 1, skill: sk(G.skillFor(kind)), speed: sk(s.at.hiz), oppQ, hard: hard * (x.focus ? .88 : 1) * (x.tired || 1) * (x.crowd ? .85 : 1) * (x.big ? .9 : 1) * (x.adapt ? 1.07 : 1) * (x.wxh || 1) * (x.prep ? .93 : 1), wall: x.wall || null, vr: x.vr || null, bonus: !!x.bonus, cu, co, pk: Object.fromEntries(s.perks.map(p => [p, 1])) });
   $mini.hidden = true;
   return res;
 }
@@ -770,6 +770,7 @@ async function runMatch(fxt, rl, mode) {
   const s = G.S, M = G.buildMatch(fxt, rl), nat = M.nat; let sim = mode === 'sim' || AUTO; mSim = false;
   const ENVM = G.matchEnv(fxt, M.wx); let stad = null;   // stadyum: kademe, saat, doluluk
   const roar = us => { if (stad) stad.cheer((nat ? us : us === ENVM.home) ? 1 : .12); };
+  M.gkw = nat ? null : G.gkWeak(fxt.opp).k; M.lines = ENVM.lines;   // rakip kalecinin zaafı; yan hakem var mı
   const usN = nat ? fxt.usN : G.club(s.clubId).n, opN = nat ? fxt.opp.n : G.club(fxt.opp).n, home = nat ? fxt.home !== false : fxt.home;
   const lbl = nat ? (fxt.name || tt('Milli maç')) + (fxt.round ? ' · ' + fxt.round : '') : fxt.cup ? `${fxt.name} · ${fxt.round}` : LMAP[fxt.lid].name;
   let capLine = '', pitch = null;
@@ -812,11 +813,16 @@ async function runMatch(fxt, rl, mode) {
   // gol sonrası VAR: us gol bizim mi, mine golü oyuncu mu attı
   const vr = async (us, mine, min) => {
     const v = G.varCheck(M, us); if (!v) return;
+    if (v.noVar) {   // VAR yok: karar sahada kalır
+      if (us) { M.usG--; M.varAg = true; if (mine) { M.pg--; M.rt -= 1.1; if (M.goals) M.goals.pop(); } } else M.oppG--;
+      put(min, ENVM.lines ? tt('Yan hakem bayrağı kaldırdı: ofsayt, gol sayılmadı.') : tt('Hakem ofsayt düdüğünü çaldı: gol sayılmadı.'), us ? 'b' : 'g', 'x'); if (!AUTO) { if (us) sfx.conceded(); else sfx.goal(); }
+      return;
+    }
     const pe = $('#pitch'); if (pe) pe.classList.add('var');
     put(min, tt('VAR incelemesi başladı...'), 'var', 'eye'); if (!AUTO) sfx.card(); await wait(1900);
     if (pe) pe.classList.remove('var');
     if (v.cancel) {
-      if (us) { M.usG--; M.varAg = true; if (mine) { M.pg--; M.rt -= 1.1; } } else M.oppG--;
+      if (us) { M.usG--; M.varAg = true; if (mine) { M.pg--; M.rt -= 1.1; if (M.goals) M.goals.pop(); } } else M.oppG--;
       put(min, tt`GOL İPTAL: ${v.why}.`, us ? 'b' : 'g', 'x'); if (!AUTO) { if (us) sfx.conceded(); else sfx.goal(); }
     } else put(min, tt('VAR kararı: gol geçerli.'), us ? 'g' : 'b', 'check');
   };
@@ -863,15 +869,25 @@ async function runMatch(fxt, rl, mode) {
       if (!sim && !M.red && !M.off) {
         const D = DEC[e.k], g0 = M.usG; if (e.k === 'ht') { M.stam = Math.min(100, M.stam + (G.perk('nefes') ? 25 : 12)); stamUpd(); }   // devre arası nefes
         const H = e.k === 'ht' ? G.htTalk(M) : null;   // hocanın konuşması ve ikinci yarı isteği
-        const c = await dialog({ art: art(D.p, D.i, e.k === 'ht' ? 'club' : 'risk'), k: tt`${e.min}. dakika`, t: D.t, body: tt`<p>${esc(G.decText(M, e.k))}</p>` + (H ? htHTML(M, H) : ''), opts: D.o.map((t, x) => ({ t, s: D.s[x], dis: !!H && x === 4 && !(H.cold || M.usG < M.oppG) })), cls: 'ev' });
+        const dopt = { k: tt`${e.min}. dakika`, t: D.t, body: tt`<p>${esc(G.decText(M, e.k))}</p>` + (H ? htHTML(M, H) : ''), opts: D.o.map((t, x) => ({ t, s: D.s[x], i: (D.ic || [])[x], dis: !!H && x === 4 && !(H.cold || M.usG < M.oppG) })), cls: 'ev' + (H ? ' locker' : ''), grid: true };
+        if (H) { put(e.min, tt('Devre düdüğü: takım soyunma odasına gidiyor.'), '', 'whistle'); sfx.whistle(2); await wait(700); }
+        const c = H ? await sceneDialog((g, t, W2, H2) => lockerDraw(g, t, W2, H2, lockO('ht', M)), dopt) : e.k === 'knock' ? await sceneDialog((g, t, W2, H2) => injuryDraw(g, t, W2, H2, { env: ENVM, ...kitMe() }), dopt) : await dialog({ ...dopt, art: art(D.p, D.i, 'risk') });
         const r = G.decide(M, e.k, c, e.min);
+        if (M.off) { const okk = M.rt >= 6.8; put(e.min, okk ? tt('Kenara gelirken tribün seni ayakta alkışladı.') : tt('Kenara gelirken tribünden ıslıklar yükseldi.'), 'm', 'users'); if (stad) stad.cheer(okk && ENVM.home ? .8 : .1); }
         r.lines.forEach(l => put(e.min, l.s, l.c || 'm', l.c === 'g' ? 'ball' : 'whistle'));
         if (M.usG > g0) { mark(e.min, 'g'); bump(); sfx.goal(); }
         if (r.add.length) { const tail = M.tl.splice(i + 1); tail.push(...r.add); tail.sort((a, b) => a.min - b.min); M.tl.push(...tail); }
         upd(e.min); await wait(600);
       }
     } else if (e.t === 'mom' && !M.red && !M.off) {
-      let k = e.k, bonus = false;
+      let k = e.k, bonus = false, from = null;
+      const lbl = () => `${e.min}' · ${MOM[k].n}`;
+      const myGoal = () => { mark(e.min, 'g me'); bump(); if (!AUTO) sfx.goal(); if (pitch) pitch.goal(true); roar(true); };
+      const cele = async () => {   // maçın ilk golünde sevinç seçilir
+        if (sim || M.celeb || M.red) return; M.celeb = 1;
+        const ci = await dialog({ art: art('taraftar', 'star', 'fame'), k: tt`${e.min}. dakika`, t: tt('Gol sevinci'), opts: G.CELEB.map(c => ({ t: c.t, s: c.s, i: c.i })), cls: 'ev', grid: true }), ch = G.celebrate(M, ci);
+        put(e.min, G.CELEB[ci].t + (ch.length ? ' · ' + ch.slice(0, 3).join(' · ') : ''), 'm', G.CELEB[ci].i); if (M.red) put(e.min, tt('İkinci sarı! Kırmızı kart gördün.'), 'b', 'alert');
+      };
       for (;;) {
         if (e.kader && !bonus) put(e.min, tt('KADER ANI: turun anahtarı senin ayağında.'), 'm', 'star');
         const vk = bonus ? null : G.momVar(M, e, k), VR = vk ? MVAR[vk] : null;
@@ -880,19 +896,40 @@ async function runMatch(fxt, rl, mode) {
           const ch = await dialog({ art: art('takim', 'right', 'club'), k: tt`${e.min}. dakika`, t: tt('Kontra: önün açık'), body: tt('<p>Savunma geride kaldı. Yanında bir arkadaşın koşuyor, kaleci çizgisinde.</p>'), opts: [{ t: tt('Kendin bitir'), s: tt('Şut: gol senin olur'), i: 'target' }, { t: tt('Boştaki arkadaşa ver'), s: tt('Pas: asist şansı yüksek'), i: 'swap' }, { t: tt('Kaleciyi de geç'), s: tt('Çalım: tutarsa boş kaleye'), i: 'bolt' }], cls: 'ev' });
           k = ['sut', 'pas', 'calim'][ch];
         }
+        let vx = null;   // bu ana özel seçim
+        if (!sim && bonus && k === 'sut' && (from === 'kosu' || from === 'calim')) {   // kaleciyle karşı karşıya
+          const gw = M.gkw === 'bire' ? `<p class="note">${tt('Bu kaleci bire birde erken çıkıyor: aşırtma ve çalım daha kolay.')}</p>` : '';
+          const ch = await dialog({ art: art('takim', 'target', 'club'), k: tt`${e.min}. dakika`, t: tt('Kaleciyle karşı karşıyasın'), body: gw, opts: [{ t: tt('Plase'), s: tt('Köşeyi seç: isabet kolaylaşır'), i: 'target' }, { t: tt('Aşırtma'), s: tt('Kaleci öne çıkmış: topun altına vur, yumuşak kaydır'), i: 'up' }, { t: tt('Kaleciyi geç'), s: tt('Çalım: tutarsa boş kale'), i: 'bolt' }], cls: 'ev', grid: true });
+          if (ch === 2) {
+            const g1 = M.usG, rr = await playMini('calim', M.oppR - (M.gkw === 'bire' ? 6 : 0), lbl(), { env: ENVM, lh: M.lh, bonus: true, opp: nat ? null : fxt.opp, nat, focus: M.focus, big: M.big });
+            M.cmin = e.min; G.roundKeeper(M, rr.out === 'gecti').forEach(l => put(e.min, l.s, l.c || '', l.c === 'g' ? 'ball' : ''));
+            if (M.usG > g1) { myGoal(); upd(e.min); tkUpd(); await wait(680); await vr(true, true, e.min); if (M.usG > g1) await cele(); }
+            upd(e.min); tkUpd(); break;
+          }
+          vx = ch === 1 ? { rushy: 1, acc: 1.1 } : { acc: .82 };
+        }
+        if (!sim && k === 'penalti') {   // penaltıyı nasıl kullanacaksın
+          const ch = await dialog({ art: art('takim', 'target', 'club'), k: tt`${e.min}. dakika`, t: tt('Penaltıyı nasıl kullanacaksın?'), body: M.gkw === 'pen' ? `<p class="note">${tt('Bu kaleci penaltılarda erken yatıyor.')}</p>` : '', opts: [{ t: tt('Köşeye vur'), s: tt('Bildiğin vuruş'), i: 'target' }, { t: tt('Duraksayarak vur'), s: tt('Kaleci erken yatar ama isabet zorlaşır'), i: 'clock' }, { t: 'Panenka', s: tt('Ortaya aşırt: tutarsa efsane, tutmazsa rezalet'), i: 'star' }], cls: 'ev', grid: true });
+          if (ch === 2) {
+            const g1 = M.usG; M.cmin = e.min; G.panenka(M).forEach(l => put(e.min, l.s, l.c || '', 'ball'));
+            if (M.usG > g1) { myGoal(); upd(e.min); tkUpd(); await wait(680); await vr(true, true, e.min); if (M.usG > g1) await cele(); } else if (!AUTO) sfx.ooh();
+            upd(e.min); tkUpd(); await wait(500); break;
+          }
+          if (ch === 1) vx = { fake: 1, acc: 1.3 };
+        }
         let wall = null;
         if (k === 'duvar' && !sim) { const wc = await dialog({ art: art('takim', 'shield', 'club'), k: tt`${e.min}. dakika`, t: tt('Barajı kur'), body: tt('<p>Kaç kişi dizersen, vuruş ona göre gelir.</p>'), opts: [{ t: tt('Beş kişi'), s: tt('Düz vuruş kapanır; top köşeye, barajın üstünden gelir'), i: 'shield' }, { t: tt('Dört kişi'), s: tt('Dengeli'), i: 'users' }, { t: tt('Üç kişi'), s: tt('Topu iyi görürsün ama sert ve ortaya yakın gelir'), i: 'eye' }], cls: 'ev' }); wall = [[.88, 1.14], [.6, 1], [.3, .9]][wc]; }
         const g0 = M.usG, o0 = M.oppG, crowd = M.crowdOn; M.crowdOn = 0;
         if (!sim) { M.stam = Math.max(0, M.stam - (M.mode === 'o' ? 8 : M.mode === 'd' ? 5 : 6) * (M.drain || 1)); stamUpd(); }
-        const res = sim ? G.simMoment(k, M, vk) : await playMini(k, M.oppR, `${e.min}' · ${e.kader ? tt('Kader anı') : MOM[k].n}${VR ? ' · ' + VR.n : ''}`, { env: ENVM, lh: M.lh, prep: M.prep, vr: VR && MVAR[vk].k.includes(k) ? VR.vr : null, wall, wxh: WX[M.wx][4].includes(k) ? WX[M.wx][5] : 1, bonus, opp: nat ? null : fxt.opp, nat, focus: M.focus, crowd, big: M.big, adapt: M.adapt, tired: M.stam < 15 ? 1.3 : M.stam < 30 ? 1.15 : 1 });
+        const res = sim ? G.simMoment(k, M, vk) : await playMini(k, M.oppR, `${e.min}' · ${e.kader ? tt('Kader anı') : MOM[k].n}${VR ? ' · ' + VR.n : ''}`, { env: ENVM, lh: M.lh, prep: M.prep, gkw: M.gkw, vr: vx ? { ...(VR && MVAR[vk].k.includes(k) ? VR.vr : {}), ...vx } : VR && MVAR[vk].k.includes(k) ? VR.vr : null, wall, wxh: WX[M.wx][4].includes(k) ? WX[M.wx][5] : 1, bonus, opp: nat ? null : fxt.opp, nat, focus: M.focus, crowd, big: M.big, adapt: M.adapt, tired: M.stam < 15 ? 1.3 : M.stam < 30 ? 1.15 : 1 });
         M.cmin = e.min; const r = G.applyMoment(M, k, res, vk);
         r.lines.forEach(l => put(e.min, l.s, l.c || '', l.c === 'g' || l.c === 'b' ? 'ball' : ''));
         if (M.usG > g0) { mark(e.min, 'g me'); bump(); if (sim && !AUTO) sfx.goal(); if (pitch) pitch.goal(true); roar(true); }
         if (M.oppG > o0) { mark(e.min, 'b'); bump(); if (!AUTO) sfx.conceded(); if (pitch) pitch.goal(false); roar(false); }
         if (res.out === 'faul' && !AUTO) sfx.card();
         upd(e.min); tkUpd(); await wait(680);
-        if (res.out === 'gol' && M.usG > g0) { await vr(true, true, e.min); upd(e.min); tkUpd(); }
-        if (r.chain) { k = r.chain; bonus = true; continue; }
+        if (res.out === 'gol' && M.usG > g0) { await vr(true, true, e.min); upd(e.min); tkUpd(); if (M.usG > g0) await cele(); }
+        if (r.chain) { from = k; k = r.chain; bonus = true; continue; }
         break;
       }
     }
@@ -910,6 +947,7 @@ async function runMatch(fxt, rl, mode) {
     put(90, scored ? tt('Penaltını gole çevirdin.') : tt('Penaltını kaçırdın.'), scored ? 'g' : 'b', 'ball');
     put(90, pens ? tt('Seriyi kazandınız, tur sizin!') : tt('Seri rakibin oldu.'), pens ? 'g' : 'b', 'trophy'); await wait(900);
   }
+  if (!sim && ENVM.tier >= 4 && !M.et) { put(90, tt`Dördüncü hakem tabelayı kaldırdı: +${2 + (M.usG + M.oppG) % 4} dakika.`, '', 'clock'); await wait(500); }
   put(90, tt('Son düdük.'), '', 'whistle'); if (!AUTO) { sfx.whistle(3); sfx.ambOff(); } await wait(800);
   if (M.stam < 15) M.risk = Math.max(M.risk || 1, 1.5);
   curM = null; if (pitch) pitch.stop(); if (stad) stad.stop(); spiker.stop();
@@ -922,9 +960,14 @@ async function runMatch(fxt, rl, mode) {
     opts: [{ t: tt('Devam') }, { t: tt('Maç kartını paylaş'), s: tt('Sonucu görsel olarak kaydet ya da gönder'), i: 'phone', c: 'ghost' }, ...(M.goals && M.goals.length && !AUTO ? [{ t: tt('Golünü tekrar izle'), s: tt('Sahada yeniden oynar; gol kartını paylaşabilirsin'), i: 'ball', c: 'ghost' }] : [])], auto: 0,
   });
   if (rj === 2) await replayFlow(M, fxt);
+  const lmood = AUTO ? '' : G.lockerMood(M, win, M.usG < M.oppG);   // büyük gecelerin ardından soyunma odası
+  if (lmood) {
+    const cap = !!s.fl.kaptan, ci = await sceneDialog((g, t, W2, H2) => lockerDraw(g, t, W2, H2, lockO(lmood)), { k: tt('Soyunma odası'), t: lmood === 'win' ? tt('Şarkılar, su şişeleri, kahkaha') : tt('Kimse konuşmuyor'), body: cap ? `<p>${tt('Kaptan sensin. Gözler sende.')}</p>` : '', opts: cap ? G.CAPL[lmood].map(o => ({ t: o[0], i: o[1] })) : [{ t: tt('Devam') }], grid: cap, auto: 0, cls: 'ev locker' });
+    if (cap) { const ch = G.capLocker(lmood, ci); if (ch.length) toast(ch.join(' · '), 'users'); }
+  }
   if (rj === 1) { const cc = nat ? { c1: '#d81e2c' } : G.club(s.clubId); await shareCard({ c1: cc.c1, tag: tt(lbl).toLocaleUpperCase(LC), big: dec(rep.rt, 1), bigL: tt('MAÇ NOTU'), title: [`${home ? usN : opN} ${home ? M.usG : M.oppG}-${home ? M.oppG : M.usG}`, home ? opN : usN], sub: `${s.name} · ${POS[s.pos].n}`, stats: [[M.pg, tt('Gol')], [M.pa, tt('Asist')], [`${M.ok}/${M.mom}`, tt('An')]], text: tt`Toprak Saha: ${s.name}, maç notu ${dec(rep.rt, 1)}.` }); }
   if (!AUTO && !nat) {   // iyi maç, derbi, final ya da kötü gün: mikrofonlar uzanır
-    const must = (fxt.final && win) || M.pg >= 3 || (M.derby && win), hot = rep.rt >= 7.8 || M.pg >= 2, cold = (rep.rt < 5.6 || M.red) && G.chance(.35);
+    const must = !!fxt.final && win, hot = rep.rt >= 7.8 || M.pg >= 2 || (M.derby && win), cold = (rep.rt < 5.6 || M.red) && G.chance(.35);
     if (must || (G.ivDue() && (hot || cold))) await ivFlow('post', fxt, M);   // özel geceler dışında mikrofon birkaç haftada bir uzanır
   }
   if (nat) return { us: M.usG, opp: M.oppG, win: M.ko ? win : M.usG > M.oppG };
@@ -1327,7 +1370,7 @@ async function nextStep() {
         opts: [{ t: tt('Maça çık'), s: tt('Kilit anları sen oynarsın'), i: 'ball' }, { t: tt('Simüle et'), i: 'right' }, ...(back && s.diff !== 'gercek' ? [{ t: tt('Geri dön'), s: tt('Hafta harcanmaz'), c: 'ghost' }] : [])],
       });
       if (j === 2) return 'back';
-      if (!AUTO && G.ivDue() && G.bigMatch(f) && G.chance(.5)) await ivFlow('pre', f);
+      if (!AUTO && G.ivDue() && G.bigMatch(f) && G.chance(.3)) await ivFlow('pre', f);
       return runMatch(f, rl, j === 0 ? 'play' : 'sim');
     };
     const cf = G.sideFixture(); let ownCup = null, first = true;
@@ -1388,7 +1431,7 @@ function derbyLine(f) {
   return `<div class="aggb dby">${ic('bolt', 14)}${d ? tt`Derbi karnen: ${d[0]} galibiyet, ${d[1]} beraberlik, ${d[2]} mağlubiyet · ${d[3]} gol` : tt('Bu derbide ilk kez sahne alacaksın')}</div>`;
 }
 const paperBtn = () => `<button class="chip sm" data-a="paper">${ic('news', 14)} ${tt('Gazete')}</button>`;
-const preExtra = (f, rf) => (rf.pen ? `<div class="stn">${ic('target', 16)}${rf.pen}</div>` : '') + (G.isDerby(G.S.clubId, f.opp) ? `<div class="stn st-liste">${ic('bolt', 16)}<span><b>${tt('Derbi günü')}</b> · ${f.home ? tt('Tribünler saatler önce doldu. Bugün her top iki kat ağır.') : tt('Deplasman tribünü ıslıkla bekliyor. Bugün her top iki kat ağır.')}</span></div>` : '');
+const preExtra = (f, rf) => (f.nat ? '' : (() => { const gw = G.gkWeak(f.opp); return `<div class="stn">${ic('eye', 16)}${tt('Rakip kaleci')} <b>${esc(gw.n)}</b> · ${gw.t}</div>`; })()) + (rf.pen ? `<div class="stn">${ic('target', 16)}${rf.pen}</div>` : '') + (G.isDerby(G.S.clubId, f.opp) ? `<div class="stn st-liste">${ic('bolt', 16)}<span><b>${tt('Derbi günü')}</b> · ${f.home ? tt('Tribünler saatler önce doldu. Bugün her top iki kat ağır.') : tt('Deplasman tribünü ıslıkla bekliyor. Bugün her top iki kat ağır.')}</span></div>` : '');
 
 // Haftalık gazete sayfası
 async function paperFlow() {
@@ -1658,7 +1701,7 @@ async function signFlow(o) {
 // Röportaj: sponsor panosu önünde, mikrofonlar uzanmış
 function ivArt() {
   const s = G.S, c = G.club(s.clubId);
-  return `<div class="art t-fame ivb" style="--c1:${c.c1};--c2:${c.c2}"><div class="ivt">${Array.from({ length: 18 }, (_, i) => `<i>${i % 2 ? crest(s.clubId, 18) : 'BS'}</i>`).join('')}</div><div class="art-av">${avatar(s.look, c.c1, c.c2, lookX())}</div><svg class="ivm" viewBox="0 0 120 50" aria-hidden="true"><path d="M20 50 34 22M60 50V20M100 50 86 22" stroke="#15120f" stroke-width="5" stroke-linecap="round"/><rect x="26" y="6" width="16" height="20" rx="7" fill="#d81e2c" transform="rotate(-25 34 16)"/><rect x="52" y="2" width="16" height="22" rx="7" fill="#ffd23f"/><rect x="78" y="6" width="16" height="20" rx="7" fill="#58a6ff" transform="rotate(25 86 16)"/></svg><span class="art-n">${esc(s.name)}</span></div>`;
+  return `<div class="art t-fame ivb" style="--c1:${c.c1};--c2:${c.c2}"><div class="ivt">${Array.from({ length: 18 }, (_, i) => `<i>${i % 2 ? crest(s.clubId, 18) : ''}</i>`).join('')}</div><div class="art-av">${avatar(s.look, c.c1, c.c2, lookX())}</div><svg class="ivm" viewBox="0 0 120 50" aria-hidden="true"><path d="M20 50 34 22M60 50V20M100 50 86 22" stroke="#15120f" stroke-width="5" stroke-linecap="round"/><rect x="26" y="6" width="16" height="20" rx="7" fill="#d81e2c" transform="rotate(-25 34 16)"/><rect x="52" y="2" width="16" height="22" rx="7" fill="#ffd23f"/><rect x="78" y="6" width="16" height="20" rx="7" fill="#58a6ff" transform="rotate(25 86 16)"/></svg><span class="art-n">${esc(s.name)}</span></div>`;
 }
 
 // ---------- kariyer yolu: oynadığın kulüpler bir çizgide ----------
@@ -1696,6 +1739,22 @@ async function recordClip(src, o) {
   try { const file = new File([blob], 'toprak-saha-gol.' + ext, { type: blob.type }); if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: o.text }); return; } } catch (e) { return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'toprak-saha-gol.' + ext; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast(tt('Klip indirildi'), 'down');
 }
+
+// ---------- canlı sahneli diyalog: üstte canvas, altta seçenekler ----------
+async function sceneDialog(draw, o) {
+  const p = dialog({ ...o, art: '<canvas id="scn" class="tun"></canvas>' });
+  const cv = $('#scn'); let on = true;
+  if (cv) {
+    const g = cv.getContext('2d'), dpr = Math.min(window.devicePixelRatio || 1, 2), W = 360, H = 170; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const t0 = performance.now(), loop = () => { if (!on) return; draw(g, (performance.now() - t0) / 1000, W, H); if (!GFX.calm) setTimeout(loop, GFX.low ? 120 : 40); }; loop();
+  }
+  const r = await p; on = false; return r;
+}
+const kitMe = () => { const s = G.S, c = G.club(s.clubId), L = s.look || {}; return { c1: c.c1, c2: c.c2, skin: SKIN[L.skin ?? 1], hair: HAIRC[L.hc ?? 0], boot: G.bootColor() }; };
+const lockO = (mood, M) => { const k = kitMe(); return { c1: k.c1, c2: k.c2, mood, me: k, board: M ? [`${M.usG} - ${M.oppG}`, tt`Notun ${dec(M.rt, 1)}`, tt`Anlar ${M.ok}/${M.mom}`] : [] }; };
+// Röportaj sıklığı ayarı
+const IVM = () => ({ normal: [tt('Normal'), tt('Altı ila dokuz haftada bir')], sik: [tt('Sık'), tt('İki üç haftada bir')], final: [tt('Yalnız finaller'), tt('Kupa kazanınca mikrofon uzanır')] });
+const ivCard = () => { const m = G.S.ivm || 'normal', X = IVM()[m]; return `<button class="opt sm hv-ayar" data-a="ivm">${ic('mic', 20)}<span><b>${tt('Röportaj sıklığı')}: ${X[0]}</b><small>${X[1]}</small></span></button>`; };
 
 // Senaryolu başlangıç: deneme yok, doğrudan kulüpte
 async function scenStart() {
@@ -1790,6 +1849,7 @@ const ACT = {
     const [t, ok] = G.propose(v); if (ok) sfx.up(); else sfx.bad(); toast(t, ok ? 'eye' : 'x'); G.save(); render();
   },
   tab: v => { V.tab = v; render(); window.scrollTo(0, 0); const m = $('main'); if (m && !GFX.calm) m.classList.add('fin'); },
+  ivm: () => { const s = G.S; s.ivm = { normal: 'sik', sik: 'final', final: 'normal' }[s.ivm || 'normal']; G.save(); render(); },
   gfx: v => { let o = {}; try { o = JSON.parse(localStorage.getItem(GKEY)) || {}; } catch (e) { /* yok */ } o[v] = !GFX[v]; if (o.calm == null) o.calm = GFX.calm; try { localStorage.setItem(GKEY, JSON.stringify(o)); } catch (e) { /* yok */ } applyGfx(); render(); },
   lv: v => { V.lv = v; render(); },
   tstat: v => { const ch = G.setStatus(v); if (ch.length) { sfx.bad(); toast(ch.join(' · '), 'alert'); } G.save(); render(); },

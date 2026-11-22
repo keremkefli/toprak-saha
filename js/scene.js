@@ -128,6 +128,9 @@ export const POSE = {
   cheer: (t = 0) => ({ ll: -.15, rl: .15, lk: 0, rk: 0, la: -2.6 + Math.sin(t * 9) * .25, ra: 2.6 - Math.sin(t * 9 + 1) * .25, lf: 0, rf: 0, up: Math.abs(Math.sin(t * 7)) * 6 }),
   limp: (t = 0) => ({ ll: -.1, rl: .3, lk: 0, rk: .5, la: -.3, ra: .9, lf: .2, rf: -1.2, dy: 1 + Math.sin(t * 3), lean: .08 }),
   card: (t = 0) => ({ ll: -.1, rl: .1, lk: 0, rk: 0, la: -.3, ra: 2.9, lf: .1, rf: .1, dy: 0 }),
+  sit: (t = 0, low = 0) => ({ ll: -.55, rl: .55, lk: 1.35, rk: 1.35, la: -.4, ra: .4, lf: .95, rf: -.95, dy: 13 + low * 2 + Math.sin(t * 1.4) * .4 }),
+  point: (t = 0) => ({ ll: -.1, rl: .1, lk: 0, rk: 0, la: -2 + Math.sin(t * 3) * .12, ra: .3, lf: -.2, rf: -.1, dy: 0 }),
+  lie: () => ({ ll: -.1, rl: .3, lk: 0, rk: .7, la: -2.5, ra: .5, lf: .2, rf: -.6, lean: -1.48 }),
 };
 function seg(g, x, y, a, l, w, col) { const ex = x + Math.sin(a) * l, ey = y + Math.cos(a) * l; g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.stroke(); return [ex, ey]; }
 function kitFill(g, x, y, w, h, r, c1, c2, pat) {
@@ -190,4 +193,42 @@ export class StadView {
   draw() { const g = this.g, E = this.E; backdrop(g, 0, 0, this.w, this.h * 1.36, E, this.t); weather(g, this.w, this.h, E.wx, this.t); }
   cheer(v = 1) { this.E.flash = v; }
   stop() { this.on = false; clearInterval(this.iv); }
+}
+
+// ---------- soyunma odası: dolaplar, bank, taktik tahtası ----------
+// o: { c1, c2, mood 'ht'|'win'|'loss', me: { skin, hair, boot }, board: [satırlar] }
+export function lockerDraw(g, t, W, H, o) {
+  g.fillStyle = '#1b1713'; g.fillRect(0, 0, W, H); g.fillStyle = '#14110e'; g.fillRect(0, H * .82, W, H * .18);
+  const n = 6, lw = W / n, pat = kitPat(o.c1, o.c2), ht = o.mood === 'ht';
+  for (let i = 0; i < n; i++) {
+    const x = i * lw; g.fillStyle = i % 2 ? '#2a2520' : '#262119'; g.fillRect(x + 2, H * .08, lw - 4, H * .6); g.fillStyle = mix(o.c1, '#14110e', .45); g.fillRect(x + 2, H * .08, lw - 4, 6);
+    if (!(ht && i < 2)) { g.fillStyle = '#0c0a09'; g.fillRect(x + lw / 2 - 1, H * .12, 2, H * .08); kitFill(g, x + lw / 2 - 12, H * .19, 24, 27, 5, o.c1, o.c2, pat); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x + lw / 2 - 12, H * .19 + 21, 24, 6); }
+  }
+  g.fillStyle = '#5b4630'; g.fillRect(0, H * .7, W, 7); g.fillStyle = '#3a2a1e'; for (let x = 18; x < W; x += 72) g.fillRect(x, H * .7, 5, H * .13);
+  if (ht) {   // taktik tahtası
+    const bx = 8, by = H * .1, bw = lw * 2 - 14, bh = H * .52;
+    g.fillStyle = '#e9e2d3'; g.fillRect(bx, by, bw, bh); g.strokeStyle = '#6b4a2c'; g.lineWidth = 3; g.strokeRect(bx, by, bw, bh);
+    g.strokeStyle = '#1b1712'; g.lineWidth = 1.2; g.strokeRect(bx + 8, by + 8, bw - 16, bh * .44); g.beginPath(); g.moveTo(bx + bw / 2, by + 8); g.lineTo(bx + bw / 2, by + 8 + bh * .44); g.stroke();
+    g.strokeStyle = '#ff6a2b'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(bx + 22, by + bh * .36); g.quadraticCurveTo(bx + bw * .5, by + 10, bx + bw - 26, by + bh * .22); g.stroke(); g.fillStyle = '#ff6a2b'; g.beginPath(); g.arc(bx + bw - 24, by + bh * .22, 3.4, 0, 7); g.fill();
+    g.fillStyle = '#1b1712'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '700 10px Barlow, system-ui, sans-serif'; (o.board || []).slice(0, 3).forEach((ln, i) => g.fillText(ln, bx + 9, by + bh * .6 + i * 12.5, bw - 16));
+    fig(g, lw * 2 + 14, H * .93, 1.15, { c1: '#23272e', c2: '#ff6a2b', pat: 'duz', hair: '#d8d2c8', pose: POSE.point(t) });
+    [.5, .66, .82].forEach((fx, i) => fig(g, W * fx, H * .8, 1, { c1: o.c1, c2: o.c2, pose: POSE.sit(t + i), ...(i === 2 && o.me ? { skin: o.me.skin, hair: o.me.hair, boot: o.me.boot, me: 1 } : {}) }));
+  } else if (o.mood === 'win') {
+    [.14, .32, .5, .68, .86].forEach((fx, i) => fig(g, W * fx, H * .95, i === 2 ? 1.25 : 1.08, { c1: o.c1, c2: o.c2, pose: POSE.cheer(t + i * .7), ...(i === 2 && o.me ? { skin: o.me.skin, hair: o.me.hair, boot: o.me.boot } : {}) }));
+    if (!GFX.low) for (let i = 0; i < 26; i++) { g.fillStyle = [o.c1, o.c2, '#ffd23f'][i % 3]; g.fillRect((i * 53.7 + Math.sin(t + i) * 9) % W, (i * 31.3 + t * 46) % H, 3.4, 5); }
+  } else {
+    [.2, .42, .64].forEach((fx, i) => fig(g, W * fx, H * .8, 1, { c1: o.c1, c2: o.c2, pose: POSE.sit(t * .4 + i, 1), ...(i === 1 && o.me ? { skin: o.me.skin, hair: o.me.hair, boot: o.me.boot } : {}) }));
+    fig(g, W * .86, H * .95, 1.12, { c1: o.c1, c2: o.c2, back: true, pose: POSE.idle(t * .5, 1) });
+    g.fillStyle = 'rgba(8,10,16,.34)'; g.fillRect(0, 0, W, H);
+  }
+}
+// ---------- sakatlık: yerde oyuncu, sağlık ekibi, sedye ----------
+export function injuryDraw(g, t, W, H, o) {
+  const E = o.env || o;
+  backdrop(g, 0, 0, W, H * .62, E, t);
+  const [a, b] = turf(E); let gr = g.createLinearGradient(0, H * .42, 0, H); gr.addColorStop(0, b); gr.addColorStop(1, a); g.fillStyle = gr; g.fillRect(0, H * .42, W, H * .58);
+  g.strokeStyle = '#a79b8e'; g.lineWidth = 3; g.beginPath(); g.moveTo(W * .7, H * .66); g.lineTo(W * .98, H * .66); g.moveTo(W * .7, H * .76); g.lineTo(W * .98, H * .76); g.stroke(); g.fillStyle = '#e9e2d3'; g.fillRect(W * .74, H * .66, W * .2, H * .1);   // sedye
+  fig(g, W * .5, H * .86, 1.2, { c1: o.c1, c2: o.c2, skin: o.skin, hair: o.hair, boot: o.boot, pose: POSE.lie() });
+  fig(g, W * .56, H * .93, 1.1, { c1: '#f2f2f2', c2: '#d63b3b', pat: 'duz', pose: POSE.ready(t * .5) });
+  g.fillStyle = '#d63b3b'; g.fillRect(W * .64, H * .82, 22, 16); g.fillStyle = '#fff'; g.fillRect(W * .64 + 9, H * .82 + 3, 4, 10); g.fillRect(W * .64 + 6, H * .82 + 6, 10, 4);
 }

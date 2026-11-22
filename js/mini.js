@@ -80,8 +80,11 @@ function stadium(g, t, crowd, net, bare) {
   backdrop(g, 0, 0, W, gb * 1.36, EV, t);
   if (EV.tier >= 2) {   // reklam panosu
     g.fillStyle = '#14110e'; g.fillRect(0, gb - 15, W, 15);
-    g.font = '900 10px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillStyle = EV.tier >= 4 ? EV.c1 : '#ff6a2b';
-    for (let x = -40 + (GFX.calm ? 0 : (t * 10) % 120); x < W; x += 120) g.fillText('BAŞKA SAKARYA', x, gb - 7);
+    g.font = '900 10px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillStyle = EV.tier >= 4 ? '#f5efe4' : '#ff6a2b';
+    const ads = EV.ads && EV.ads.length ? EV.ads : [tt('BURAYA SPONSORLUK ALABİLİRSİNİZ')], gap = 250, sc = GFX.calm ? 0 : t * 14, base = Math.floor(sc / gap);
+    for (let x = -gap + sc % gap + 16, i = 0; x < W; x += gap, i++) g.fillText(ads[(((i - base) % ads.length) + ads.length) % ads.length], x, gb - 7);
+  } else {   // mahalle sahası: tel örgüye asılı bez afiş
+    g.fillStyle = '#efe7d6'; g.fillRect(W / 2 - 96, gb - 36, 192, 15); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillStyle = '#1b1712'; g.fillText(tt('BURAYA SPONSORLUK ALABİLİRSİNİZ'), W / 2, gb - 28, 184);
   }
   const [ta, tb] = turf(EV); let gr = g.createLinearGradient(0, gb, 0, H); gr.addColorStop(0, tb); gr.addColorStop(1, ta);
   g.fillStyle = gr; g.fillRect(0, gb, W, H - gb); patches(g, 0, gb, W, H - gb, EV);
@@ -145,6 +148,7 @@ function shotGame(m, o) {
   const HW = { x: 46, y: 412, r: 30 };          // vuruş noktası göstergesi
   let phase = AIR ? 'cross' : 'aim', t = 0, tl = (run ? 4.6 : 7) * (V.t || 1), kx = 180, sw = null, sh = null, net = null, bp = null, bv = null, hold = false, lastX = null;
   const tl0 = tl, ks = (1.1 + o.oppQ * 1.1) * o.hard * (V.sp || 1), kAmp = v === 'penalti' ? 8 : 56;
+  const fakeSide = V.fake ? (Math.random() < .5 ? -1 : 1) : 0;   // duraksayınca kaleci bir yana kayar
   const defs = [];
   if (run && !o.bonus && !(V.n < 0) && (o.oppQ > .4 || V.n > 0)) defs.push({ x: rnd(100, 260), y: 258, vx: (Math.random() < .5 ? -1 : 1) * (44 + o.oppQ * 46) * o.hard });
   if (run && !o.bonus && V.n > 0) defs.push({ x: rnd(90, 270), y: 300, vx: (Math.random() < .5 ? -1 : 1) * (38 + o.oppQ * 40) * o.hard });
@@ -154,7 +158,7 @@ function shotGame(m, o) {
   const sigma0 = (20 - o.skill * 14) * o.hard * (v === 'frikik' ? (pk.frikik ? 1.05 : 1.45) : v === 'penalti' ? .6 : 1) * (pk.plase ? .8 : 1) * (V.acc || 1);
   const org = () => (cr ? { x: cr.hx, y: cr.hy } : ball);
   const far = () => clamp((org().y - gb) / 208, .5, 1.2);            // kaleye uzaklık (1 = başlangıç mesafesi)
-  const rush = () => (run ? clamp((428 - ball.y) / 110, 0, 1) : 0);   // kalecinin açı kapatması
+  const rush = () => (run ? Math.max(V.rushy ? .62 : 0, clamp((428 - ball.y) / 110, 0, 1)) : 0);   // kalecinin açı kapatması
   const spOf = (L, dur) => clamp((L / Math.max(.04, dur) - 300) / 1000, 0, 1);
   const kind = spN => (spN < .35 && hit.y > .55 ? 'AŞIRTMA' : spN < .4 ? 'PLASE' : spN > .7 ? tt('SERT ŞUT') : tt('ŞUT'));
 
@@ -175,7 +179,7 @@ function shotGame(m, o) {
     else if (res === 'blok' || res === 'baraj') { bv = { x: rnd(-60, 60), y: 150 }; m.burst(b.x, b.y, 8, ['#fff'], 100); m.shake(4); sfx.save(); }
     else if (res === 'aut') { bv = { x: (sh.tx - sh.from.x) * .8, y: -150 }; sfx.ooh(); }
     else sfx.ooh();
-    m.finish({ out: res });
+    m.finish({ out: res, parry: !!(sh && sh.parry) });
   }
   function release(s) {
     const dx = s.x - s.x0, dy = s.y - s.y0, L = Math.hypot(dx, dy), spN = spOf(L, t - s.t0);
@@ -185,9 +189,9 @@ function shotGame(m, o) {
     const sg = sigma0 * (.75 + spN * .75) * (.7 + far() * .5) * (kd === 'PLASE' ? .75 : 1) * (cr ? AIR.sg + (1 - q) * 1.6 : 1);
     const tx = a.tx + randn() * sg, ty = a.ty + randn() * sg * .5;
     const side = tx < 150 ? -1 : tx > 210 ? 1 : 0;
-    sh = { from: { x: ball.x, y: ball.y }, tx, ty, T: Math.max(cr ? .46 : .3, (.8 - .36 * spN) * clamp(far(), .6, 1.1) * (v === 'frikik' ? 1.2 : 1)), curve: cr ? 0 : -hit.x * 60, p: 0, el: 0, slowed: false, shift: 0,
+    sh = { from: { x: ball.x, y: ball.y }, tx, ty, T: Math.max(cr ? .46 : .3, (.8 - .36 * spN) * clamp(far(), .6, 1.1) * (v === 'frikik' ? 1.2 : 1)), curve: cr ? 0 : -hit.x * 60, p: 0, el: 0, sp: spN, slowed: false, shift: 0,
       rd: v === 'penalti' ? .04 : cr ? .1 + AIR.rd + (1 - o.oppQ) * .12 : .16 + (1 - o.oppQ) * .18, vk: (165 + o.oppQ * 150) * (o.bonus ? .75 : 1) * (cr ? 1.1 : 1), chip: kd === 'AŞIRTMA', rush: rush(),
-      pen: v === 'penalti' ? 180 + (Math.random() < o.oppQ * .15 * (pk.buz ? .3 : 1) ? side : [-1, 0, 1][Math.floor(Math.random() * 3)]) * 64 : null };
+      pen: v === 'penalti' ? 180 + (fakeSide && Math.random() < .72 ? fakeSide : Math.random() < o.oppQ * .15 * (pk.buz ? .3 : 1) ? side : [-1, 0, 1][Math.floor(Math.random() * 3)]) * 64 : null };
     phase = 'fly'; lastX = null; sfx.kick(); m.shake(3);
   }
   function arrive(b) {
@@ -195,9 +199,18 @@ function shotGame(m, o) {
     const inG = tx > gx + 5 && tx < gx + gw - 5 && ty > gy + 5 && ty <= gb;
     const post = !inG && tx > gx - 6 && tx < gx + gw + 6 && ty > gy - 6 && (Math.abs(tx - gx) <= 6 || Math.abs(tx - gx - gw) <= 6 || Math.abs(ty - gy) <= 6);
     if (!inG) return end(post ? 'direk' : 'aut', b);
-    let reach = v === 'penalti' ? (hN > .72 ? 22 : 30) : (26 + o.oppQ * 10) * (hN > .72 ? .72 : 1) * (1 + sh.rush * .3);
+    let reach = v === 'penalti' ? (hN > .72 ? 24 : 32) : (28 + o.oppQ * 10) * (hN > .72 ? .74 : 1) * (1 + sh.rush * .3);
     if (sh.chip && sh.rush > .45) reach *= .45;     // öne çıkmış kalecinin üstünden
-    end(Math.abs(tx - kx) <= reach ? 'kurtaris' : 'gol', b);
+    const gw8 = o.gkw, weak = (gw8 === 'alt' && hN < .3) || (gw8 === 'ust' && hN > .68) || (gw8 === 'pen' && v === 'penalti') || (gw8 === 'bire' && sh.rush > .4);   // kalecinin zaafı
+    if (weak) reach *= .8;
+    const d = Math.abs(tx - kx);
+    if (d > reach) return end('gol', b);
+    // Yetişti ama tutabilecek mi: parmak ucundaki sert şut ağlara gider, gövdeye gelen top kucakta kalır
+    const edge = d / reach, wet = EV.wx === 'yagmur' || EV.wx === 'kar' || EV.wx === 'camur';
+    const pIn = clamp((edge - .5) * 1.5 * (.55 + sh.sp * .9) * (hN > .68 ? 1.25 : 1) * (1.2 - o.oppQ * .45) * (weak ? 1.3 : 1), 0, .7);
+    if (Math.random() < pIn) return end('gol', b);
+    sh.parry = edge > .45 || sh.sp > .7 || (wet && Math.random() < .3);   // çelinen top oyunda kalır
+    end('kurtaris', b);
   }
   // vuruş sonrası duruş: devam hareketi, golde sevinç
   const mePose = pre => pre || (phase === 'fly' ? POSE.kick(.4 + clamp(sh.el / .32, 0, 1) * .6) : phase === 'end' && m.res && m.res.out === 'gol' ? POSE.cheer(t) : phase === 'end' && sh ? POSE.kick(1) : undefined);
@@ -207,7 +220,7 @@ function shotGame(m, o) {
     update(dt) {
       t += dt;
       for (const d of defs) { d.x += d.vx * dt; if (d.x < 80 || d.x > 280) { d.vx *= -1; d.x = clamp(d.x, 80, 280); } }
-      if (phase === 'aim' || phase === 'cross') kx = 180 + Math.sin(t * ks) * kAmp;
+      if (phase === 'aim' || phase === 'cross') kx = 180 + Math.sin(t * ks) * kAmp + fakeSide * 24 * clamp(t / 1.3, 0, 1);
       if (phase === 'aim') {
         tl -= dt;
         if (run) { ball.y -= 26 * dt; ball.x = clamp(ball.x + Math.sin(t * 1.3) * 14 * dt, 60, 300); }
@@ -746,7 +759,7 @@ export class Mini {
         if (this.res) {
           this.endT += rdt;
           const rep = !!this.cam && this.res.out === 'gol' && !GFX.low && !GFX.calm;   // golde kale arkası tekrar
-          if (this.res.out === 'faul' || this.res.out === 'ofsayt') fig(g, W - 58, H - 22, 1.5, { c1: '#15120f', c2: '#ffd23f', pat: 'duz', pose: POSE.card(), card: this.res.out === 'faul' ? '#ffd23f' : '#ff6a2b' });   // hakem
+          if (this.res.out === 'faul' || (this.res.out === 'ofsayt' && EV.lines !== false)) fig(g, W - 58, H - 22, 1.5, { c1: '#15120f', c2: '#ffd23f', pat: 'duz', pose: POSE.card(), card: this.res.out === 'faul' ? '#ffd23f' : '#ff6a2b' });   // hakem
           if (rep && this.endT > 1.5) netCam(g, clamp((this.endT - 1.5) / 1.4, 0, 1), this.cam, clk());
           else if (this.endT > .4) this.banner(Math.min(1, (this.endT - .4) / .18));
           if (this.endT > (rep ? 3.3 : 1.75)) { const r = this.res; this.game = null; resolve(r); return; }

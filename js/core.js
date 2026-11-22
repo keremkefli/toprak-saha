@@ -920,7 +920,7 @@ export function buildMatch(fxt, rl) {
 export function simMoment(k, M, v) {
   const base = { sut: .2, kafa: .17, frikik: .08, penalti: .76, pas: .62, calim: .45, savunma: .58, kurtaris: .74, vole: .15, rovesata: .07, orta: .48, korner: .45, duvar: .7, penkurtar: .26, kosu: .42, ribaund: .26, markaj: .6, cikis: .7 }[k];
   const shot = k === 'sut' || k === 'kafa' || k === 'frikik' || k === 'vole' || k === 'rovesata' || k === 'ribaund';
-  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (M.prep ? .03 : 0) + (M.big ? .04 : 0) - (M.adapt ? .03 : 0) - (M.awayEu ? .02 : 0) - ((M.lh || 1) - 1) * .2 - (v && MVAR[v] ? MVAR[v].dif : 0) - (M.wx && WX[M.wx][4].includes(k) ? .03 : 0) - (S.diff === 'gercek' ? .03 : 0) + (S.diff === 'kolay' ? .04 : S.diff === 'zor' ? -.04 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0), .05, shot ? .42 : .92));
+  const ok = chance(clamp(base + (skillFor(k) - M.oppR) * (shot ? 0.008 : 0.013) + (M.focus ? .06 : 0) + (M.prep ? .03 : 0) + (M.big ? .04 : 0) - (M.adapt ? .03 : 0) - (M.awayEu ? .02 : 0) - ((M.lh || 1) - 1) * .2 - (v && MVAR[v] ? MVAR[v].dif : 0) - (M.wx && WX[M.wx][4].includes(k) ? .03 : 0) - (S.diff === 'gercek' ? .03 : 0) + (S.diff === 'kolay' ? .04 : S.diff === 'zor' ? -.04 : 0) + (k === 'penalti' && perk('buz') ? .1 : 0) + (k === 'penalti' && M.gkw === 'pen' ? .05 : 0), .05, shot ? .42 : .92));
   switch (k) {
     case 'pas': return ok ? { out: 'ok', adv: chance(.5) } : { out: pick(['kesildi', 'bos']) };
     case 'orta': case 'korner': return ok ? { out: 'ok', adv: true } : { out: pick(['kesildi', 'bos']) };
@@ -936,6 +936,7 @@ export function simMoment(k, M, v) {
 }
 
 export function applyMoment(M, k, res, v) {
+  const lucky = k === 'kosu' && res.out === 'ofsayt' && M.lines === false && chance(.4); if (lucky) res = { out: 'kacti' };   // mahalle maçında yan hakem yok
   const out = res.out, me = S.name.split(' ').slice(-1)[0], lines = []; let chain = null;
   const good = GOOD.includes(out);
   M.mom++; if (good) M.ok++;
@@ -953,7 +954,7 @@ export function applyMoment(M, k, res, v) {
     else if (out === 'blok') { M.rt -= .15; lines.push({ s: tt('Savunma senden önce davrandı.') }); }
     else { M.rt -= .2; lines.push({ s: tt('Topa dokunamadın.') }); }
   } else if (k === 'kosu') {
-    if (out === 'kacti') { M.rt += .3; chain = 'sut'; lines.push({ s: tt('Savunmanın arkasına sarktın, kaleciyle karşı karşıyasın!') }); }
+    if (out === 'kacti') { M.rt += .3; chain = 'sut'; if (lucky) lines.push({ s: tt('Ofsayttaydın ama yan hakem yok: hakem görmedi, devam!') }); lines.push({ s: tt('Savunmanın arkasına sarktın, kaleciyle karşı karşıyasın!') }); }
     else if (out === 'ofsayt') { M.rt -= .15; lines.push({ s: tt('Erken çıktın: yardımcı hakem bayrağı kaldırdı.') }); }
     else { M.rt -= .2; lines.push({ s: tt('Geç kaldın, pas arkanda kaldı.') }); }
   } else if (k === 'markaj') {
@@ -968,8 +969,13 @@ export function applyMoment(M, k, res, v) {
       lines.push({ s: tt`GOL! ${me} ${k === 'kafa' ? tt('kafayla ağları buldu') : k === 'frikik' ? tt('frikikten harika attı') : k === 'penalti' ? tt('penaltıyı gole çevirdi') : k === 'vole' ? tt('gelişine vurdu, top ağlarda') : k === 'rovesata' ? tt('röveşatayla stadı ayağa kaldırdı') : tt('topu ağlara gönderdi')}!`, c: 'g' });
       if (chance(.6) && CELE[S.cele]) lines.push({ s: `${me} ${CELE[S.cele][1]}.` });
       if (k === 'rovesata') { S.fl.rov = 1; M.rt += .6; fx({ fol: Math.round(300 + S.fol * .12), taraf: 4 }); addFeed('basin', tt('Saha Kenarı'), tt`RÖVEŞATA! ${S.name} yılın golüne aday.`, 'manset'); }
-    } else if (out === 'kurtaris') { M.rt += k === 'penalti' ? -0.6 : 0.1; lines.push({ s: M.gk ? tt`Kaleci ${M.gk} vuruşunu çıkardı.` : tt('Kaleci vuruşunu çıkardı.') }); }
-    else if (out === 'direk') { M.rt += 0.05; lines.push({ s: tt('Direk! Top oyun alanında kaldı.') }); }
+    } else if (out === 'kurtaris') {
+      M.rt += k === 'penalti' ? -0.6 : 0.1; lines.push({ s: M.gk ? tt`Kaleci ${M.gk} vuruşunu çıkardı.` : tt('Kaleci vuruşunu çıkardı.') });
+      if ((res.parry ?? chance(.2)) && chance(.6)) { chain = 'ribaund'; lines.push({ s: tt('Kaleci çeldi ama tutamadı: top ortada!') }); }   // çelinen top
+    } else if (out === 'direk') {
+      M.rt += 0.05;
+      if (chance(.4)) { chain = 'ribaund'; lines.push({ s: tt('Direk! Top sana doğru geri sekti!') }); } else lines.push({ s: tt('Direk! Top oyun alanında kaldı.') });
+    }
     else if (out === 'baraj') { M.rt -= 0.1; lines.push({ s: tt('Vuruşun barajda kaldı.') }); }
     else if (out === 'blok') { M.rt -= 0.1; lines.push({ s: tt('Vuruşun savunmaya çarptı.') }); }
     else if (out === 'gec') { M.rt -= 0.25; lines.push({ s: tt('Çok bekledin, top ayağından alındı.') }); }
@@ -1286,7 +1292,9 @@ function assignRef() {
 }
 // Gol sonrası VAR incelemesi. us: gol bizim mi. null dönerse inceleme yok.
 export function varCheck(M, us) {
-  if (!M.ref || !chance(.05 + M.ref.vr * .1)) return null;
+  if (!M.ref) return null;
+  if (!(M.varOn ??= hasVar(M.fxt))) return chance(.03) ? { cancel: true, why: tt('ofsayt'), noVar: true } : null;   // VAR yok: hakemin düdüğü son söz
+  if (!chance(.05 + M.ref.vr * .1)) return null;
   return { cancel: chance(clamp(.42 - (us ? M.bias : -M.bias) * .16, .1, .8)), why: pick([tt('ofsayt'), tt('elle oynama'), 'faul']) };
 }
 
@@ -2014,9 +2022,9 @@ function ivCtx(fxt, M) {
     watch: S.watch.length > 0, co: co.n, tac: TACT[co.st].n.toLocaleLowerCase(LC), ref: curRef().n, rival: S.rival.n };
 }
 // Duruma uyan, yakın zamanda sorulmamış n soru seçer
-export const ivDue = () => absWeek() >= (S.ivn || 0);   // mikrofonlar her hafta uzanmaz
+export const ivDue = () => S.ivm !== 'final' && absWeek() >= (S.ivn || 0);   // mikrofonlar her hafta uzanmaz
 export function ivPick(kind, fxt, M, n = 2) {
-  if (kind !== 'imza') S.ivn = absWeek() + ri(4, 6);
+  if (kind !== 'imza') S.ivn = absWeek() + (S.ivm === 'sik' ? ri(2, 3) : ri(6, 9));
   const c = ivCtx(fxt, M), seen = S.ivq || (S.ivq = []), ok = IVQ.filter(q => q.k === kind && (!q.if || q.if(c)));
   const w = {}; ok.forEach(q => { w[q.id] = (q.w || 1) * (q.if ? 2.5 : 1) * (seen.includes(q.id) ? .04 : 1); });
   const out = [];
@@ -2869,10 +2877,50 @@ export function matchEnv(fxt, wx) {
   const tod = fxt.eu ? 'gece' : tier <= 2 ? (h % 4 ? 'gun' : 'aksam') : ['gun', 'aksam', 'gece', 'gece'][h % 4];
   const fill = clamp(.3 + (mine ? s.rel.taraf : 50) / 220 + (big ? .2 : 0) + (derby ? .25 : 0) + (tier >= 4 ? .12 : 0) + (nat ? .3 : 0), .12, 1);
   const nm = s.name.split(' ').slice(-1)[0].toLocaleUpperCase(LC), love = mine && s.rel.taraf >= 70, boo = mine && s.rel.taraf < 22;
-  return { tier, tod, wx: wx || 'acik', fill, c1: hc ? hc.c1 : '#d81e2c', c2: hc ? hc.c2 : '#f2f2f2', derby, eu: fxt.eu || null, home: mine, banner: love ? `${nm} ${s.num}` : boo ? tt('BU FORMA EMEK İSTER') : '', boo };
+  return { tier, tod, wx: wx || 'acik', fill, c1: hc ? hc.c1 : '#d81e2c', c2: hc ? hc.c2 : '#f2f2f2', derby, eu: fxt.eu || null, home: mine, banner: love ? `${nm} ${s.num}` : boo ? tt('BU FORMA EMEK İSTER') : '', boo, lines: tier >= 2, ads: adList() };
 }
 // Antrenman sahası: kulübün tesis düzeyi kadar gelişmiş, tribünler boş
-export function trainEnv() { const c = S.clubId ? club(S.clubId) : null; return { tier: S.clubId ? facOf(S.clubId) : 1, tod: 'gun', wx: 'acik', fill: .04, c1: c ? c.c1 : '#ff6a2b', c2: c ? c.c2 : '#f2f2f2' }; }
+// Saha kenarı panoları: boş reklam alanı ve varsa krampon sponsorun
+export const adList = () => [tt('BURAYA SPONSORLUK ALABİLİRSİNİZ'), ...(S && S.boot ? [S.boot.n.toLocaleUpperCase(LC)] : [])];
+export function trainEnv() { const c = S.clubId ? club(S.clubId) : null; return { tier: S.clubId ? facOf(S.clubId) : 1, tod: 'gun', wx: 'acik', fill: .04, c1: c ? c.c1 : '#ff6a2b', c2: c ? c.c2 : '#f2f2f2', ads: adList() }; }
 // Krampon rengi: sponsor markasına göre
 const BOOTC = { Poyraz: '#3d7bff', Zirve: '#ffd23f', 'Akın': '#ff4d4d', 'Kıvılcım': '#ff6a2b' };
 export const bootColor = () => (S.boot ? BOOTC[S.boot.n] || '#f2f2f2' : has('krampon') ? '#e9e2d3' : '#15120f');
+
+// ---------- VAR ve hakem ekibi: yalnız üst düzeyde ----------
+export function hasVar(fxt) {
+  if (!fxt) return false; if (fxt.nat) return !!fxt.tour || !!fxt.q; if (fxt.eu) return true;
+  const t = id => { const l = leagueOf(id); return l ? LMAP[l].tier : 9; };
+  return Math.min(t(S.clubId), t(fxt.opp)) <= (KW ? 1 : 2);
+}
+// Rakip kalecinin zaafı: sezon boyu sabit, maç öncesi görünür
+const GKW = { alt: tt('Alt köşelere geç yatıyor'), ust: tt('Üst köşelere yetişemiyor'), pen: tt('Penaltılarda erken yatıyor'), bire: tt('Bire birde erken çıkıyor') };
+export function gkWeak(opp) { const k = Object.keys(GKW)[hsh(opp + ':gk:' + S.season) % 4]; return { k, t: GKW[k], n: squad(opp)[0] }; }
+// Panenka: kaleci yatarsa gol, beklerse rezillik. Aynı kaleci ikinciye yemez.
+export function panenka(M) {
+  const key = 'pnk_' + M.fxt.opp, stay = clamp(.16 + (M.oppR - M.usR) * .004 + (S.fl[key] ? .3 : 0), .08, .65), me = S.name.split(' ').slice(-1)[0];
+  M.mom++; S.fl[key] = 1;
+  if (!chance(stay)) { M.ok++; M.usG++; M.pg++; M.rt += 1.1; (M.goals || (M.goals = [])).push({ min: M.cmin || 0, k: 'penalti' }); fx({ taraf: 3, ego: 2, fol: Math.round(120 + S.fol * .01) }); return [{ s: tt`PANENKA! ${me} topu ortaya aşırttı, kaleci çoktan yatmıştı!`, c: 'g' }]; }
+  M.rt -= .9; fx({ taraf: -3, mo: -4 });
+  return [{ s: tt('Kaleci yerinden kıpırdamadı: top kucağına düştü. Tribün ıslıklıyor.'), c: 'b' }];
+}
+// Bire birde kaleciyi geçmeyi denedin
+export function roundKeeper(M, ok) {
+  const me = S.name.split(' ').slice(-1)[0]; M.mom++;
+  if (ok) { M.ok++; M.usG++; M.pg++; M.rt += 1.25; M.cnt.calim++; (M.goals || (M.goals = [])).push({ min: M.cmin || 0, k: 'calim' }); return [{ s: tt`GOL! ${me} kaleciyi de geçti, topu boş kaleye yuvarladı!`, c: 'g' }]; }
+  M.rt -= .2; M.cnt.bad++;
+  return [{ s: M.gk ? tt`${M.gk} ayaklarına kapandı, topu aldı.` : tt('Kaleci ayaklarına kapandı, topu aldı.') }];
+}
+// Gol sevinci: maçın ilk golünde seçilir
+export const CELEB = [{ t: tt('Tribüne koş'), s: tt('Taraftarla kucaklaş'), i: 'users' }, { t: tt('Armayı öp'), s: tt('Bu forma benim'), i: 'heart' }, { t: tt('Sus işareti'), s: tt('Rakip tribüne cevap: kart riski'), i: 'alert' }];
+export function celebrate(M, i) {
+  if (i === 0) return fx({ taraf: 2.5, en: -2 });
+  if (i === 1) return fx({ taraf: S.since < S.season ? 3.5 : 1.2, hoca: 1, sad: 2 });
+  const L = fx({ ego: 3, rep: .4, fol: Math.round(60 + S.fol * .004), taraf: 1.5 });
+  if (M.ref && chance(.08 + M.ref.strict * .1)) { M.yel++; L.push(tt('Sarı kart')); if (M.yel >= 2) { M.red = true; M.rt -= 1.5; } }
+  return L;
+}
+// Maç sonu soyunma odası: sahne ne zaman açılır, kaptan ne der
+export const lockerMood = (M, win, lose) => (M.nat ? '' : win && (M.usG - M.oppG >= 2 || M.derby || M.fxt.final || M.fxt.po) ? 'win' : lose && (M.oppG - M.usG >= 3 || M.derby) ? 'loss' : S.fl.kaptan && (win || lose) && chance(.35) ? (win ? 'win' : 'loss') : '');
+export const CAPL = { win: [[tt('Herkesi tek tek tebrik et'), 'users', { takim: 4 }], [tt('"Daha bitmedi" de'), 'target', { takim: 1, hoca: 2 }], [tt('Kutlamayı başlat'), 'bolt', { takim: 3, mo: 4, en: -3 }]], loss: [[tt('Sorumluluğu üstlen'), 'shield', { takim: 4, mo: -2 }], [tt('Sert konuş'), 'alert', { takim: -2, hoca: 2 }], [tt('Sessizliğe izin ver'), 'moon', { takim: 1 }]] };
+export function capLocker(mood, i) { const o = CAPL[mood][i]; if (mood === 'loss' && i === 1 && chance(.45)) return fx({ takim: 3, hoca: 2 }); return fx(o[2]); }

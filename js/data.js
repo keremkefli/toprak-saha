@@ -559,10 +559,10 @@ export const ACH = [
 
 // Maç içi kararlar. p: konuşan kişi, i: ikon
 export const DEC = {
-  ht: { t: tt('Devre arası'), p: 'hoca', i: 'whistle', o: [tt('Takımı ateşle'), tt('Kendi oyununa odaklan'), tt('Riskli oyna'), tt('Hocaya plan sor'), tt('Hocaya itiraz et')], s: [tt('Tutarsa takım gol bulabilir'), tt('Kalan anlar daha sakin akar'), tt('Fazladan pozisyon, fazladan sakatlık riski'), tt('İstediği an ikinci yarıda karşına çıkar'), tt('Tutarsa sistem sana göre değişir; tutmazsa kenara gelebilirsin')] },
-  pen: { t: tt('Penaltı!'), p: 'takim', i: 'target', o: [tt('Ben atarım'), tt('Ustası atsın')], s: [tt('Penaltıyı sen kullanırsın'), tt('Takımın penaltıcısı atar')] },
-  ref: { t: tt('Tartışmalı karar'), p: 'fed', i: 'alert', o: [tt('İtiraz et'), tt('Oyuna dön')], s: [tt('Tribün sever, kart riski var'), tt('Hoca takdir eder')] },
-  knock: { t: tt('Bir şey oldu'), p: 'doktor', i: 'plus', o: [tt('Devam et'), tt('Değişiklik iste')], s: [tt('Sakatlık riski artar'), tt('Maç senin için biter')] },
+  ht: { t: tt('Devre arası'), p: 'hoca', i: 'whistle', ic: ['bolt', 'target', 'alert', 'whistle', 'x'], o: [tt('Takımı ateşle'), tt('Kendi oyununa odaklan'), tt('Riskli oyna'), tt('Hocaya plan sor'), tt('Hocaya itiraz et')], s: [tt('Tutarsa takım gol bulabilir'), tt('Kalan anlar daha sakin akar'), tt('Fazladan pozisyon, fazladan sakatlık riski'), tt('İstediği an ikinci yarıda karşına çıkar'), tt('Tutarsa sistem sana göre değişir; tutmazsa kenara gelebilirsin')] },
+  pen: { t: tt('Penaltı!'), p: 'takim', i: 'target', ic: ['target', 'users'], o: [tt('Ben atarım'), tt('Ustası atsın')], s: [tt('Penaltıyı sen kullanırsın'), tt('Takımın penaltıcısı atar')] },
+  ref: { t: tt('Tartışmalı karar'), p: 'fed', i: 'alert', ic: ['alert', 'right'], o: [tt('İtiraz et'), tt('Oyuna dön')], s: [tt('Tribün sever, kart riski var'), tt('Hoca takdir eder')] },
+  knock: { t: tt('Bir şey oldu'), p: 'doktor', i: 'plus', ic: ['shield', 'plus'], o: [tt('Devam et'), tt('Değişiklik iste')], s: [tt('Sakatlık riski artar'), tt('Maç senin için biter')] },
 };
 
 // Oyuncu yaratma ayrıntıları
