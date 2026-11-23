@@ -574,12 +574,19 @@ function vSocial() {
     <section><div class="sh"><h4>Akış</h4></div><div class="feedl">${feed || tt('<p class="mut sm pad">Akış boş. İlk maçından sonra dolmaya başlar.</p>')}</div></section>`;
 }
 
+// Geniş ekranda sol menünün tepesindeki kimlik kartı
+function navCard() {
+  const s = G.S, c = G.club(s.clubId), bz = G.isBiz() ? bizLbl(s.mgr.role) : null;
+  if (bz) return `<div class="nvc"><span class="bizc">${ic(bz[2], 24)}</span><div><b>${esc(s.name)}</b><small>${esc(bz[1])}</small></div></div>`;
+  if (s.mgr) return `<div class="nvc" style="--c1:${c.c1}">${crest(s.clubId, 46)}<div><b>${esc(s.name)}</b><small>${esc(c.n)}</small></div></div>`;
+  return `<div class="nvc" style="--c1:${c.c1}"><div class="avw">${avatar(s.look, c.c1, c.c2)}</div><div><b>${esc(s.name)}</b><small>${POS[s.pos].n} · ${esc(c.n)}</small></div><em>${G.OVR()}</em></div>`;
+}
 function vHub() {
   const mg = !!G.S.mgr, bz = G.isBiz(), ag = bz && G.S.mgr.role === 'agent', pu = bz && G.S.mgr.role === 'pundit';
   const tabs = bz ? [['ev', pu ? tt('Stüdyo') : ag ? tt('Ofis') : tt('Okul'), pu ? 'mic' : ag ? 'pen' : 'book'], ['kar', pu ? tt('Program') : ag ? tt('Oyuncular') : tt('Öğrenciler'), pu ? 'chart' : 'users'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Hayat'), 'heart']] : mg ? [['ev', tt('Kenar'), 'whistle'], ['kar', tt('Kulüp'), 'shield'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Hayat'), 'heart']] : [['ev', tt('Saha'), 'ball'], ['kar', tt('Kariyer'), 'user'], ['lig', tt('Lig'), 'trophy'], ['sos', tt('Sosyal'), 'phone'], ['hay', tt('Hayat'), 'heart']];
   const nw = V.tab === 'sos' ? 0 : G.S.feedNew || 0;
   const body = { ev: bz ? vBizHome : mg ? vMgrHome : vHome, kar: bz ? vBizList : mg ? vMgrClub : vCareer, lig: vLeague, sos: () => rumCard() + vSocial(), hay: vLife }[V.tab]();
-  return head() + tt`<main>${body}</main><nav class="tabs">${tabs.map(([k, n, i]) => tt`<button class="${V.tab === k ? 'on' : ''}" data-a="tab" data-v="${k}">${ic(i, 22)}<span>${n}</span>${k === 'sos' && nw ? tt`<em>${nw > 9 ? '9+' : nw}</em>` : ''}</button>`).join('')}</nav>`;
+  return head() + tt`<main>${body}</main><nav class="tabs">${navCard()}${tabs.map(([k, n, i]) => tt`<button class="${V.tab === k ? 'on' : ''}" data-a="tab" data-v="${k}">${ic(i, 22)}<span>${n}</span>${k === 'sos' && nw ? tt`<em>${nw > 9 ? '9+' : nw}</em>` : ''}</button>`).join('')}</nav>`;
 }
 
 function render() {
@@ -1872,6 +1879,7 @@ function gfxCard() {
 // Sayaç animasyonu: para akar, güç artınca parlar
 let lastMoney = null, lastOvr = null;
 function polish() {
+  app.querySelectorAll('.at b').forEach(b => { const v = parseFloat(b.textContent); b.dataset.t = v >= 80 ? 5 : v >= 65 ? 4 : v >= 50 ? 3 : v >= 35 ? 2 : 1; });   // özellik sayısı rengi
   const s = G.S; if (!s || V.scr !== 'hub') { lastMoney = lastOvr = null; return; }
   const p = $('.top .pill'), m = s.mgr && !G.isBiz() ? s.mgr.bud : s.money;
   if (p && lastMoney != null && m !== lastMoney && !GFX.calm) {
