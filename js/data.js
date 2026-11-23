@@ -18,189 +18,189 @@ export const COUNTRIES = {
 };
 
 export const LEAGUES = [
-  { id: 'tr1', c: 'TR', name: 'Süper Lig', tier: 1, teams: T(`
-    Galatasaray|82|RY
-    Fenerbahçe|81|NY
+  { id: 'tr1', c: 'TR', name: 'Elit Lig', tier: 1, teams: T(`
+    Galata|82|RY
+    Kadıköy|81|NY
     Beşiktaş|77|KW
-    Trabzonspor|76|MS
+    Trabzon|76|MS
     Başakşehir|73|ON
-    Samsunspor|73|RW
+    Samsun|73|RW
     Göztepe|72|YR
-    Eyüpspor|70|PY
-    Çaykur Rizespor|69|GB
+    Eyüp|70|PY
+    Rize|69|GB
     Kasımpaşa|69|BW
-    Konyaspor|69|GW
-    Alanyaspor|69|OG
-    Kocaelispor|68|GK
-    Antalyaspor|68|RW
-    Gaziantep FK|68|RK
-    Kayserispor|67|YR
-    Gençlerbirliği|67|RK
-    Fatih Karagümrük|67|RK`) },
+    Konya|69|GW
+    Alanya|69|OG
+    Kocaeli|68|GK
+    Antalya|68|RW
+    Gaziantep|68|RK
+    Kayseri|67|YR
+    Ankara G|67|RK
+    Karagümrük|67|RK`) },
   { id: 'tr2', c: 'TR', name: '1. Lig', tier: 2, teams: T(`
-    Sivasspor|65|RW
-    Bodrum FK|64|GW
-    Hatayspor|63|MW
-    Bandırmaspor|63|MW
-    Çorum FK|63|RK
-    Erzurumspor FK|63|BW
-    Esenler Erokspor|63|GY
-    Amed SF|63|GR
-    Sakaryaspor|62|GK
-    İstanbulspor|62|YK
-    Iğdır FK|62|GW
-    Boluspor|61|RW
-    Keçiörengücü|61|MW
-    Manisa FK|61|KW
-    Pendikspor|61|RW
-    Ümraniyespor|61|RW
-    Vanspor FK|60|RK
+    Sivas|65|RW
+    Bodrum|64|GW
+    Hatay|63|MW
+    Bandırma|63|MW
+    Çorum|63|RK
+    Erzurum|63|BW
+    Esenler|63|GY
+    Diyarbakır|63|GR
+    Sakarya|62|GK
+    İstanbul|62|YK
+    Iğdır|62|GW
+    Bolu|61|RW
+    Keçiören|61|MW
+    Manisa|61|KW
+    Pendik|61|RW
+    Ümraniye|61|RW
+    Van|60|RK
     Sarıyer|59|NW
-    Serik Belediyespor|59|GW
-    Adana Demirspor|58|SN`) },
+    Serik|59|GW
+    Adana D|58|SN`) },
   { id: 'tr3', c: 'TR', name: '2. Lig', tier: 3, teams: T(`
-    Bursaspor|60|GW
-    MKE Ankaragücü|59|NY
-    Batman Petrolspor|57|RW
-    Muğlaspor|57|GW
-    Mardin 1969 Spor|57|RN
-    Menemen FK|56|YN
-    Elazığspor|56|MW
-    Aksarayspor|56|RG
-    Adanaspor|55|OW
-    Şanlıurfaspor|55|YG
-    Kastamonuspor|55|RK
-    Altınordu|55|RN
-    Isparta 32 Spor|55|PG
-    Güzide Gebzespor|55|PW
-    Fethiyespor|55|BW
-    Kırklarelispor|54|GW
-    Somaspor|54|KW
-    Yeni Malatyaspor|52|YK`) },
+    Bursa|60|GW
+    Ankara A|59|NY
+    Batman|57|RW
+    Muğla|57|GW
+    Mardin|57|RN
+    Menemen|56|YN
+    Elazığ|56|MW
+    Aksaray|56|RG
+    Adana|55|OW
+    Şanlıurfa|55|YG
+    Kastamonu|55|RK
+    İzmir O|55|RN
+    Isparta|55|PG
+    Gebze|55|PW
+    Fethiye|55|BW
+    Kırklareli|54|GW
+    Soma|54|KW
+    Malatya|52|YK`) },
   { id: 'tr4', c: 'TR', name: '3. Lig', tier: 4, teams: T(`
-    Altay|53|KW
+    İzmir A|53|KW
     Karşıyaka|53|GR
-    Eskişehirspor|53|RK
-    Denizlispor|52|GK
-    Balıkesirspor|51|RW
-    Giresunspor|51|GW
-    Kütahyaspor|50|BW
-    Orduspor 1967|50|PW
-    Düzcespor|50|RB
-    İnegölspor|50|MW
-    Zonguldakspor FK|49|RN
-    Çorluspor 1947|49|RW
-    Silivrispor|49|RB
-    Ayvalıkgücü Belediyespor|49|YR
-    Nazillispor|49|KW
-    Uşakspor|48|RK
-    Edirnespor|48|RY
-    Pazarspor|48|GW`) },
+    Eskişehir|53|RK
+    Denizli|52|GK
+    Balıkesir|51|RW
+    Giresun|51|GW
+    Kütahya|50|BW
+    Ordu|50|PW
+    Düzce|50|RB
+    İnegöl|50|MW
+    Zonguldak|49|RN
+    Çorlu|49|RW
+    Silivri|49|RB
+    Ayvalık|49|YR
+    Nazilli|49|KW
+    Uşak|48|RK
+    Edirne|48|RY
+    Pazar|48|GW`) },
   { id: 'tr5', c: 'TR', name: 'Bölgesel Amatör Lig', tier: 5, teams: T(`
-    Darıca Gençlerbirliği|47|RW
-    Kartalspor|47|RB
-    Tepecikspor|46|BW
-    Hendekspor|45|GW
-    Gölcükspor|45|RW
-    Yalovaspor|45|BW
-    Çengelköyspor|45|RN
-    Tekirdağspor|45|RN
-    Sapanca Gençlikspor|44|GY
-    Bozüyük Vitraspor|44|BY
-    Lüleburgazspor|44|GW
-    Modafenspor|44|NW
-    Çanakkalespor|44|RW
-    Bilecikspor|43|RW
-    Mudanyaspor|43|BW
-    Orhangazispor|43|RW`) },
+    Darıca|47|RW
+    Kartal|47|RB
+    Tepecik|46|BW
+    Hendek|45|GW
+    Gölcük|45|RW
+    Yalova|45|BW
+    Çengelköy|45|RN
+    Tekirdağ|45|RN
+    Sapanca|44|GY
+    Bozüyük|44|BY
+    Lüleburgaz|44|GW
+    Moda|44|NW
+    Çanakkale|44|RW
+    Bilecik|43|RW
+    Mudanya|43|BW
+    Orhangazi|43|RW`) },
   { id: 'tr6', c: 'TR', name: 'Süper Amatör Lig', tier: 6, gen: true },
   { id: 'tr7', c: 'TR', name: '1. Amatör Lig', tier: 7, gen: true },
   { id: 'tr8', c: 'TR', name: '2. Amatör Lig', tier: 8, gen: true },
-  { id: 'en1', c: 'EN', name: 'Premier League', tier: 1, teams: T(`
+  { id: 'en1', c: 'EN', name: 'İngiltere Ligi', tier: 1, teams: T(`
     Liverpool|89|RW
-    Arsenal|88|RW
-    Manchester City|88|SW
+    Londra A|88|RW
+    Manchester C|88|SW
     Chelsea|85|BW
-    Newcastle United|83|KW
-    Aston Villa|83|MS
-    Manchester United|82|RK
+    Newcastle|83|KW
+    Birmingham V|83|MS
+    Manchester U|82|RK
     Tottenham|82|WN
     Brighton|80|BW
-    Nottingham Forest|80|RW
-    Crystal Palace|79|RB
+    Nottingham|80|RW
+    Londra P|79|RB
     Bournemouth|79|RK
     Brentford|78|RW
     Fulham|78|WK
     Everton|77|BW
     West Ham|77|MS
-    Wolves|75|OK
-    Leeds United|75|WY
+    Wolverhampton|75|OK
+    Leeds|75|WY
     Sunderland|75|RW
     Burnley|74|MS`) },
-  { id: 'es1', c: 'ES', name: 'LaLiga', tier: 1, teams: T(`
-    Real Madrid|90|WC
+  { id: 'es1', c: 'ES', name: 'İspanya Ligi', tier: 1, teams: T(`
+    Madrid|90|WC
     Barcelona|90|BM
-    Atlético Madrid|86|RW
-    Athletic Club|82|RW
+    Madrid A|86|RW
+    Bilbao|82|RW
     Villarreal|82|YN
-    Real Betis|80|GW
-    Real Sociedad|79|BW
+    Sevilla B|80|GW
+    San Sebastián|79|BW
     Sevilla|77|WR
     Valencia|77|WK
-    Celta Vigo|77|SW
+    Vigo|77|SW
     Girona|76|RW
-    Osasuna|76|RN
-    Rayo Vallecano|76|WR
+    Pamplona|76|RN
+    Vallecas|76|WR
     Mallorca|75|RK
     Getafe|75|BW
-    Espanyol|74|BW
-    Alavés|74|BW
-    Levante|73|NM
+    Barcelona E|74|BW
+    Vitoria|74|BW
+    Valencia L|73|NM
     Elche|73|WG
-    Real Oviedo|72|BW`) },
-  { id: 'de1', c: 'DE', name: 'Bundesliga', tier: 1, teams: T(`
-    Bayern München|90|RW
-    Borussia Dortmund|85|YK
-    Bayer Leverkusen|84|RK
-    RB Leipzig|83|WR
-    Eintracht Frankfurt|81|KR
-    VfB Stuttgart|80|WR
+    Oviedo|72|BW`) },
+  { id: 'de1', c: 'DE', name: 'Almanya Ligi', tier: 1, teams: T(`
+    Münih|90|RW
+    Dortmund|85|YK
+    Leverkusen|84|RK
+    Leipzig|83|WR
+    Frankfurt|81|KR
+    Stuttgart|80|WR
     Freiburg|78|RK
-    Mainz 05|77|RW
+    Mainz|77|RW
     Mönchengladbach|77|WG
     Wolfsburg|77|GW
-    Werder Bremen|76|GW
+    Bremen|76|GW
     Hoffenheim|76|BW
     Augsburg|75|RG
-    Union Berlin|75|RW
+    Berlin U|75|RW
     Köln|74|WR
-    Hamburger SV|74|BW
+    Hamburg|74|BW
     St. Pauli|73|MW
     Heidenheim|72|RB`) },
-  { id: 'it1', c: 'IT', name: 'Serie A', tier: 1, teams: T(`
-    Inter|88|BK
+  { id: 'it1', c: 'IT', name: 'İtalya Ligi', tier: 1, teams: T(`
+    Milano I|88|BK
     Napoli|86|SW
-    Juventus|85|KW
-    Milan|84|RK
-    Atalanta|83|BK
+    Torino J|85|KW
+    Milano|84|RK
+    Bergamo|83|BK
     Roma|83|MO
     Lazio|80|SW
     Bologna|80|RN
-    Fiorentina|79|PW
+    Floransa|79|PW
     Como|77|BW
     Torino|76|MW
-    Udinese|75|KW
-    Genoa|75|RN
+    Udine|75|KW
+    Cenova|75|RN
     Sassuolo|74|GK
     Cagliari|73|RN
     Parma|73|YB
     Lecce|72|YR
     Verona|72|YN
     Pisa|71|KB
-    Cremonese|71|RE`) },
-  { id: 'fr1', c: 'FR', name: 'Ligue 1', tier: 1, teams: T(`
-    Paris Saint-Germain|90|NR
-    Marseille|82|WS
+    Cremona|71|RE`) },
+  { id: 'fr1', c: 'FR', name: 'Fransa Ligi', tier: 1, teams: T(`
+    Paris|90|NR
+    Marsilya|82|WS
     Monaco|82|RW
     Lille|80|RN
     Lyon|80|WB
@@ -212,68 +212,68 @@ export const LEAGUES = [
     Brest|75|RW
     Nantes|73|YG
     Auxerre|73|WB
-    Paris FC|73|NW
+    Paris F|73|NW
     Lorient|72|OK
     Angers|71|KW
     Le Havre|71|SN
     Metz|71|MW`) },
-  { id: 'nl1', c: 'NL', name: 'Eredivisie', tier: 1, teams: T(`
-    PSV|80|RW
-    Ajax|79|WR
-    Feyenoord|79|RW
-    AZ Alkmaar|76|RW
+  { id: 'nl1', c: 'NL', name: 'Hollanda Ligi', tier: 1, teams: T(`
+    Eindhoven|80|RW
+    Amsterdam|79|WR
+    Rotterdam|79|RW
+    Alkmaar|76|RW
     Twente|75|RW
     Utrecht|75|RW
-    NEC Nijmegen|71|RG
-    Go Ahead Eagles|71|RY
+    Nijmegen|71|RG
+    Deventer|71|RY
     Heerenveen|70|BW
-    Sparta Rotterdam|70|RW
+    Rotterdam S|70|RW
     Groningen|70|GW
-    Fortuna Sittard|69|YG
-    Heracles|68|KW
-    PEC Zwolle|68|BW
-    NAC Breda|68|YK
+    Sittard|69|YG
+    Almelo|68|KW
+    Zwolle|68|BW
+    Breda|68|YK
     Volendam|67|OK
-    Excelsior|67|RK
-    Telstar|66|WB`) },
-  { id: 'pt1', c: 'PT', name: 'Liga Portugal', tier: 1, teams: T(`
-    Benfica|82|RW
-    Sporting CP|82|GW
+    Rotterdam E|67|RK
+    Velsen|66|WB`) },
+  { id: 'pt1', c: 'PT', name: 'Portekiz Ligi', tier: 1, teams: T(`
+    Lizbon|82|RW
+    Lizbon S|82|GW
     Porto|81|BW
     Braga|77|RW
-    Vitória SC|73|WK
+    Guimarães|73|WK
     Famalicão|71|BW
-    Santa Clara|71|RW
+    Ponta Delgada|71|RW
     Estoril|70|YB
-    Casa Pia|70|KW
-    Rio Ave|70|GW
-    Moreirense|70|GW
-    Gil Vicente|70|RB
+    Lizbon C|70|KW
+    Vila do Conde|70|GW
+    Moreira|70|GW
+    Barcelos|70|RB
     Arouca|69|YB
-    Nacional|68|KW
-    Estrela Amadora|68|RG
-    AVS|67|RW
+    Funchal|68|KW
+    Amadora|68|RG
+    Vila das Aves|67|RW
     Tondela|67|GY
     Alverca|67|RB`) },
-  { id: 'sa1', c: 'SA', name: 'Saudi Pro League', tier: 1, teams: T(`
-    Al-Hilal|82|BW
-    Al-Nassr|81|YB
-    Al-Ittihad|81|YK
-    Al-Ahli|81|GW
-    Al-Qadsiah|77|RY
-    Al-Shabab|74|WK
-    Neom SC|73|TW
-    Al-Ettifaq|73|GR
-    Al-Taawoun|72|YB
-    Al-Fateh|70|BG
-    Al-Khaleej|70|YG
-    Al-Fayha|69|OB
-    Damac|69|RY
-    Al-Riyadh|68|RK
-    Al-Kholood|68|YK
-    Al-Okhdood|67|SW
-    Al-Najma|66|GW
-    Al-Hazem|66|RY`) },
+  { id: 'sa1', c: 'SA', name: 'Suudi Ligi', tier: 1, teams: T(`
+    Riyad H|82|BW
+    Riyad N|81|YB
+    Cidde İ|81|YK
+    Cidde A|81|GW
+    Hubar|77|RY
+    Riyad Ş|74|WK
+    Neom|73|TW
+    Dammam|73|GR
+    Bureyde|72|YB
+    Hasa|70|BG
+    Seyhat|70|YG
+    Mecmaa|69|OB
+    Hamis Muşeyt|69|RY
+    Riyad R|68|RK
+    Ras K|68|YK
+    Necran|67|SW
+    Uneyze|66|GW
+    Ras H|66|RY`) },
 ];
 
 export const CLUBS = {};
@@ -289,75 +289,75 @@ for (const L of LEAGUES) {
   });
 }
 
-// Liglerimizin dışındaki Avrupa kulüpleri: yalnızca Şampiyonlar Ligi ve Avrupa Ligi'nde görünürler
+// Liglerimizin dışındaki Avrupa kulüpleri: yalnızca Kıta Ligi ve Kıta Kupası'nda görünürler
 export const XIDS = T(`
-  Celtic|73|GW|İskoçya
-  Rangers|72|BW|İskoçya
-  Club Brugge|75|BK|Belçika
+  Glasgow C|73|GW|İskoçya
+  Glasgow R|72|BW|İskoçya
+  Brugge|75|BK|Belçika
   Anderlecht|72|PW|Belçika
-  Union SG|73|YB|Belçika
+  Brüksel U|73|YB|Belçika
   Genk|71|BW|Belçika
-  RB Salzburg|72|RW|Avusturya
-  Sturm Graz|70|KW|Avusturya
-  Shakhtar Donetsk|73|OK|Ukrayna
-  Dinamo Kiev|71|WB|Ukrayna
-  Olympiakos|74|RW|Yunanistan
-  PAOK|72|KW|Yunanistan
-  Panathinaikos|71|GW|Yunanistan
-  Kızılyıldız|72|RW|Sırbistan
-  Partizan|69|KW|Sırbistan
+  Salzburg|72|RW|Avusturya
+  Graz|70|KW|Avusturya
+  Donetsk|73|OK|Ukrayna
+  Kiev|71|WB|Ukrayna
+  Pire|74|RW|Yunanistan
+  Selanik|72|KW|Yunanistan
+  Atina P|71|GW|Yunanistan
+  Belgrad K|72|RW|Sırbistan
+  Belgrad P|69|KW|Sırbistan
   Kopenhag|72|WB|Danimarka
   Midtjylland|71|KR|Danimarka
-  Young Boys|71|YK|İsviçre
+  Bern|71|YK|İsviçre
   Basel|71|RB|İsviçre
-  Dinamo Zagreb|72|BW|Hırvatistan
-  Slavia Prag|74|RW|Çekya
-  Sparta Prag|73|MW|Çekya
-  Viktoria Plzen|71|RB|Çekya
-  Ferencvaros|71|GW|Macaristan
-  Bodo/Glimt|73|YK|Norveç
+  Zagreb|72|BW|Hırvatistan
+  Prag S|74|RW|Çekya
+  Prag|73|MW|Çekya
+  Plzen|71|RB|Çekya
+  Budapeşte|71|GW|Macaristan
+  Bodø|73|YK|Norveç
   Malmö|70|SW|İsveç
-  Karabağ|71|KW|Azerbaycan
-  Ludogorets|69|GW|Bulgaristan
-  Legia Varşova|70|GW|Polonya
-  Maccabi Tel Aviv|70|YB|İsrail
-  Hearts|68|MW|İskoçya
+  Ağdam|71|KW|Azerbaycan
+  Razgrad|69|GW|Bulgaristan
+  Varşova|70|GW|Polonya
+  Tel Aviv|70|YB|İsrail
+  Edinburgh|68|MW|İskoçya
   Aberdeen|67|RW|İskoçya
   Gent|70|BW|Belçika
-  Antwerp|70|RW|Belçika
-  LASK|68|KW|Avusturya
-  Rapid Wien|69|GW|Avusturya
-  AEK Atina|71|YK|Yunanistan
-  Aris|68|YK|Yunanistan
-  Bröndby|69|YB|Danimarka
+  Anvers|70|RW|Belçika
+  Linz|68|KW|Avusturya
+  Viyana|69|GW|Avusturya
+  Atina A|71|YK|Yunanistan
+  Selanik A|68|YK|Yunanistan
+  Brøndby|69|YB|Danimarka
   Lugano|68|KW|İsviçre
-  Servette|68|MW|İsviçre
-  Hajduk Split|69|WB|Hırvatistan
+  Cenevre|68|MW|İsviçre
+  Split|69|WB|Hırvatistan
   Rijeka|68|WB|Hırvatistan
-  Jagiellonia|68|YR|Polonya
-  Rakow|69|RB|Polonya
-  CFR Cluj|68|MW|Romanya
-  Rosenborg|68|WK|Norveç
+  Białystok|68|YR|Polonya
+  Częstochowa|69|RB|Polonya
+  Cluj|68|MW|Romanya
+  Trondheim|68|WK|Norveç
   Molde|69|BW|Norveç
-  Djurgarden|68|SB|İsveç
-  Hammarby|68|GW|İsveç
-  HJK Helsinki|66|BW|Finlandiya
-  Shamrock Rovers|65|GW|İrlanda
-  Omonia|66|GW|Kıbrıs
-  APOEL|66|YB|Kıbrıs
-  Slovan Bratislava|68|SW|Slovakya
-  Olimpija Ljubljana|66|GW|Slovenya
+  Stockholm D|68|SB|İsveç
+  Stockholm H|68|GW|İsveç
+  Helsinki|66|BW|Finlandiya
+  Dublin|65|GW|İrlanda
+  Lefkoşa O|66|GW|Kıbrıs
+  Lefkoşa A|66|YB|Kıbrıs
+  Bratislava|68|SW|Slovakya
+  Ljubljana|66|GW|Slovenya
 `).map((t, i) => { const [n, r, c, x] = t.split('|'), id = 'x_' + i; CLUBS[id] = { n, r: +r, c1: PAL[c[0]], c2: PAL[c[1]], x }; return id; });
 
-// Kıtalararası Kupa rakipleri: Şampiyonlar Ligi'ni kazanan kulübün karşısına çıkar
+// Kıtalararası Kupa rakipleri: Kıta Ligi'ni kazanan kulübün karşısına çıkar
 export const WIDS = T(`
-  Flamengo|80|RK|Brezilya
-  Palmeiras|79|GW|Brezilya
-  River Plate|78|WR|Arjantin
-  Boca Juniors|77|NY|Arjantin
+  Rio F|80|RK|Brezilya
+  São Paulo P|79|GW|Brezilya
+  Buenos Aires R|78|WR|Arjantin
+  Buenos Aires B|77|NY|Arjantin
   Monterrey|74|NW|Meksika
-  Al Ahly|72|RW|Mısır
-  Urawa Reds|70|RK|Japonya
+  Kahire|72|RW|Mısır
+  Saitama|70|RK|Japonya
 `).map((t, i) => { const [n, r, c, x] = t.split('|'), id = 'w_' + i; CLUBS[id] = { n, r: +r, c1: PAL[c[0]], c2: PAL[c[1]], x }; return id; });
 
 // İl bazlı amatör ligler. l: elle yazılmış 3 kademe, d: ilçelerden üretilir.
@@ -509,7 +509,7 @@ export const FILL = [
   tt('Rakip ofsayta düştü.'), tt('Kenar yönetimi ısınanlara işaret etti.'),
 ];
 
-export const CUPS = { EN: 'FA Cup', ES: 'Copa del Rey', DE: 'DFB-Pokal', IT: 'Coppa Italia', FR: 'Coupe de France', NL: 'KNVB Beker', PT: 'Taça de Portugal', SA: 'Kral Kupası' };
+export const CUPS = { EN: 'İngiltere Kupası', ES: 'İspanya Kupası', DE: 'Almanya Kupası', IT: 'İtalya Kupası', FR: 'Fransa Kupası', NL: 'Hollanda Kupası', PT: 'Portekiz Kupası', SA: 'Kral Kupası' };
 export const TSTAT = { mutlu: tt('Mutluyum'), acik: tt('Tekliflere açığım'), istek: tt('Transfer istiyorum'), kiralik: tt('Kiralık gitmek istiyorum') };
 export const STANCE = { kilit: tt('Satılık değil'), acik: tt('Uygun teklife açık'), liste: tt('Satış listesinde'), kiralik: tt('Kiralık oyuncu') };
 
@@ -550,8 +550,8 @@ export const FANS = ['tribun54', 'sakaryali_reis', 'kale_arkasi', 'gol_hasreti',
 
 export const ACH = [
   ['ilkgol', tt('İlk gol'), 'ball'], ['hat', 'Hat-trick', 'star'], ['g50', tt('50 gol'), 'ball'], ['g100', tt('100 gol'), 'ball'], ['g250', tt('250 gol'), 'ball'],
-  ['pro', tt('İlk profesyonel sözleşme'), 'pen'], ['sl', tt('Süper Lig oyuncusu'), 'shield'], ['yurt', tt('Yurt dışı macerası'), 'globe'], ['milli', tt('Milli forma'), 'flag'],
-  ['kupa', tt('Kupa kaldırdın'), 'trophy'], ['avrupa', tt('Şampiyonlar Ligi şampiyonu'), 'crown'], ['al', tt('Avrupa Ligi şampiyonu'), 'trophy'], ['hayal', tt('Hayalindeki forma'), 'heart'], ['m1', tt('1 milyon takipçi'), 'phone'],
+  ['pro', tt('İlk profesyonel sözleşme'), 'pen'], ['sl', tt('Elit Lig oyuncusu'), 'shield'], ['yurt', tt('Yurt dışı macerası'), 'globe'], ['milli', tt('Milli forma'), 'flag'],
+  ['kupa', tt('Kupa kaldırdın'), 'trophy'], ['avrupa', tt('Kıta Ligi şampiyonu'), 'crown'], ['al', tt('Kıta Kupası şampiyonu'), 'trophy'], ['hayal', tt('Hayalindeki forma'), 'heart'], ['m1', tt('1 milyon takipçi'), 'phone'],
   ['ay', tt('Ayın oyuncusu'), 'star'], ['yil11', tt('Yılın 11\'i'), 'users'],
   ['milk', tt('Milli takımla kupa'), 'flag'], ['efsane', tt('Kulüp efsanesi'), 'crown'],
   ['sc_kurtar', tt('Kurtarıcı'), 'shield'], ['sc_donus', tt('Büyük dönüş'), 'plus'], ['sc_sondans', tt('Son dans'), 'crown'], ['derbi', tt('Derbi kahramanı'), 'bolt'], ['akil', tt('Akıl hocası'), 'book'], ['koleksiyon', tt('Koleksiyoncu'), 'star'],
@@ -596,9 +596,9 @@ export const MACT = {
   oyun: { n: tt('Oyun gecesi'), i: 'phone', b: 7, fx: { mo: 4, en: -2 }, r: tt('{n} sabaha karşı rövanş istedi.') },
   akil: { n: tt('Akıl hocalığı yap'), i: 'book', b: 9, vet: 1, fx: { hoca: 2, takim: 2 }, r: tt('{n} ile maç görüntülerini izlediniz; nerede duracağını tek tek gösterdin.') },
 };
-export const DERBY = [['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Trabzonspor'], ['Sakaryaspor', 'Kocaelispor'], ['Göztepe', 'Karşıyaka', 'Altay'], ['Bursaspor', 'Eskişehirspor'], ['Adana Demirspor', 'Adanaspor'], ['Gençlerbirliği', 'MKE Ankaragücü'],
-  ['Real Madrid', 'Barcelona', 'Atlético Madrid'], ['Manchester United', 'Manchester City', 'Liverpool'], ['Arsenal', 'Tottenham', 'Chelsea'], ['Inter', 'Milan', 'Juventus'], ['Roma', 'Lazio'], ['Bayern München', 'Borussia Dortmund'],
-  ['Paris Saint-Germain', 'Marseille'], ['Ajax', 'Feyenoord', 'PSV'], ['Benfica', 'Porto', 'Sporting CP'], ['Al-Hilal', 'Al-Nassr', 'Al-Ittihad']];
+export const DERBY = [['Galata', 'Kadıköy', 'Beşiktaş', 'Trabzon'], ['Sakarya', 'Kocaeli'], ['Göztepe', 'Karşıyaka', 'İzmir A'], ['Bursa', 'Eskişehir'], ['Adana D', 'Adana'], ['Ankara G', 'Ankara A'],
+  ['Madrid', 'Barcelona', 'Madrid A'], ['Manchester U', 'Manchester C', 'Liverpool'], ['Londra A', 'Tottenham', 'Chelsea'], ['Milano I', 'Milano', 'Torino J'], ['Roma', 'Lazio'], ['Münih', 'Dortmund'],
+  ['Paris', 'Marsilya'], ['Amsterdam', 'Rotterdam', 'Eindhoven'], ['Lizbon', 'Porto', 'Lizbon S'], ['Riyad H', 'Riyad N', 'Cidde İ']];
 export const DIFF = { kolay: [tt('Kolay'), .85], normal: ['Normal', 1], zor: [tt('Zor'), 1.15], gercek: [tt('Gerçekçi'), 1.22] };
 
 // Hoca taktikleri. m: maç anı ağırlık çarpanları, add: mevkide olmayan ana eklenen ağırlık,
@@ -804,3 +804,6 @@ export const AGBR = {
   para: { n: tt('En yüksek ücret'), d: tt('Kim çok veriyorsa'), i: 'coin' },
   yurt: { n: tt('Yurt dışı'), d: tt('Başka bir ülkede oynamak istiyorum'), i: 'globe' },
 };
+
+// Eski kayıtlardaki gerçek kulüp, lig ve kupa adlarının yeni karşılıkları (bir kez, yüklerken çevrilir)
+export const REN = {"Galatasaray": "Galata", "Fenerbahçe": "Kadıköy", "Trabzonspor": "Trabzon", "Samsunspor": "Samsun", "Eyüpspor": "Eyüp", "Çaykur Rizespor": "Rize", "Konyaspor": "Konya", "Alanyaspor": "Alanya", "Kocaelispor": "Kocaeli", "Antalyaspor": "Antalya", "Gaziantep FK": "Gaziantep", "Kayserispor": "Kayseri", "Fatih Karagümrük": "Karagümrük", "Sivasspor": "Sivas", "Bodrum FK": "Bodrum", "Hatayspor": "Hatay", "Bandırmaspor": "Bandırma", "Çorum FK": "Çorum", "Erzurumspor FK": "Erzurum", "Esenler Erokspor": "Esenler", "Amed SF": "Diyarbakır", "Sakaryaspor": "Sakarya", "İstanbulspor": "İstanbul", "Iğdır FK": "Iğdır", "Boluspor": "Bolu", "Keçiörengücü": "Keçiören", "Manisa FK": "Manisa", "Pendikspor": "Pendik", "Ümraniyespor": "Ümraniye", "Vanspor FK": "Van", "Serik Belediyespor": "Serik", "Adana Demirspor": "Adana D", "Bursaspor": "Bursa", "MKE Ankaragücü": "Ankara A", "Batman Petrolspor": "Batman", "Muğlaspor": "Muğla", "Mardin 1969 Spor": "Mardin", "Menemen FK": "Menemen", "Elazığspor": "Elazığ", "Aksarayspor": "Aksaray", "Adanaspor": "Adana", "Şanlıurfaspor": "Şanlıurfa", "Kastamonuspor": "Kastamonu", "Altınordu": "İzmir O", "Isparta 32 Spor": "Isparta", "Güzide Gebzespor": "Gebze", "Fethiyespor": "Fethiye", "Kırklarelispor": "Kırklareli", "Somaspor": "Soma", "Yeni Malatyaspor": "Malatya", "Altay": "İzmir A", "Eskişehirspor": "Eskişehir", "Denizlispor": "Denizli", "Balıkesirspor": "Balıkesir", "Giresunspor": "Giresun", "Kütahyaspor": "Kütahya", "Orduspor 1967": "Ordu", "Düzcespor": "Düzce", "İnegölspor": "İnegöl", "Zonguldakspor FK": "Zonguldak", "Çorluspor 1947": "Çorlu", "Silivrispor": "Silivri", "Ayvalıkgücü Belediyespor": "Ayvalık", "Nazillispor": "Nazilli", "Uşakspor": "Uşak", "Edirnespor": "Edirne", "Pazarspor": "Pazar", "Darıca Gençlerbirliği": "Darıca", "Kartalspor": "Kartal", "Tepecikspor": "Tepecik", "Hendekspor": "Hendek", "Gölcükspor": "Gölcük", "Yalovaspor": "Yalova", "Çengelköyspor": "Çengelköy", "Tekirdağspor": "Tekirdağ", "Sapanca Gençlikspor": "Sapanca", "Bozüyük Vitraspor": "Bozüyük", "Lüleburgazspor": "Lüleburgaz", "Modafenspor": "Moda", "Çanakkalespor": "Çanakkale", "Bilecikspor": "Bilecik", "Mudanyaspor": "Mudanya", "Orhangazispor": "Orhangazi", "Arsenal": "Londra A", "Manchester City": "Manchester C", "Newcastle United": "Newcastle", "Aston Villa": "Birmingham V", "Manchester United": "Manchester U", "Nottingham Forest": "Nottingham", "Crystal Palace": "Londra P", "Wolves": "Wolverhampton", "Leeds United": "Leeds", "London City Lionesses": "Londra L", "Birmingham City": "Birmingham C", "Charlton Athletic": "Charlton", "Real Madrid": "Madrid", "Atlético Madrid": "Madrid A", "Athletic Club": "Bilbao", "Real Betis": "Sevilla B", "Real Sociedad": "San Sebastián", "Celta Vigo": "Vigo", "Osasuna": "Pamplona", "Rayo Vallecano": "Vallecas", "Espanyol": "Barcelona E", "Alavés": "Vitoria", "Levante": "Valencia L", "Real Oviedo": "Oviedo", "Madrid CFF": "Madrid C", "Badalona Women": "Badalona", "Deportivo Abanca": "La Coruña", "Logroño United": "Logroño", "Bayern München": "Münih", "Borussia Dortmund": "Dortmund", "Bayer Leverkusen": "Leverkusen", "RB Leipzig": "Leipzig", "Eintracht Frankfurt": "Frankfurt", "VfB Stuttgart": "Stuttgart", "Mainz 05": "Mainz", "Werder Bremen": "Bremen", "Union Berlin": "Berlin U", "Hamburger SV": "Hamburg", "VfL Wolfsburg": "Wolfsburg", "TSG Hoffenheim": "Hoffenheim", "SC Freiburg": "Freiburg", "1. FC Köln": "Köln", "1. FC Nürnberg": "Nürnberg", "Inter": "Milano I", "Juventus": "Torino J", "Milan": "Milano", "Atalanta": "Bergamo", "Fiorentina": "Floransa", "Udinese": "Udine", "Genoa": "Cenova", "Cremonese": "Cremona", "Como 1907": "Como", "Como Women": "Como K", "Ternana": "Terni", "Paris Saint-Germain": "Paris", "Marseille": "Marsilya", "Paris FC": "Paris F", "OL Lyonnes": "Lyon", "PSV": "Eindhoven", "Ajax": "Amsterdam", "Feyenoord": "Rotterdam", "AZ Alkmaar": "Alkmaar", "NEC Nijmegen": "Nijmegen", "Go Ahead Eagles": "Deventer", "Sparta Rotterdam": "Rotterdam S", "Fortuna Sittard": "Sittard", "Heracles": "Almelo", "PEC Zwolle": "Zwolle", "NAC Breda": "Breda", "Excelsior": "Rotterdam E", "Telstar": "Velsen", "ADO Den Haag": "Lahey", "De Graafschap": "Doetinchem", "Benfica": "Lizbon", "Sporting CP": "Lizbon S", "Vitória SC": "Guimarães", "Santa Clara": "Ponta Delgada", "Casa Pia": "Lizbon C", "Rio Ave": "Vila do Conde", "Moreirense": "Moreira", "Gil Vicente": "Barcelos", "Nacional": "Funchal", "Estrela Amadora": "Amadora", "AVS": "Vila das Aves", "Torreense": "Torres Vedras", "Racing Power": "Seixal", "Valadares Gaia": "Gaia", "Marítimo": "Funchal M", "Al-Hilal": "Riyad H", "Al-Nassr": "Riyad N", "Al-Ittihad": "Cidde İ", "Al-Ahli": "Cidde A", "Al-Qadsiah": "Hubar", "Al-Shabab": "Riyad Ş", "Neom SC": "Neom", "Al-Ettifaq": "Dammam", "Al-Taawoun": "Bureyde", "Al-Fateh": "Hasa", "Al-Khaleej": "Seyhat", "Al-Fayha": "Mecmaa", "Damac": "Hamis Muşeyt", "Al-Riyadh": "Riyad R", "Al-Kholood": "Ras K", "Al-Okhdood": "Necran", "Al-Najma": "Uneyze", "Al-Hazem": "Ras H", "Celtic": "Glasgow C", "Rangers": "Glasgow R", "Club Brugge": "Brugge", "Union SG": "Brüksel U", "RB Salzburg": "Salzburg", "Sturm Graz": "Graz", "Shakhtar Donetsk": "Donetsk", "Dinamo Kiev": "Kiev", "Olympiakos": "Pire", "PAOK": "Selanik", "Panathinaikos": "Atina P", "Kızılyıldız": "Belgrad K", "Partizan": "Belgrad P", "Young Boys": "Bern", "Dinamo Zagreb": "Zagreb", "Slavia Prag": "Prag S", "Sparta Prag": "Prag", "Viktoria Plzen": "Plzen", "Ferencvaros": "Budapeşte", "Bodo/Glimt": "Bodø", "Karabağ": "Ağdam", "Ludogorets": "Razgrad", "Legia Varşova": "Varşova", "Maccabi Tel Aviv": "Tel Aviv", "Hearts": "Edinburgh", "Antwerp": "Anvers", "LASK": "Linz", "Rapid Wien": "Viyana", "AEK Atina": "Atina A", "Aris": "Selanik A", "Bröndby": "Brøndby", "Servette": "Cenevre", "Hajduk Split": "Split", "Jagiellonia": "Białystok", "Rakow": "Częstochowa", "CFR Cluj": "Cluj", "Rosenborg": "Trondheim", "Djurgarden": "Stockholm D", "Hammarby": "Stockholm H", "HJK Helsinki": "Helsinki", "Shamrock Rovers": "Dublin", "Omonia": "Lefkoşa O", "APOEL": "Lefkoşa A", "Slovan Bratislava": "Bratislava", "Olimpija Ljubljana": "Ljubljana", "Flamengo": "Rio F", "Palmeiras": "São Paulo P", "River Plate": "Buenos Aires R", "Boca Juniors": "Buenos Aires B", "Al Ahly": "Kahire", "Urawa Reds": "Saitama", "ABB FOMGET": "Ankara F", "Amed": "Diyarbakır", "Hakkarigücü": "Hakkari", "Ünye Kadın": "Ünye", "Sultanbeyligücü": "Sultanbeyli", "1207 Antalyaspor": "Antalya", "Giresun Sanayispor": "Giresun", "Şile Bilgidoğa": "Şile", "Kayseri Kadın": "Kayseri", "Bakırköy Kadın": "Bakırköy", "Haymanaspor": "Haymana", "Kocaeli Bayan FK": "Kocaeli", "Sakarya Kadın FK": "Sakarya", "Dudulluspor": "Dudullu", "Hatay Defnespor": "Hatay", "Gaziantep Safir": "Gaziantep", "Adana İdman Yurdu": "Adana", "Genç Ülküm": "Ankara Ü", "Soma Zaferspor": "Soma", "Gazikentspor": "Gaziantep G", "Şırnak Kadın SK": "Şırnak", "Avcılar Cihangirspor": "Avcılar", "Sancaktepe Belediyespor": "Sancaktepe", "Afyon Anadolu Gücü": "Afyon", "Kdz. Ereğli Lisesi": "Ereğli", "Siverek Kadın SK": "Siverek", "Bursa Soğanlıspor": "Bursa", "Tuzla Sahilspor": "Tuzla", "Pendik Güvenspor": "Pendik", "Tekirdağ Gençlik": "Tekirdağ", "Antalya Deniz Kadın": "Antalya D", "Denizli Sultanlar": "Denizli", "7 Eylül Gençlikspor": "7 Eylül", "Uşak 64 Belediye": "Uşak", "Kılıçaslan Yıldızspor": "Kılıçaslan", "Karabük Gençlerbirliği": "Karabük", "Yakacık Genç Erlerbirliği": "Yakacık", "Rusumat-4": "Rusumat", "Amasyaspor": "Amasya", "1955 Batman Belediyespor": "Batman", "Vangücü": "Van", "Kahramanmaraş Anadolu": "Kahramanmaraş", "Defne Belediyespor": "Defne", "Asenalar Kadın FK": "Asenalar", "BK Häcken": "Göteborg", "Malmö FF": "Malmö", "Rosengård": "Malmö R", "Vålerenga": "Oslo", "Brann": "Bergen", "Austria Wien": "Viyana A", "OH Leuven": "Leuven", "Fortuna Hjørring": "Hjørring", "HB Køge": "Køge", "Glasgow City": "Glasgow S", "Vorskla Poltava": "Poltava", "Ferencváros": "Budapeşte", "Breiðablik": "Kópavogur", "Valur": "Reykjavik", "GKS Katowice": "Katowice", "Apollon": "Limasol", "FC Minsk": "Minsk", "KuPS": "Kuopio", "Spartak Subotica": "Subotica", "SFK 2000 Saraybosna": "Saraybosna", "Mura": "Murska Sobota", "Shelbourne": "Dublin", "BIIK Şımkent": "Şımkent", "Gintra": "Şiauliai", "Farul Köstence": "Köstence", "Vllaznia": "İşkodra", "Gotham FC": "New York", "Corinthians": "São Paulo C", "Wuhan Jiangda": "Wuhan", "AS FAR": "Rabat", "FIFA Kadınlar Şampiyonlar Kupası": "Kadınlar Kıtalararası Kupa", "Şampiyonlar Ligi": "Kıta Ligi", "Şamp. Ligi": "Kıta Ligi", "Avrupa Ligi": "Kıta Kupası", "Konferans Ligi": "Kıta Kalkanı", "Dünya Kupası": "Dünya Turnuvası", "Avrupa Şampiyonası": "Avrupa Turnuvası", "Kadınlar Süper Ligi": "Kadınlar Elit Ligi", "Süper Lig": "Elit Lig", "Premier League": "İngiltere Ligi", "LaLiga": "İspanya Ligi", "Frauen-Bundesliga": "Almanya Kadın Ligi", "Bundesliga": "Almanya Ligi", "Serie A Femminile": "İtalya Kadın Ligi", "Serie A": "İtalya Ligi", "Ligue 1": "Fransa Ligi", "Vrouwen Eredivisie": "Hollanda Kadın Ligi", "Eredivisie": "Hollanda Ligi", "Liga Portugal": "Portekiz Ligi", "Saudi Pro League": "Suudi Ligi", "Women's Super League": "İngiltere Kadın Ligi", "Liga F": "İspanya Kadın Ligi", "Première Ligue": "Fransa Kadın Ligi", "Liga BPI": "Portekiz Kadın Ligi", "Women's FA Cup": "İngiltere Kadın Kupası", "FA Cup": "İngiltere Kupası", "Copa de la Reina": "İspanya Kadın Kupası", "Copa del Rey": "İspanya Kupası", "DFB-Pokal Frauen": "Almanya Kadın Kupası", "DFB-Pokal": "Almanya Kupası", "Coppa Italia Femminile": "İtalya Kadın Kupası", "Coppa Italia": "İtalya Kupası", "Coupe de France Féminine": "Fransa Kadın Kupası", "Coupe de France": "Fransa Kupası", "KNVB Beker Vrouwen": "Hollanda Kadın Kupası", "KNVB Beker": "Hollanda Kupası", "Taça de Portugal Feminina": "Portekiz Kadın Kupası", "Taça de Portugal": "Portekiz Kupası", "Avrupa Ligi'nde": "Kıta Kupası'nda", "Avrupa Ligi'ne": "Kıta Kupası'na", "Kadınlar Avrupa Kupası": "Kadınlar Kıta Kupası", "La Liga": "İspanya Ligi"};

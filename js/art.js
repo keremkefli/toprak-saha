@@ -206,11 +206,11 @@ export function ring(v, icon, cls = '') {
 // Avrupa kupası amblemleri (özgün çizim). cl: yıldız halkası, el: kupa ve dalga
 const starP = (cx, cy, R, rot = -90) => { let d = ''; for (let i = 0; i < 10; i++) { const a = (rot + i * 36) * Math.PI / 180, q = i % 2 ? R * .42 : R; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * q).toFixed(1) + ' ' + (cy + Math.sin(a) * q).toFixed(1); } return d + 'z'; };
 export function euLogo(k, s = 40) {
-  if (k === 'cl') {
-    let ring = '';
-    for (let i = 0; i < 8; i++) { const a = (i * 45 - 90) * Math.PI / 180; ring += `<path d="${starP(50 + Math.cos(a) * 31, 50 + Math.sin(a) * 31, 6.5, i * 45 - 90)}" fill="#fff"/>`; }
-    return tt`<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gcl" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#3f74ff"/><stop offset="1" stop-color="#061045"/></radialGradient></defs>
-      <circle cx="50" cy="50" r="48" fill="url(#gcl)" stroke="#a9c1ff" stroke-width="2"/><circle cx="50" cy="50" r="21.5" fill="none" stroke="#a9c1ff" stroke-width="1.2" opacity=".65"/>${ring}<path d="${starP(50, 51, 16)}" fill="#fff"/></svg>`;
+  if (k === 'cl') {   // Kıta Ligi: lacivert zeminde dünya ve tepesinde taç
+    return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gcl" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#3f74ff"/><stop offset="1" stop-color="#061045"/></radialGradient></defs>
+      <circle cx="50" cy="50" r="48" fill="url(#gcl)" stroke="#a9c1ff" stroke-width="2"/>
+      <g fill="none" stroke="#fff" stroke-width="3.2"><circle cx="50" cy="57" r="22"/><ellipse cx="50" cy="57" rx="9" ry="22"/><path d="M28 57h44M31 46h38M31 68h38"/></g>
+      <path d="M33 30l6 6 11-12 11 12 6-6-3 10H36z" fill="#ffd21a" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
   }
   if (k === 'ko') return `<svg class="eul" width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="gko" cx=".35" cy=".28" r=".95"><stop offset="0" stop-color="#34d07f"/><stop offset="1" stop-color="#06402a"/></radialGradient></defs>
     <circle cx="50" cy="50" r="48" fill="url(#gko)" stroke="#b6f2d2" stroke-width="2"/>

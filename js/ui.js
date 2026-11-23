@@ -145,7 +145,7 @@ function vTitle() {
     </div>
     ${m.n ? tt`<p class="meta">${ic('trophy', 16)} ${m.n} kariyer · en iyi ${num(m.best || 0)} puan${m.leg ? tt` · miras +${m.leg}` : ''}</p>` : ''}
     <button class="cta ghost chb" data-a="chal">${ic('bolt', 20)} Haftanın meydan okuması</button>
-    <div class="tlinks"><label class="link imp">Kayıt dosyası yükle<input type="file" accept=".json,application/json" data-c="imp" hidden></label><button class="link" data-a="kod">Kodla yükle</button>${G.hasSave() ? slotDelBtn() : ''}</div>
+    <div class="tlinks"><label class="link imp">Kayıt dosyası yükle<input type="file" accept=".json,application/json" data-c="imp" hidden></label><button class="link" data-a="kod">Kodla yükle</button>${(G.hasSave() ? slotDelBtn() : '') + legalBtn()}</div>
     <button class="icb snd" data-a="snd" aria-label="Ses">${ic(sfx.on ? 'vol' : 'mute', 22)}</button>
     <div class="tlang">${langBtns(1)}</div>
   </div>`;
@@ -414,7 +414,7 @@ function legHTML(id) {
 }
 
 // Avrupa kupası sayfası: lig aşaması tablosu, eleme turları, katılım kuralları
-const EUL = [['en1', 'Premier League'], ['es1', 'La Liga'], ['it1', 'Serie A'], ['de1', 'Bundesliga'], ['fr1', 'Ligue 1'], ['nl1', 'Eredivisie'], ['pt1', 'Liga Portugal'], ['tr1', 'Süper Lig']];
+const EUL = [['en1', 'İngiltere Ligi'], ['es1', 'İspanya Ligi'], ['it1', 'İtalya Ligi'], ['de1', 'Almanya Ligi'], ['fr1', 'Fransa Ligi'], ['nl1', 'Hollanda Ligi'], ['pt1', 'Portekiz Ligi'], ['tr1', 'Elit Lig']];
 function euroView(k) {
   const s = G.S, c = s[k], inIt = c.teams.includes(s.clubId), nx = G.euroNext(k), tb = G.euroTable(k), kf = c.fmt === 'k', bye = !!c.bye && c.bye.includes(s.clubId);
   const st = c.champ ? tt`Şampiyon: ${esc(G.club(c.champ).n)}` : !inIt ? tt('Kulübün bu sezon katılmıyor') : nx ? tt`Devam ediyorsun · ${nx.round}, ${nx.week}. hafta` : bye ? tt('Çeyrek finaldesin · rakibin play-off turundan gelecek') : tt('Elendiniz');
@@ -431,9 +431,9 @@ function euroView(k) {
     ${c.md === 0 ? '' : tt`<section class="card np eu-${k}"><table class="tb lg eu"><tr><th>#</th><th>Takım</th>${lgHead()}</tr>${rows}</table>
       ${kf ? tt`<p class="mut sm leg"><i class="q"></i>İlk 4 çeyrek finale<i class="q2"></i>5–12 play-off turuna · lig aşaması ${Math.min(c.r, 6)}/6</p>` : tt`<p class="mut sm leg"><i class="q"></i>İlk 16 çift maçlı eleme turlarına kalır · lig aşaması ${Math.min(c.r, 6)}/6</p>`}</section>`}
     ${lastLg ? tt`<section class="card">${lastLg}</section>` : ''}
-    ${G.KW ? tt`<section class="card">${tag(tt('Kim, nereden katılır?'))}<div class="eur hd k3"><span>Lig sırası</span><i class="z-cl">ŞL</i><i class="z-clq">Eleme</i><i class="z-el">Avr. K.</i></div>${rulesK}
-      <p class="note">Şampiyonlar Ligi 18 takımlı: lig aşamasında altı maç, ilk 4 çeyrek finale, 5–12 play-off turuna. Elemeyi kaybeden yola Avrupa Kupası'nda devam eder; orada final dahil her tur çift maçlıdır.</p></section>` : tt`<section class="card">${tag(tt('Kim, nereden katılır?'))}<div class="eur hd"><span>Lig sırası</span><i class="z-cl">ŞL</i><i class="z-clq">Eleme</i><i class="z-el">Avr. L.</i><i class="z-ko">Konf.</i></div>${rules}
-      <p class="note">Ülke kupası şampiyonu Avrupa Ligi'ne gider. <em class="plus1">+1</em>: geçen sezon Avrupa'da en başarılı iki ülkeye verilen fazladan Şampiyonlar Ligi bileti. Elemeyi kaybeden yola Avrupa Ligi'nde devam eder.</p></section>`}`;
+    ${G.KW ? tt`<section class="card">${tag(tt('Kim, nereden katılır?'))}<div class="eur hd k3"><span>Lig sırası</span><i class="z-cl">KL</i><i class="z-clq">Eleme</i><i class="z-el">Kıta K.</i></div>${rulesK}
+      <p class="note">Kıta Ligi 18 takımlı: lig aşamasında altı maç, ilk 4 çeyrek finale, 5–12 play-off turuna. Elemeyi kaybeden yola Kıta Kupası'nda devam eder; orada final dahil her tur çift maçlıdır.</p></section>` : tt`<section class="card">${tag(tt('Kim, nereden katılır?'))}<div class="eur hd"><span>Lig sırası</span><i class="z-cl">KL</i><i class="z-clq">Eleme</i><i class="z-el">Kıta K.</i><i class="z-ko">Kalkan</i></div>${rules}
+      <p class="note">Ülke kupası şampiyonu Kıta Kupası'na gider. <em class="plus1">+1</em>: geçen sezon Avrupa'da en başarılı iki ülkeye verilen fazladan Kıta Ligi bileti. Elemeyi kaybeden yola Kıta Kupası'nda devam eder.</p></section>`}`;
 }
 
 function vLeague() {
@@ -441,7 +441,7 @@ function vLeague() {
   const seg = tt`<div class="seg">${[['tb', tt('Puan')], ['cup', tt('Kupa')], ['sc', G.KW ? tt('Gol kraliçeliği') : tt('Gol krallığı')]].map(([k, l]) => tt`<button class="${V.lv === k ? 'on' : ''}" data-a="lv" data-v="${k}">${l}</button>`).join('')}</div>`;
   if (V.lv === 'cup') {
     const ck = G.EUK.includes(V.ck) ? V.ck : s.cup.none ? 'cl' : 'cup', c = s.cup, alive = c.alive.includes(s.clubId), cn = G.cupNext('cup');
-    const seg2 = tt`<div class="seg s3">${[['cup', tt('Kupa')], ['cl', tt('Şamp. L.')], ['el', G.KW ? tt('Avrupa K.') : tt('Avrupa L.')], ['ko', tt('Konferans')]].filter(([k]) => (k === 'cup' ? !s.cup.none : G.EUK.includes(k))).map(([k, l]) => tt`<button class="${ck === k ? 'on' : ''} sg-${k}" data-a="ck" data-v="${k}">${esc(l)}</button>`).join('')}</div>`;
+    const seg2 = tt`<div class="seg s3">${[['cup', tt('Kupa')], ['cl', tt('Kıta L.')], ['el', G.KW ? tt('Kıta K.') : tt('Kıta K.')], ['ko', tt('Kalkan')]].filter(([k]) => (k === 'cup' ? !s.cup.none : G.EUK.includes(k))).map(([k, l]) => tt`<button class="${ck === k ? 'on' : ''} sg-${k}" data-a="ck" data-v="${k}">${esc(l)}</button>`).join('')}</div>`;
     if (ck !== 'cup') return `${seg}${seg2}${euroView(ck)}`;
     const rounds = c.hist.slice().reverse().map(h => {
       const mine = h.res.filter(x => x[0] === s.clubId || x[1] === s.clubId), rest = h.res.filter(x => !mine.includes(x)).slice(0, h.res.length > 8 ? 5 : 8);
@@ -451,7 +451,7 @@ function vLeague() {
       ${cn ? tt`<section class="card">${tag(tt('Sıradaki tur'), 'ye')}${cl(cn.opp, tt`${crest(cn.opp, 34)}<div><b>${esc(G.club(cn.opp).n)}</b><small>${cn.round} · ${cn.week}. hafta · güç ${Math.round(s.rt[cn.opp])}</small></div>`, 'wt')}</section>` : ''}
       ${rounds ? tt`<section class="card">${rounds}</section>` : tt('<p class="mut sm pad">İlk tur henüz oynanmadı.</p>')}`;
   }
-  const opt = LEAGUES.map(L => tt`<option value="${L.id}" ${L.id === lid ? 'selected' : ''}>${L.c === 'TR' ? '' : COUNTRIES[L.c] + ' · '}${L.name}${L.gen ? ' (' + s.prov + ')' : ''}</option>`).join('');
+  const opt = LEAGUES.map(L => tt`<option value="${L.id}" ${L.id === lid ? 'selected' : ''}>${''}${L.name}${L.gen ? ' (' + s.prov + ')' : ''}</option>`).join('');
   const sel = tt`<label class="fld"><select data-c="lig">${opt}</select></label>`;
   if (V.lv === 'sc') {
     const sc = G.scorers(lid).filter(x => x.g > 0).map((x, i) => tt`<tr class="${x.me ? 'me' : ''}" data-a="club" data-v="${x.team}"><td>${i + 1}</td><td class="tn">${crest(x.team, 20)}${esc(x.n)}</td><td><b>${x.g}</b></td></tr>`).join('');
@@ -463,7 +463,7 @@ function vLeague() {
   return tt`${seg}${sel}
     <section class="card np"><table class="tb lg"><tr><th>#</th><th>Takım</th>${lgHead()}</tr>${rows}</table>
     <p class="mut sm leg"><i class="up"></i>${lid === 'tr1' || LMAP[lid].c !== 'TR' ? 'Şampiyon' : tt('Yükselme')}${z.po ? '<i class="po"></i>Play-off' : ''}${z.out ? '<i class="out"></i>Play-out' : ''}${z.down ? tt('<i class="down"></i>Düşme') : ''} · ${s.lg[lid].rd}/${G.rounds(lid)} hafta · eşitlikte ikili averaj</p>
-    ${hasEu && G.KW ? tt`<p class="mut sm leg eu"><i class="z-cl"></i>Şamp. Ligi<i class="z-clq"></i>ŞL elemesi<i class="z-el"></i>Avrupa Kupası · takıma dokun: profil</p>` : hasEu ? tt`<p class="mut sm leg eu"><i class="z-cl"></i>Şamp. Ligi<i class="z-clq"></i>ŞL elemesi<i class="z-el"></i>Avrupa Ligi<i class="z-ko"></i>Konferans · takıma dokun: profil</p>` : tt('<p class="mut sm leg">Takıma dokun: kulüp profili</p>')}</section>
+    ${hasEu && G.KW ? tt`<p class="mut sm leg eu"><i class="z-cl"></i>Kıta Ligi<i class="z-clq"></i>KL elemesi<i class="z-el"></i>Kıta Kupası · takıma dokun: profil</p>` : hasEu ? tt`<p class="mut sm leg eu"><i class="z-cl"></i>Kıta Ligi<i class="z-clq"></i>KL elemesi<i class="z-el"></i>Kıta Kupası<i class="z-ko"></i>Kalkan · takıma dokun: profil</p>` : tt('<p class="mut sm leg">Takıma dokun: kulüp profili</p>')}</section>
     ${last ? tt`<section class="card">${tag(tt('Son hafta'))}${last}</section>` : ''}`;
 }
 
@@ -520,7 +520,7 @@ function vLife() {
     <section class="card hv-ayar">${tag(tt('Tema'))}<div class="thm">${THEMES.map(([k, n, c2]) => `<button class="${theme() === k ? 'on' : ''}" data-a="theme" data-v="${k}"><i style="background:${c2 || 'conic-gradient(#d81e2c, #ffd21a, #0f8a4b, #1c57c4, #d81e2c)'}"></i>${n}</button>`).join('')}</div></section>
     <section class="card hv-ayar">${tag(tt('Dil'))}<div class="seg">${langBtns()}</div></section>
     <button class="opt sm hv-ayar" data-a="exp">${ic('down', 20)}<span><b>${tt('Kaydı dosyaya aktar')}</b></span></button>
-    ${mgrSetBtns()}
+    ${mgrSetBtns()}${legalOpt()}
     <button class="link hv-ayar" data-a="menu">${tt('Ana menü')}</button></div>`;
   }
   return tt`<div class="hvw" data-hv="${V.hv}"><div class="seg">${[['cev', tt('Çevre')], ['para', tt('Para')], ['gor', tt('Görünüm')], ['ayar', tt('Ayarlar')]].map(([k, l]) => tt`<button class="${V.hv === k ? 'on' : ''}" data-a="hv" data-v="${k}">${l}</button>`).join('')}</div>
@@ -546,7 +546,7 @@ function vLife() {
     <section class="card hv-ayar">${tag(tt('Para birimi'))}<div class="seg">${Object.keys(G.CUR).map(k => tt`<button class="${G.curKey() === k ? 'on' : ''}" data-a="cur" data-v="${k}">${G.CUR[k][0]} ${G.CUR[k][2]}</button>`).join('')}</div><p class="mut sm">Sabit kur: €1 = ₺${G.CUR.EUR[1]} · $1 = ₺${G.CUR.USD[1]}</p></section>
     <section class="card hv-ayar">${tag(tt('Tema'))}<div class="thm">${THEMES.map(([k, n, c]) => tt`<button class="${theme() === k ? 'on' : ''}" data-a="theme" data-v="${k}"><i style="background:${c || 'conic-gradient(#d81e2c, #ffd21a, #0f8a4b, #1c57c4, #d81e2c)'}"></i>${n}</button>`).join('')}</div></section>
     <section class="card hv-ayar">${tag(tt('Dil'))}<div class="seg">${langBtns()}</div></section>
-    ${gfxCard()}${ivCard()}
+    ${gfxCard()}${ivCard()}${legalOpt()}
     ${spiker.ok ? tt`<button class="opt sm hv-ayar" data-a="spk">${ic('mic', 20)}<span><b>Spiker sesi: ${spiker.on ? tt('açık') : tt('kapalı')}</b><small>Maçta goller ve anlar sesli okunur</small></span></button>` : ''}
     <button class="opt sm hv-ayar" data-a="howto">${ic('book', 20)}<span><b>Nasıl oynanır?</b><small>Rehberi baştan göster</small></span></button>
     <button class="opt sm hv-ayar" data-a="kodal">${ic('swap', 20)}<span><b>Aktarım kodunu kopyala</b><small>Başka cihazda giriş ekranında "Kodla yükle"</small></span></button>
@@ -687,8 +687,8 @@ function offerHTML(o) {
       <div>${ic('cal', 16)}<small>${o.loan ? tt('Tür') : tt('Sözleşme')}</small><b>${o.loan ? tt('Kiralık') : tt`${o.len} sezon`}</b></div></div>
     ${o.fee ? tt`<div class="stn st-${o.st === 'ok' ? 'acik' : 'kilit'}">${ic(o.st === 'ok' ? 'check' : 'lock', 16)}Bonservis teklifi <b>${G.fmtS(o.fee)}</b> · ${o.st === 'ok' ? tt('kulübün kabul etti') : tt`kulübün ${G.fmtS(o.ask)} istiyor`}</div>` : ''}`;
 }
-const offerSub = id => { const L = LMAP[G.leagueOf(id)]; return L ? tt`${L.c !== 'TR' ? COUNTRIES[L.c] + ' · ' : ''}${L.name} · güç ${Math.round(G.S.rt[id])}` : tt`${G.club(id).x || tt('Avrupa')} · güç ${Math.round(G.S.rt[id])}`; };
-const EUNM = { cl: 'Şampiyonlar Ligi', el: 'Avrupa Ligi', ko: 'Konferans Ligi' };
+const offerSub = id => { const L = LMAP[G.leagueOf(id)]; return L ? tt`${''}${L.name} · güç ${Math.round(G.S.rt[id])}` : tt`${G.club(id).x || tt('Avrupa')} · güç ${Math.round(G.S.rt[id])}`; };
+const EUNM = { cl: 'Kıta Ligi', el: 'Kıta Kupası', ko: 'Kıta Kalkanı' };
 // Transfer analizi: mevcut kulüp ile teklif yan yana
 function cmpHTML(m) {
   const cell = (r, v, sub) => (r.star ? stars(v) : tt`<b>${esc(String(v))}</b>`) + (sub ? tt`<small>${esc(sub)}</small>` : '');
@@ -1645,6 +1645,22 @@ function slotRow() {
     ? `<span class="avw">${avatar(x.look || { skin: 1, hair: 0, hc: 0 }, x.c1, x.c2, { num: x.num })}</span><b>${esc(x.name)}</b><small>${esc(x.club)} · ${x.mgr ? tt('kenarda') : tt`${x.age} yaş`}</small>`
     : `<span class="avw plus">${ic('plus', 24)}</span><b>${tt`Yuva ${x.n}`}</b><small>${tt('Boş')}</small>`}</button>`).join('')}</div>`;
 }
+// ---------- gizlilik bildirimi ve künye: başlık ekranından ve Ayarlar'dan açılır ----------
+const REPO = 'https://github.com/keremkefli/toprak-saha';
+const legalBtn = () => `<button class="link" data-a="legal">${tt('Gizlilik ve künye')}</button>`;
+const legalOpt = () => `<button class="opt sm hv-ayar" data-a="legal">${ic('lock', 20)}<span><b>${tt('Gizlilik ve künye')}</b><small>${tt('Hangi veri nerede tutuluyor, kim sorumlu')}</small></span></button>`;
+async function legalFlow() {
+  const sec = (h, ps) => `<div class="lgl"><b>${h}</b>${ps.map(p => `<p>${p}</p>`).join('')}</div>`;
+  const body = sec(tt('Kısaca'), [tt('Toprak Saha hesap istemez, reklam ve analitik aracı kullanmaz, çerez koymaz. Geliştirici hiçbir kişisel veriyi toplamaz, görmez, sunucuya göndermez.')])
+    + sec(tt('Cihazında saklananlar'), [tt('Kariyer kayıtların ve ayarların (dil, ses, tema, para birimi) tarayıcının yerel depolamasında yalnızca bu cihazda durur. Oyunun çalışması için gereklidir; başka bir amaçla kullanılmaz.'), tt('Oyuncuna verdiğin ad da yalnızca cihazında kalır. Gerçek adını yazmak zorunda değilsin.')])
+    + sec(tt('Barındırma'), [tt('Site GitHub Pages üzerinde yayınlanır. Sayfayı açtığında IP adresin, bağlantının teknik gereği olarak GitHub sunucularına ulaşır; GitHub bunu kendi gizlilik bildirimine göre güvenlik amacıyla işler. Yazı tipleri ve sesler aynı sunucudan gelir, başka bir şirkete istek yapılmaz.')])
+    + sec(tt('Paylaşım ve aktarım'), [tt('Kariyer özeti, aktarım kodu ve kayıt dosyası yalnızca sen düğmeye basarsan oluşur; cihazının paylaşım menüsüne, panoya ya da indirme klasörüne gider. Nereye göndereceğini sen seçersin.')])
+    + sec(tt('Silme ve hakların'), [tt('Ana menüdeki "Bu yuvayı sil" düğmesiyle bir kariyeri, tarayıcı ayarlarından site verilerini temizleyerek tüm kayıtları silebilirsin. Geliştiricide senin hakkında veri olmadığı için silinecek başka bir şey kalmaz.'), tt('6698 sayılı KVKK kapsamındaki soruların ve başvuruların için aşağıdaki iletişim kanalını kullanabilirsin.')])
+    + sec(tt('Künye'), [tt('Toprak Saha bağımsız bir hayran yapımıdır; ücretsizdir, uygulama içi satın alma ve gerçek parayla oynanan hiçbir bölüm yoktur.'), tt('Kulüp adları şehir ve semt adlarından türetilmiştir; lig ve turnuva adları kurgudur. Oyunun hiçbir kulüp, federasyon ya da organizasyonla bağı yoktur, onlarca onaylanmamıştır. Armalar oyun içinde baş harflerden üretilir; resmî logo kullanılmaz.'), tt('Oyuncular, hocalar, hakemler ve diğer kişiler kurgudur; gerçek kişilerle benzerlik tesadüftür. Bahis, şike ve doping olayları kurgudur ve cezalarıyla birlikte gösterilir; gerçek bahsi özendirmez.'), tt('Yazı tipleri: Barlow ve Big Shoulders Display, SIL Open Font License 1.1.')])
+    + sec(tt('İletişim'), [`<a href="${REPO}/issues" target="_blank" rel="noopener">${REPO.replace('https://', '')}/issues</a>`])
+    + `<p class="note">${tt('Son güncelleme: 23 Kasım 2026')}</p>`;
+  await dialog({ k: tt('Bilgilendirme'), t: tt('Gizlilik ve künye'), body, opts: [{ t: tt('Tamam') }], auto: 0 });
+}
 const slotDelBtn = () => `<button class="link" data-a="slotdel">${tt('Bu yuvayı sil')}</button>`;
 
 // Oyuncu yaratma: klasik kariyer ya da senaryo
@@ -1738,7 +1754,7 @@ function trophyRoom() {
   const s = G.S, cs = G.statsInfo().cs;
   if (!s.tro.length && !cs.length) return '';
   const g = {}; for (const x of s.tro) { const i = x.indexOf(' · '), y = x.slice(0, i), n = x.slice(i + 3).replace(/ \(\d+ gol\)$/, ''); (g[n] || (g[n] = [])).push(y); }
-  const kind = n => (/Gol Kral/.test(n) ? ['ball', 'b'] : /Yılın|Ayın/.test(n) ? ['star', 's'] : /Şampiyonlar Ligi|Avrupa|Dünya|Süper Kupa/.test(n) ? ['crown', 'e'] : ['trophy', 'g']);
+  const kind = n => (/Gol Kral/.test(n) ? ['ball', 'b'] : /Yılın|Ayın/.test(n) ? ['star', 's'] : /Kıta|Avrupa|Dünya|Süper Kupa/.test(n) ? ['crown', 'e'] : ['trophy', 'g']);
   const tiles = Object.keys(g).map(n => { const [i, k] = kind(n), ys = g[n]; return `<div class="trt k-${k}"><div class="trc">${trophySvg(k === 'b' ? 'gol' : k === 's' ? 'odul' : k === 'e' ? 'avrupa' : /Kupa/.test(n) ? 'kupa' : 'lig', 34)}${ys.length > 1 ? `<em>×${ys.length}</em>` : ''}</div><b>${esc(tt`${n}`)}</b><small>${ys.slice(-3).join(' · ')}${ys.length > 3 ? ' …' : ''}</small></div>`; }).join('');
   const shirts = cs.slice(0, 9).map(x => { const k = G.club(x.id); return `<button class="shr" data-a="club" data-v="${x.id}">${shirtSvg(k.c1, k.c2, s.num)}<b>${esc(k.n)}</b><small>${tt`${x.apps} maç, ${x.g} gol`}</small></button>`; }).join('');
   return `<section class="card trr">${tag(tt('Kupa odası'), 'ye')}${tiles ? `<div class="trg">${tiles}</div>` : `<p class="mut sm">${tt('Raflar boş. İlk kupan bu vitrine gelecek.')}</p>`}${shirts ? `<div class="sub">${ic('shirt', 16)}${tt('Giydiğin formalar')}</div><div class="shg">${shirts}</div>` : ''}</section>`;
@@ -2049,6 +2065,7 @@ const ACT = {
   inv: v => { const stp = G.nice(Math.max(5000, G.S.money * .2)); if (G.invest(v, stp)) { sfx.coin(); toast(tt`${INV[v][0]}: ${G.fmtS(stp)} yatırıldı`, 'chart'); G.save(); render(); } },
   div: v => { const x = G.divest(v); if (x) { sfx.coin(); toast(tt`${INV[v][0]}: ${G.fmtS(x)} hesabına geçti`, 'coin'); G.save(); render(); } },
   spk: () => { spiker.toggle(); render(); },
+  legal: async () => { if (busy) return; busy = true; try { await legalFlow(); } finally { busy = false; } },
   howto: async () => { if (busy) return; busy = true; try { await tip('hub', 1); await tip('mac', 1); await tip('transfer', 1); } finally { busy = false; } },
   kodal: async () => { try { const c = await packSave(); await navigator.clipboard.writeText(c); toast(tt`Kod panoya kopyalandı (${Math.round(c.length / 1024)} KB)`, 'check'); } catch (e) { toast(tt('Kopyalanamadı. Dosyaya aktarmayı dene.'), 'alert'); } },
   kod: async () => {

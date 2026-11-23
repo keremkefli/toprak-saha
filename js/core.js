@@ -1,6 +1,6 @@
 // Toprak Saha — oyun çekirdeği: durum, lig simülasyonu, sezon, transfer, ekonomi
 import { tt, LC, NLOC, DSEP } from './i18n.js';
-import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR, UPG, SESS, PROLE, SCENS, COLK, SPN, KLIK, PTAG } from './data.js';
+import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR, UPG, SESS, PROLE, SCENS, COLK, SPN, KLIK, PTAG , REN } from './data.js';
 
 export let S = null;
 export const WEEKS = 38;
@@ -58,16 +58,23 @@ const sg = v => (v > 0 ? '+' : '−') + Math.abs(Math.round(v));
 
 // ---------- kayıt ----------
 export function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* depolama kapalı */ } }
+// Eski kayıt: gerçek kulüp, lig ve kupa adları yeni karşılıklarıyla değiştirilir (kayıt nm:2 ile işaretlenir)
+let RENX = null;
+export function renameText(j) {
+  if (!j || j.includes('"nm":2')) return j;
+  RENX ??= new RegExp('(^|[^\\p{L}\\p{N}])(' + Object.keys(REN).sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?=$|[^\\p{L}\\p{N}])', 'gu');
+  return j.replace(RENX, (m, a, b) => a + REN[b]);
+}
 export function load() {
   try {
-    const j = localStorage.getItem(KEY); if (!j) return false; S = JSON.parse(j); setWorld(S.w);
+    const j = localStorage.getItem(KEY); if (!j) return false; S = JSON.parse(renameText(j)); S.nm = 2; setWorld(S.w);
     // eski kayıtları yeni alanlarla tamamla
     S.look ??= { skin: 1, hair: 0, hc: 0 }; S.tstat ??= 'mutlu'; S.watch ??= []; S.loan ??= null; S.st.lg ??= S.st.g;
     if (S.con && S.con.rel == null) S.con.rel = nice(value() * 4);
     if (!S.cup) initCup();
     S.perks ??= []; S.pp ??= 0; S.px ??= 0; S.ach ??= {}; S.feed ??= []; S.pop ??= []; S.mr ??= []; S.feedNew ??= 0; S.awards ??= 0;
     if (S.dream === undefined) S.dream = SAK();
-    if (!S.fl.drm) { S.fl.drm = 1; const d = S.dream && CLUBS[S.dream]; if (d && d.n === 'Sakaryaspor' && S.prov !== 'Sakarya' && !S.mgr) S.dream = SAK(); }   // eski kayıt: varsayılan hedef artık doğduğun şehrin kulübü
+    if (!S.fl.drm) { S.fl.drm = 1; const d = S.dream && CLUBS[S.dream]; if (d && d.n === 'Sakarya' && S.prov !== 'Sakarya' && !S.mgr) S.dream = SAK(); }   // eski kayıt: varsayılan hedef artık doğduğun şehrin kulübü
     for (const id in S.gen) if (!S.gen[id].c2) S.gen[id].c2 = '#f2f2f2';   // eski kayıtlarda boş kalan ikinci renk
     S.net ??= []; S.diff ??= 'normal'; if (!S.mates || !S.mates.length) genMates(); if (!S.quest) newQuest();
     S.fu ??= []; S.num ??= 9; S.cele ??= 'kayarak'; S.nick ??= ''; if (!S.refs || !S.refs.length) initRefs();
@@ -586,7 +593,7 @@ export function seasonEnd() {
   return { label, league: L.name, pos, n, champ, st, avg, tro, lines, moved, aw, xi, doc };
 }
 
-// ---------- kupalar: 'cup' ülke kupası; 'cl' Şampiyonlar Ligi, 'el' Avrupa Ligi ----------
+// ---------- kupalar: 'cup' ülke kupası; 'cl' Kıta Ligi, 'el' Kıta Kupası ----------
 const CUPW = [5, 10, 16, 23, 29, 35];
 const cupRoundName = n => ({ 64: 'Son 64', 32: 'Son 32', 16: 'Son 16', 8: 'Çeyrek final', 4: 'Yarı final', 2: 'Final' }[n] || 'Tur');
 
@@ -637,7 +644,7 @@ function cupRound(own, k) {
 }
 
 // ---------- transfer ----------
-// Kadın futbolunda ücret eğrisi daha alçak ve daha yatık: Süper Lig ortası haftada ~₺10 bin, Avrupa zirvesi ~₺800 bin (≈€16 bin); 2. ve 3. Lig amatör
+// Kadın futbolunda ücret eğrisi daha alçak ve daha yatık: Elit Lig ortası haftada ~₺10 bin, Avrupa zirvesi ~₺800 bin (≈€16 bin); 2. ve 3. Lig amatör
 const baseW = o => (KW ? 125 * Math.exp((o - 30) * 0.146) : 150 * Math.exp((o - 30) * 0.19));
 const valF = () => (KW ? .2 : 1);     // bonservis ölçeği: kadınlarda rekor bedeller €1 milyon dolayında
 const folF = () => (KW ? .35 : 1);    // takipçi artışı
@@ -798,8 +805,8 @@ export function acceptOffer(o) {
 
 // ---------- milli takım ----------
 // Milli takım haftaları: iki sezonda altı eleme maçı, çift yıllarda yaz turnuvası
-// Kadınlarda turnuvalar tek yıllarda: 2027 Dünya Kupası, 2029 Avrupa Şampiyonası, 2031 Dünya Kupası…
-const NATW = [9, 17, 27], NTN_E = { euro: 'Avrupa Şampiyonası', wc: 'Dünya Kupası' }, NTN_K = { euro: 'Kadınlar Avrupa Şampiyonası', wc: 'Kadınlar Dünya Kupası' };
+// Kadınlarda turnuvalar tek yıllarda: 2027 Dünya Turnuvası, 2029 Avrupa Turnuvası, 2031 Dünya Turnuvası…
+const NATW = [9, 17, 27], NTN_E = { euro: 'Avrupa Turnuvası', wc: 'Dünya Turnuvası' }, NTN_K = { euro: 'Kadınlar Avrupa Turnuvası', wc: 'Kadınlar Dünya Turnuvası' };
 let NTN = NTN_E;
 const WORLD_E = [['İngiltere', 87], ['Belçika', 82], ['Danimarka', 79], ['Brezilya', 87], ['Arjantin', 88], ['Uruguay', 81], ['Kolombiya', 80], ['ABD', 77], ['Meksika', 77], ['Japonya', 78], ['Güney Kore', 76], ['Fas', 80], ['Senegal', 78], ['Nijerya', 76], ['Avustralya', 73]];
 let WORLD = WORLD_E;
@@ -1144,7 +1151,7 @@ function checkAch(M) {
 
 // ---------- hedef takım ----------
 // Hedef takım: doğduğun şehrin en güçlü kulübü; bulunamazsa oyuncu kendi seçer
-const CITYC = { 'İstanbul': ['Galatasaray', 'Fenerbahçe', 'Beşiktaş', 'Başakşehir', 'Kasımpaşa', 'Eyüpspor', 'Fatih Karagümrük', 'İstanbulspor', 'Ümraniyespor', 'Pendikspor', 'Sarıyer', 'Esenler Erokspor', 'Silivrispor', 'Beylerbeyi', 'Ataşehir'], 'İzmir': ['Göztepe', 'Altay', 'Karşıyaka', 'Altınordu', 'Menemen FK', 'Bucaspor', 'Konak'], 'Ankara': ['Gençlerbirliği', 'MKE Ankaragücü', 'Keçiörengücü', 'Ankara', 'Fomget'], 'Bursa': ['Bursaspor', 'İnegölspor'], 'Kocaeli': ['Kocaelispor', 'Güzide Gebzespor'], 'Trabzon': ['Trabzonspor'], 'Adana': ['Adana Demirspor', 'Adanaspor', 'Adana'], 'Antalya': ['Antalyaspor', 'Alanyaspor', 'Serik Belediyespor'], 'Konya': ['Konyaspor'], 'Samsun': ['Samsunspor'], 'Sakarya': ['Sakaryaspor', 'Sakarya'] };
+const CITYC = { 'İstanbul': ['Galata', 'Kadıköy', 'Beşiktaş', 'Başakşehir', 'Kasımpaşa', 'Eyüp', 'Karagümrük', 'İstanbul', 'Ümraniye', 'Pendik', 'Sarıyer', 'Esenler', 'Silivri', 'Beylerbeyi', 'Ataşehir'], 'İzmir': ['Göztepe', 'İzmir A', 'Karşıyaka', 'İzmir O', 'Menemen', 'Bucaspor', 'Konak'], 'Ankara': ['Ankara G', 'Ankara A', 'Keçiören', 'Ankara', 'Fomget'], 'Bursa': ['Bursa', 'İnegöl'], 'Kocaeli': ['Kocaeli', 'Gebze'], 'Trabzon': ['Trabzon'], 'Adana': ['Adana D', 'Adana', 'Adana'], 'Antalya': ['Antalya', 'Alanya', 'Serik'], 'Konya': ['Konya'], 'Samsun': ['Samsun'], 'Sakarya': ['Sakarya', 'Sakarya'] };
 export function cityClubs(prov = S.prov) {
   const names = CITYC[prov] || [prov], out = [];
   for (const lid in S.lg) { if (LMAP[lid].c !== 'TR' || LMAP[lid].gen) continue; for (const id of S.lg[lid].t) { const n = CLUBS[id] && CLUBS[id].n; if (n && names.some(x => n.startsWith(x))) out.push(id); } }
@@ -1474,19 +1481,19 @@ export function rehab(ok) {
 }
 
 // ---------- Avrupa kupaları ----------
-// Kontenjanlar UEFA ülke sıralamasına göre: [doğrudan Şampiyonlar Ligi, ŞL eleme turu, Avrupa Ligi]
-const EUQ_E = { en1: [4, 0, 2, 1], es1: [4, 0, 2, 1], it1: [4, 0, 2, 1], de1: [4, 0, 2, 1], fr1: [3, 1, 2, 1], nl1: [2, 1, 2, 1], pt1: [1, 1, 2, 1], tr1: [1, 1, 2, 1] };   // son sütun: Konferans Ligi
+// Kontenjanlar UEFA ülke sıralamasına göre: [doğrudan Kıta Ligi, KL eleme turu, Kıta Kupası]
+const EUQ_E = { en1: [4, 0, 2, 1], es1: [4, 0, 2, 1], it1: [4, 0, 2, 1], de1: [4, 0, 2, 1], fr1: [3, 1, 2, 1], nl1: [2, 1, 2, 1], pt1: [1, 1, 2, 1], tr1: [1, 1, 2, 1] };   // son sütun: Kıta Kalkanı
 // Kadınlar (UEFA 2026/27 erişim listesi): 1-2. ülkelerin ilk ikisi ve 3-6. ülkelerin şampiyonu doğrudan lig aşamasında, diğerleri elemede.
-// Konferans Ligi yok; ikinci kupa Kadınlar Avrupa Kupası (Hollanda üçüncüsü ve Türkiye ikincisi doğrudan, eleme kaybedenleri de oraya geçer).
+// Kıta Kalkanı yok; ikinci kupa Kadınlar Kıta Kupası (Hollanda üçüncüsü ve Türkiye ikincisi doğrudan, eleme kaybedenleri de oraya geçer).
 const EUQ_K = { en1: [2, 1, 0, 0], fr1: [2, 1, 0, 0], es1: [1, 2, 0, 0], de1: [1, 2, 0, 0], it1: [1, 2, 0, 0], pt1: [1, 2, 0, 0], nl1: [0, 2, 1, 0], tr1: [0, 1, 1, 0] };
 export let EUQ = EUQ_E;
 const EUK_E = ['cl', 'el', 'ko'], EUK_K = ['cl', 'el'];
 export let EUK = EUK_E;
-const EUN_E = { cl: 'Şampiyonlar Ligi', el: 'Avrupa Ligi', ko: 'Konferans Ligi' }, EUN_K = { cl: 'Kadınlar Şampiyonlar Ligi', el: 'Kadınlar Avrupa Kupası' };
+const EUN_E = { cl: 'Kıta Ligi', el: 'Kıta Kupası', ko: 'Kıta Kalkanı' }, EUN_K = { cl: 'Kadınlar Kıta Ligi', el: 'Kadınlar Kıta Kupası' };
 export let EUN = EUN_E;
-const EUWK = [6, 8, 18, 20, 24, 26, 30, 32];   // Kadınlar Avrupa Kupası: son 16'dan finale dört tur, hepsi çift maçlı
+const EUWK = [6, 8, 18, 20, 24, 26, 30, 32];   // Kadınlar Kıta Kupası: son 16'dan finale dört tur, hepsi çift maçlı
 const EUW = [3, 6, 8, 11, 13, 15, 18, 20, 24, 26, 30, 32, 36], EUMD = 6;   // lig aşaması, sonra çift maçlı turlar ve tek maç final
-// S.eps: geçen sezon Avrupa'da en iyi iki ülke, fazladan bir Şampiyonlar Ligi bileti alır
+// S.eps: geçen sezon Avrupa'da en iyi iki ülke, fazladan bir Kıta Ligi bileti alır
 export function euroSpots(lid) { const q = EUQ[lid]; if (!q) return null; return { cl: q[0] + (!KW && (S.eps || []).includes(lid) ? 1 : 0), clq: q[1], el: q[2], ko: q[3] }; }
 export function euroZone(lid, i) { const q = euroSpots(lid); if (!q) return ''; return i < q.cl ? 'cl' : i < q.cl + q.clq ? 'clq' : i < q.cl + q.clq + q.el ? 'el' : i < q.cl + q.clq + q.el + q.ko ? 'ko' : ''; }
 export const euroOf = id => EUK.find(k => S[k] && S[k].teams.includes(id)) || null;
@@ -1494,7 +1501,7 @@ export const euroOf = id => EUK.find(k => S[k] && S[k].teams.includes(id)) || nu
 export const euFix = () => { for (const k of EUK) { const f = euroFixture(k); if (f) return f; } return null; };
 export const sideFixture = () => cupFixture() || euFix() || xcFixture();
 
-// Önceki sezonun sıralamasına (ilk sezonda güce) göre Avrupa'ya gidenler. Kupa şampiyonu Avrupa Ligi'ne gider.
+// Önceki sezonun sıralamasına (ilk sezonda güce) göre Avrupa'ya gidenler. Kupa şampiyonu Kıta Kupası'na gider.
 function euroQual(sorted) {
   const cl = [], q = [], el = [], ko = [], qc = [], cw = S.cup && S.cup.champ && S.cup.top ? S.cup.champ : null;
   for (const l in EUQ) {
@@ -1507,8 +1514,8 @@ function euroQual(sorted) {
   }
   return { cl, q, el, ko, qc };
 }
-// Kadınlar: Şampiyonlar Ligi 18 takımlı lig aşaması (8 doğrudan + elemeden 10), Avrupa Kupası 16 takımlı çift maçlı eleme.
-// Eleme iki yoldan: şampiyonlar yolu (4 bilet) ve lig yolu (6 bilet). Kaybedenler Avrupa Kupası'na geçer.
+// Kadınlar: Kıta Ligi 18 takımlı lig aşaması (8 doğrudan + elemeden 10), Kıta Kupası 16 takımlı çift maçlı eleme.
+// Eleme iki yoldan: şampiyonlar yolu (4 bilet) ve lig yolu (6 bilet). Kaybedenler Kıta Kupası'na geçer.
 function initEuroK(q) {
   const key = {}; XIDS.forEach(id => { key[id] = S.rt[id] + rnd(0, 6); });
   const xs = [...XIDS].sort((a, b) => key[b] - key[a]), cl = [...q.cl], el = [...q.el], pre = [];
@@ -1538,7 +1545,7 @@ function initEuro(q) {
   if (KW) return initEuroK(q);
   const key = {}; XIDS.forEach(id => { key[id] = S.rt[id] + rnd(0, 6); });
   const xs = [...XIDS].sort((a, b) => key[b] - key[a]), cl = [...q.cl], el = [...q.el], ko = [...(q.ko || [])], pre = [];
-  for (const id of q.q) {   // eleme turu: iki maç toplamı, kaybeden Avrupa Ligi'ne
+  for (const id of q.q) {   // eleme turu: iki maç toplamı, kaybeden Kıta Kupası'na
     const x = xs.splice(ri(3, 10), 1)[0], [a, b] = simScore(S.rt[id], S.rt[x]), [c, d] = simScore(S.rt[x], S.rt[id]);
     const us = a + d, th = b + c, w = us > th || (us === th && chance(.5)) ? id : x;
     cl.push(w); el.push(w === id ? x : id); pre.push([id, x, us, th, w]);
@@ -1550,7 +1557,7 @@ function initEuro(q) {
   S.cl = mk('cl', cl, pre); S.el = mk('el', el); S.ko = mk('ko', ko);
   if (!S.clubId) return;
   const m = pre.find(x => x[0] === S.clubId);
-  if (m) addNews(m[4] === S.clubId ? tt`Şampiyonlar Ligi elemesinde ${club(m[1]).n} geçildi: ${m[2]}-${m[3]}.` : tt`Şampiyonlar Ligi elemesinde ${club(m[1]).n} turladı (${m[2]}-${m[3]}). Yola Avrupa Ligi'nde devam.`, 'trophy');
+  if (m) addNews(m[4] === S.clubId ? tt`Kıta Ligi elemesinde ${club(m[1]).n} geçildi: ${m[2]}-${m[3]}.` : tt`Kıta Ligi elemesinde ${club(m[1]).n} turladı (${m[2]}-${m[3]}). Yola Kıta Kupası'nda devam.`, 'trophy');
   const k = euroOf(S.clubId); if (k) { addNews(tt`Bu sezon ${EUN[k]} sahnesindesiniz.`, 'trophy'); S.pop.push(tt`${EUN[k]} bileti`); }
 }
 export function euroTable(k) {
@@ -1634,7 +1641,7 @@ function euroRound(own, k) {
     addFeed('basin', tt('Saha Kenarı'), tt`${c.name} şampiyonu: ${club(c.champ).n}!`, 'manset');
   } else if (me) addNews(me[4] === S.clubId ? tt`${c.name}: toplamda ${Math.max(me[5], me[6])}-${Math.min(me[5], me[6])} ile tur atladınız.` : tt`${c.name}: toplamda elendiniz.`, 'trophy');
 }
-// Ülke katsayısı: Avrupa'daki ortalama başarı. En iyi iki lig gelecek sezon fazladan ŞL bileti alır.
+// Ülke katsayısı: Avrupa'daki ortalama başarı. En iyi iki lig gelecek sezon fazladan KL bileti alır.
 function euroCoef() {
   const pts = {}, cnt = {};
   for (const k of EUK) {
@@ -2302,7 +2309,7 @@ function crisisStep() {
   if (id === s.clubId && s.mgr) s.mgr.conf = clamp(s.mgr.conf - 5, 0, 100);
 }
 
-// ---------- Konferans Ligi: eski kayıtlar için sezon ortasında kurulur ----------
+// ---------- Kıta Kalkanı: eski kayıtlar için sezon ortasında kurulur ----------
 function initKo() {
   const used = new Set([...S.cl.teams, ...S.el.teams]), q = euroQual().ko.filter(id => !used.has(id)), xs = XIDS.filter(id => !used.has(id));
   while (q.length < 32 && xs.length) q.push(xs.shift());
@@ -2316,7 +2323,7 @@ function initKo() {
 function xcInit(skc, clw) {
   const s = S; s.xc = [];
   if (skc) { const a = skc[0], b = skc[1] && skc[1] !== a ? skc[1] : skc[2]; if (s.clubId === a || s.clubId === b) s.xc.push({ k: 'sk', name: 'Süper Kupa', week: 2, opp: s.clubId === a ? b : a }); }
-  if (clw && clw === s.clubId) s.xc.push({ k: 'dk', name: KW ? 'FIFA Kadınlar Şampiyonlar Kupası' : 'Kıtalararası Kupa', week: 22, opp: pick(WIDS) });
+  if (clw && clw === s.clubId) s.xc.push({ k: 'dk', name: KW ? 'Kadınlar Kıtalararası Kupa' : 'Kıtalararası Kupa', week: 22, opp: pick(WIDS) });
   for (const x of s.xc) addNews(tt`${x.name}: ${x.week}. haftada rakip ${club(x.opp).n}.`, 'trophy');
 }
 export function xcFixture() { const x = (S.xc || []).find(y => y.week === S.week && !y.done); return x ? { cup: true, key: 'xc', name: x.name, round: 'Final', opp: x.opp, home: true, final: true } : null; }
@@ -2893,7 +2900,7 @@ export function setSlot(n) { if (!KEYS[n - 1]) return; KEY = KEYS[n - 1]; S = nu
 export function slotList() {
   return KEYS.map((k, i) => {
     const o = { n: i + 1, cur: k === KEY };
-    try { const j = localStorage.getItem(k); if (!j) return o; const d = JSON.parse(j), c = CLUBS[d.clubId] || (d.gen || {})[d.clubId] || {}; return { ...o, name: d.name, age: d.age, pos: d.pos, club: c.n || '', c1: c.c1 || '#ff6a2b', c2: c.c2 || '#14110e', look: d.look, num: d.num, mgr: !!d.mgr, year: d.year }; } catch (e) { return o; }
+    try { const j = localStorage.getItem(k); if (!j) return o; const d = JSON.parse(renameText(j)), c = CLUBS[d.clubId] || (d.gen || {})[d.clubId] || {}; return { ...o, name: d.name, age: d.age, pos: d.pos, club: c.n || '', c1: c.c1 || '#ff6a2b', c2: c.c2 || '#14110e', look: d.look, num: d.num, mgr: !!d.mgr, year: d.year }; } catch (e) { return o; }
   });
 }
 export function wipeSlot(n) { try { localStorage.removeItem(KEYS[n - 1]); } catch (e) { /* yok */ } if (KEYS[n - 1] === KEY) S = null; }
@@ -3189,7 +3196,7 @@ export function bizEvent() {
   }
   const k = m.kids.length ? [...m.kids].sort((a, b) => b.tal - a.tal)[0] : null;
   return pick([
-    { p: 'baskan', i: 'shield', t: tt('Büyük kulüpten teklif'), d: tt('Bir Süper Lig kulübü okulunu altyapı ortağı yapmak istiyor: düzenli ödeme karşılığında en iyi öğrencilerde ilk söz hakkı.'), o: [
+    { p: 'baskan', i: 'shield', t: tt('Büyük kulüpten teklif'), d: tt('Bir Elit Lig kulübü okulunu altyapı ortağı yapmak istiyor: düzenli ödeme karşılığında en iyi öğrencilerde ilk söz hakkı.'), o: [
       [tt('Kabul et'), tt('Düzenli gelir, mezunlardan az bedel'), () => { const v = nice(90000 * bizK() * (1 + m.rp / 50)); s.money += v; m.earn += v; m.rp = clamp(m.rp + 3, 0, 100); return ['+' + fmt(v), tt('Okul itibarı +3')]; }],
       [tt('Bağımsız kal'), tt('Veliler bunu sever'), () => { m.rp = clamp(m.rp + 1.5, 0, 100); return [tt('Okul itibarı +2')]; }]] },
     ...(k ? [{ p: 'baba', i: 'home', t: tt('Veli görüşmesi'), d: tt`${k.n} okulun en yeteneklisi. Babası başka bir okula geçirmeyi düşünüyor.`, o: [
