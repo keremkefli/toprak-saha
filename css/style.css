@@ -827,3 +827,56 @@ main > section:has(> .sh) > :not(.sh) { margin: 10px 10px 0; }
   .rlc .avw { width: 132px; height: 132px; }
   .rlf { justify-content: center; }
 }
+
+/* v18: teknik direktör kadro, transfer ve canlı maç */
+.pb { display: inline-grid; place-items: center; min-width: 26px; height: 18px; padding: 0 4px; border-radius: 3px; font: 800 11px/1 var(--fh); letter-spacing: .04em; font-style: normal; color: #0b0f14; background: #8f9cad; }
+.pb.p-KL { background: #f0d264; } .pb.p-DF { background: #58a6ff; } .pb.p-OS { background: #74dd8e; } .pb.p-KN { background: #3ff0c0; } .pb.p-FV { background: #ff7a59; }
+.seg.ctab { margin-bottom: 4px; } .seg.ctab button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .seg.ctab em { font-style: normal; background: var(--rd); color: #fff; border-radius: 9px; padding: 1px 6px; font-size: 11px; }
+.seg.fms, .seg.tfs { flex-wrap: wrap; } .seg.tfs { margin: 0 12px 8px; }
+.fpitch { display: grid; gap: 8px; padding: 12px 8px; border-radius: 8px; background: repeating-linear-gradient(180deg, #1d5a34 0 34px, #1a5230 34px 68px); border: 2px solid #2f7a4a; position: relative; }
+.fpitch::before { content: ''; position: absolute; left: 50%; top: 50%; width: 70px; height: 70px; border: 2px solid rgba(255,255,255,.18); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.fr { display: flex; justify-content: space-evenly; gap: 6px; min-height: 4px; position: relative; } .fr:empty { display: none; }
+.fpl { display: grid; justify-items: center; gap: 2px; width: 74px; padding: 5px 3px 4px; border-radius: 6px; background: rgba(11,15,20,.82); border: 1.5px solid transparent; color: var(--tx); text-align: center; }
+.fpl b { font-size: 11.5px; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .fpl small { font-size: 11px; color: var(--mu); }
+.fpl.sel { border-color: var(--or); box-shadow: 0 0 0 2px color-mix(in srgb, var(--or) 40%, transparent); } .fpl.inj { opacity: .55; }
+.bnch { display: flex; flex-wrap: wrap; gap: 6px; } .fpl.b { background: var(--p2); }
+.enb { display: block; width: 100%; max-width: 64px; height: 4px; border-radius: 2px; background: var(--p3); overflow: hidden; } .enb u { display: block; height: 100%; background: var(--gr); } .enb.lo u { background: var(--rd); }
+td .enb { width: 46px; }
+.tb.sqd td, .tb.sqd th { padding: 7px 6px; font-size: 13px; } .tb.sqd tr[data-a] { cursor: pointer; } .tb.sqd tr.xi td:first-child { box-shadow: inset 3px 0 0 var(--or); }
+.tb.sqd .tn b { display: inline; margin-right: 4px; } .tb.sqd .tn small { display: block; color: var(--mu); font-size: 11.5px; }
+.tg { display: inline-flex; align-items: center; gap: 2px; font-style: normal; font-size: 10.5px; padding: 1px 5px; border-radius: 3px; margin-right: 3px; background: var(--p3); color: var(--tx); vertical-align: middle; }
+.tg.cap { background: var(--ye); color: #14110e; font-weight: 800; } .tg.inj, .tg.ban { background: color-mix(in srgb, var(--rd) 35%, var(--p2)); } .tg.sl { background: color-mix(in srgb, var(--or) 35%, var(--p2)); } .tg.ln { background: color-mix(in srgb, var(--bl) 35%, var(--p2)); }
+.stars { color: var(--ye); letter-spacing: -1px; font-size: 12px; white-space: nowrap; }
+td em.lo { color: var(--rd); font-style: normal; font-weight: 700; }
+.toff, .ykid { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--ln); } .toff div, .ykid div { display: grid; gap: 2px; min-width: 0; } .toff small, .ykid small { color: var(--mu); font-size: 12px; }
+.ykid { grid-template-columns: auto 1fr auto auto; }
+.mini-b.gh { background: transparent; border: 1px solid var(--ln); color: var(--mu); }
+.btn2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 560px) { .hm { display: none; } .btn2 { grid-template-columns: 1fr; } .fpl { width: 60px; } .fpl b { font-size: 10.5px; } }
+/* canlı maç kontrolü */
+.mctl { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.mcb { display: grid; justify-items: center; gap: 3px; padding: 8px 4px; border-radius: 6px; background: var(--p1); border: 1px solid var(--ln); color: var(--tx); font: 700 12px/1.1 var(--fp); }
+.mcb:hover { border-color: var(--or); } .mcb em { font-style: normal; color: var(--or); }
+.mst { font-size: 12.5px; color: var(--mu); text-align: center; }
+.mlu { display: grid; gap: 3px; padding: 8px; border-radius: 6px; background: var(--p1); border: 1px solid var(--ln); }
+.mlh { font: 800 11px/1 var(--fh); letter-spacing: .08em; text-transform: uppercase; color: var(--mu); padding: 4px 2px 2px; }
+.mlr { display: grid; grid-template-columns: auto 1fr 52px 30px; gap: 6px; align-items: center; font-size: 12.5px; } .mlr span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 3px; } .mlr b { text-align: right; } .mlr b.hi { color: var(--gr); } .mlr b.lo { color: var(--rd); }
+.mlr.bn { opacity: .7; } .mlr.rd { opacity: .4; text-decoration: line-through; } .mlr .yc { display: inline-block; width: 7px; height: 10px; background: var(--ye); border-radius: 1px; }
+.fl.y { border-left-color: var(--ye); }
+.revs { display: grid; gap: 4px; margin-bottom: 8px; } .rev { display: grid; grid-template-columns: 34px 16px 1fr; gap: 6px; align-items: center; font-size: 13px; color: var(--mu); } .rev.us { color: var(--tx); font-weight: 600; }
+.rtl { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-bottom: 8px; } .rtl div { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; font-size: 12.5px; } .rtl .mom b { color: var(--ye); }
+main > section.card:has(> .tb.sqd) { column-span: all; }
+.seg button { min-width: 0; }
+.fr .fpl { flex: 1 1 0; max-width: 78px; min-width: 0; }
+@media (max-width: 560px) {
+  .seg.ctab button { font-size: 12.5px; gap: 3px; padding: 9px 2px; } .seg.ctab button svg { display: none; }
+  .seg.fms { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
+  .mctl { grid-template-columns: repeat(5, minmax(0, 1fr)); } .mcb { font-size: 11px; }
+  .toff { grid-template-columns: auto 1fr; } .toff .mini-b { grid-column: span 1; }
+}
+@media (max-width: 560px) {
+  .tb.sqd td, .tb.sqd th { padding: 6px 3px; font-size: 12px; }
+  .tb.sqd .tn { max-width: 118px; overflow: hidden; text-overflow: ellipsis; }
+  .tb.sqd .tn b { white-space: nowrap; }
+}
+@media (max-width: 999px) { .mgrm #feed { max-height: 260px; overflow: auto; } }
