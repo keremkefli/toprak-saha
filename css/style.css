@@ -673,3 +673,131 @@ main.fin > * { animation: fin .24s ease both; } @keyframes fin { from { opacity:
 .xir em { height: 6px; background: var(--ln); border-radius: 3px; overflow: hidden; display: block; } .xir em u { display: block; height: 100%; background: var(--gr); } .xir em.lo u { background: var(--rd); }
 .rum .rumb { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .cupn.chant { margin: 0 0 8px; font-style: italic; }
+
+/* =====================================================================
+   v15: menajer panosu dili — arduvaz paneller, başlık şeritli kartlar,
+   renk kademeli sayılar; geniş ekranda sol menü + çok sütunlu pano
+   ===================================================================== */
+:root {
+  --bg: #0b0f14; --p1: #121922; --p2: #1a2330; --p3: #223042; --ln: #263345;
+  --tx: #e9eef4; --mu: #8796a8; --fp: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sh: 0 1px 0 rgba(255, 255, 255, .035) inset, 0 8px 22px rgba(0, 0, 0, .28);
+}
+html, body { background: #06090d; }
+#app { background: linear-gradient(180deg, color-mix(in srgb, var(--or) 8%, transparent), transparent 280px), var(--bg); }
+
+/* düz, keskin parçalar: eğik etiketler yerine panel dili */
+.tagk, .chip, .mini-b, .rolep, .coachs em, .chg span, .ovr span, .scr small, #mini .mh, .art-n, .art-t, .rate, .trc em, .bar, .pw, .tlb, .dots i { transform: none; }
+.tagk { border-radius: 3px; padding: 5px 9px 4px; font-size: 12.5px; }
+.chip { border-radius: 3px; background: var(--p2); box-shadow: inset 0 0 0 1px var(--ln); }
+.chip.on { box-shadow: none; }
+.mini-b { border-radius: 3px; background: var(--p3); box-shadow: inset 0 0 0 1px var(--ln); }
+.mini-b:not(:disabled):hover { box-shadow: inset 0 0 0 1px var(--ye); }
+.rolep, .coachs em, .chg span, .ovr span, .scr small { border-radius: 3px; }
+.cta { clip-path: none; border-radius: 4px; font-size: 22px; box-shadow: 0 8px 24px color-mix(in srgb, var(--or) 30%, transparent), inset 0 -3px 0 rgba(0, 0, 0, .18); }
+.cta:not(:disabled):hover { filter: brightness(1.08); }
+.bar, .pw, .prefb { border-radius: 3px; background: #070a0e; } .pw { background: var(--rd); }
+.ring .rb { stroke: #070a0e; }
+.relr { background: conic-gradient(var(--col) calc(var(--v) * 1%), #070a0e 0); }
+.dots i { width: 14px; height: 8px; border-radius: 2px; }
+.icb { background: var(--p2); box-shadow: inset 0 0 0 1px var(--ln); }
+
+/* kartlar: başlık şeridi + kulüp rengi çizgisi */
+.card, .vsc, .gg, .coachs, .quest, .prefw, .tacs, .mctl, .sb, .fd, .pso { border-radius: 4px; box-shadow: var(--sh); }
+.card > .tagk:first-child { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; justify-self: stretch; margin: -14px -14px 2px; padding: 11px 14px 10px; border-radius: 4px 4px 0 0; background: linear-gradient(90deg, var(--p3), var(--p2) 70%); color: var(--tx); font: 700 12.5px/1 var(--fp); letter-spacing: .14em; border-bottom: 1px solid var(--ln); box-shadow: inset 3px 0 0 var(--or); }
+.card > .tagk.ye:first-child { box-shadow: inset 3px 0 0 var(--ye); }
+.card.np > .tagk:first-child { margin: -6px 0 4px; }
+main > section:has(> .sh) { background: var(--p1); border: 1px solid var(--ln); border-radius: 4px; padding-bottom: 10px; box-shadow: var(--sh); }
+main > section:has(> .sh) > :not(.sh) { margin: 10px 10px 0; }
+.sh { margin: 0; padding: 10px 12px 9px; border-radius: 4px 4px 0 0; background: linear-gradient(90deg, var(--p3), var(--p2) 70%); border-bottom: 1px solid var(--ln); box-shadow: inset 3px 0 0 var(--or); }
+.sh h4 { font: 700 12.5px/1 var(--fp); letter-spacing: .14em; }
+.sub { font: 700 11.5px/1 var(--fp); letter-spacing: .14em; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, .05); }
+
+/* eylem kutuları, haberler, seçenekler */
+.act { border-radius: 4px; background: var(--p2); border-color: var(--ln); }
+.act:first-child { background: linear-gradient(100deg, color-mix(in srgb, var(--or) 16%, var(--p3)), var(--p2)); border-color: color-mix(in srgb, var(--or) 40%, var(--ln)); }
+.act:not(:disabled):hover { background: var(--p3); }
+.aic { background: #0a0e13; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--ln); }
+.news li { background: var(--p2); border-radius: 0 3px 3px 0; }
+.opt { border-color: var(--ln); border-radius: 4px; }
+.opt:not(:disabled):hover { background: var(--p3); }
+.mbody p { color: #d6dee8; }
+#modal { background: rgba(3, 6, 10, .82); backdrop-filter: blur(3px); }
+.sheet { border-radius: 4px; box-shadow: 0 24px 60px rgba(0, 0, 0, .55); }
+#mini { background: #05080b; }
+.tabs { background: #0a0e13; }
+.top { background: linear-gradient(90deg, color-mix(in srgb, var(--or) 24%, #0b0f14), rgba(11, 15, 20, .96) 60%); border-bottom: 1px solid var(--ln); box-shadow: inset 0 -2px 0 var(--or), 0 6px 18px rgba(0, 0, 0, .3); }
+.ach { color: #4e5b6b; } .ach.on { background: color-mix(in srgb, var(--ye) 13%, var(--p2)); }
+
+/* oyuncu kartı: kulüp renginde profil başlığı */
+.hero { border-radius: 4px; background: linear-gradient(100deg, color-mix(in srgb, var(--c1) 20%, var(--p1)), var(--p1) 62%); box-shadow: var(--sh); }
+.hero-r { background: linear-gradient(180deg, rgba(255, 255, 255, .08), transparent 40%), repeating-linear-gradient(115deg, rgba(0, 0, 0, .14) 0 12px, transparent 12px 24px), var(--c1); }
+.form i { border-radius: 3px; }
+
+/* tablolar: zebra, başlık satırı */
+.tb th { background: var(--p2); padding: 8px 4px; font: 700 11px/1 var(--fp); letter-spacing: .12em; }
+.tb tr:nth-child(even) td { background: rgba(255, 255, 255, .022); }
+.tb tr[data-a="club"]:hover td { background: rgba(255, 255, 255, .06); }
+.card .kv + .kv { border-top: 1px solid rgba(255, 255, 255, .045); padding-top: 7px; }
+.tgrid div { box-shadow: inset 2px 0 0 var(--ln); border-radius: 3px; }
+
+/* özellikler: renk kademeli sayılar (1 zayıf … 5 dünya klası) */
+.ats { gap: 0; }
+.at { padding: 6px 4px 5px; border-bottom: 1px solid rgba(255, 255, 255, .05); }
+.at:nth-child(odd) { background: rgba(255, 255, 255, .02); }
+.at.key span { color: var(--tx); font-weight: 600; }
+.at.key span::before { content: ''; display: inline-block; width: 6px; height: 6px; margin: 0 6px 1px 0; border-radius: 50%; background: var(--or); }
+.at b { font-size: 19px; font-variant-numeric: tabular-nums; }
+.at b[data-t="1"] { color: #8f9cad; } .at b[data-t="2"] { color: #c3ccd8; } .at b[data-t="3"] { color: #f0d264; } .at b[data-t="4"] { color: #74dd8e; } .at b[data-t="5"] { color: #3ff0c0; text-shadow: 0 0 12px rgba(63, 240, 192, .35); }
+
+/* menü kartı (yalnızca geniş ekranda görünür) */
+.nvc { display: none; }
+
+@media (min-width: 1000px) {
+  #app { max-width: 1440px; }
+  #app[data-scr="hub"] { padding: 0 24px 48px 248px; }
+  #app[data-scr="title"], #app[data-scr="create"], #app[data-scr="end"] { max-width: 500px; }
+  .top { margin: 0 -24px 18px; padding: 12px 24px; min-height: 66px; }
+  .top .tc b { font-size: 25px; }
+  #app:has(.dock) .top { padding-right: 300px; }
+  .tabs { left: max(0px, calc(50vw - 720px)); right: auto; top: 0; bottom: 0; transform: none; width: 224px; grid-template-columns: 1fr; grid-auto-rows: min-content; align-content: start; gap: 3px; padding: 0 10px 16px; border-top: 0; border-right: 1px solid var(--ln); overflow-y: auto; }
+  .tabs::before { content: 'TOPRAK SAHA'; display: block; padding: 20px 8px 16px; font: 900 30px/.85 var(--fh); color: var(--tx); }
+  .nvc { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin: 0 0 12px; padding: 10px; border-radius: 4px; background: linear-gradient(100deg, color-mix(in srgb, var(--c1, var(--or)) 26%, var(--p1)), var(--p1)); border: 1px solid var(--ln); }
+  .nvc .avw { width: 46px; height: 46px; background: color-mix(in srgb, var(--c1, var(--or)) 50%, var(--p2)); }
+  .nvc div:not(.avw) { display: grid; gap: 2px; min-width: 0; }
+  .nvc b { font: 800 16px/1.05 var(--fh); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nvc small { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nvc em { font: 900 28px/1 var(--fh); font-style: normal; color: var(--ye); }
+  .nvc .bizc { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 8px; background: #2a2f45; color: #ffd23f; }
+  .tabs button { grid-template-columns: 22px 1fr; justify-items: start; align-items: center; gap: 12px; padding: 12px; font: 600 15px/1 var(--fp); letter-spacing: .01em; text-transform: none; border-radius: 4px; }
+  .tabs button:hover { background: var(--p1); color: var(--tx); }
+  .tabs button.on { background: var(--p2); color: var(--tx); }
+  .tabs button.on .ic { color: var(--or); }
+  .tabs button.on::before { top: 9px; bottom: 9px; left: 0; right: auto; width: 3px; height: auto; transform: none; border-radius: 2px; }
+  .tabs button em { top: 50%; left: auto; right: 10px; transform: translateY(-50%); }
+  .dock { top: 11px; bottom: auto; left: auto; right: max(24px, calc(50vw - 696px)); transform: none; width: 260px; padding: 0; background: none; }
+  .dock .cta { padding: 12px 14px; font-size: 20px; }
+  main { display: block; columns: 2; column-gap: 16px; }
+  main > *, main > .hvw > * { break-inside: avoid; margin-bottom: 16px; }
+  main > .hvw { display: contents; }
+  main > .hero.big, main > .seg, main > .hvw > .seg { column-span: all; }
+  .hero.big { min-height: 230px; grid-template-columns: 1fr 260px; }
+  .hero.big .hero-l { padding: 22px 0 18px 24px; }
+  .hero.big h2 { font-size: 40px; } .hero.big h2 span { font-size: 62px; }
+  .hero.big .ovr b { font-size: 78px; }
+  .sheet { width: min(540px, 100%); }
+  #toast { top: 84px; }
+  /* maç: solda saha ve kontroller, sağda canlı akış */
+  #app[data-scr="match"] { max-width: 1120px; padding: 0 24px 40px; }
+  .match { position: relative; padding-right: calc(38% + 18px); min-height: calc(100dvh - 40px); }
+  .match > #feed { position: absolute; top: 16px; right: 0; bottom: 0; width: 38%; overflow-y: auto; align-content: start; padding: 10px; background: var(--p1); border: 1px solid var(--ln); border-radius: 4px; box-shadow: var(--sh); }
+}
+@media (min-width: 1000px) {
+  main > .fld { column-span: all; max-width: 420px; }
+  main > .fld:has(+ .fld) { margin-bottom: 8px; }
+  main > section:has(> .feedl) { break-inside: auto; background: none; border: 0; box-shadow: none; padding: 0; animation: none; }   /* bölünen öğede kayma animasyonu Chrome'da boyamayı bozuyor */
+  main > section:has(> .feedl) > .feedl { margin: 10px 0 0; display: block; }
+  .feedl > * { break-inside: avoid; margin-bottom: 8px; }
+  .sh { border: 1px solid var(--ln); }
+}
+@media (min-width: 1400px) { main { columns: 3; } main:has(> .card.np .tb.lg) { columns: 2; } }
