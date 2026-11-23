@@ -801,3 +801,10 @@ main > section:has(> .sh) > :not(.sh) { margin: 10px 10px 0; }
   .sh { border: 1px solid var(--ln); }
 }
 @media (min-width: 1400px) { main { columns: 3; } main:has(> .card.np .tb.lg) { columns: 2; } }
+
+/* gizlilik ve künye */
+.lgl { display: grid; gap: 5px; padding-top: 9px; border-top: 1px solid var(--ln); }
+.lgl:first-child { border-top: 0; padding-top: 0; }
+.lgl b { font: 700 12px/1 var(--fp, var(--fb)); letter-spacing: .12em; text-transform: uppercase; color: var(--mu); }
+.lgl p { font-size: 14px; line-height: 1.45; }
+.lgl a { color: var(--or); overflow-wrap: anywhere; }
