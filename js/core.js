@@ -82,7 +82,7 @@ export function load() {
     for (const id of [...XIDS, ...WIDS]) S.rt[id] ??= CLUBS[id].r;
     S.co ??= {}; S.eps ??= ['en1', 'es1']; S.hon ??= {}; S.ivq ??= []; S.moves ??= []; S.adapt ??= 0; S.cup.top ??= cupTop();
     if (!S.cl || !S.el || S.cl.weeks.length < 13) { delete S.euro; initEuro(euroQual()); }
-    if (!S.nt) ntInit();
+    if (!S.nt) ntInit(); if (!S.yt) ntInit('yt'); S.car.ycaps ??= 0; S.car.yng ??= 0;
     if (!S.cs) { S.cs = {}; for (const h of S.hist) { const id = Object.keys(CLUBS).find(k => CLUBS[k].n === h.c) || Object.keys(S.gen).find(k => S.gen[k].n === h.c); if (id) { const c = S.cs[id] || (S.cs[id] = { apps: 0, g: 0 }); c.apps += h.apps; c.g += h.g; } } }
     S.up ??= {}; S.fx ??= {}; S.sq ??= {}; S.cr ??= {}; S.xc ??= []; S.inv ??= {}; S.duel ??= {}; S.xl ??= {}; S.rel.basin ??= 50; S.kid ??= S.fl.cocuk ? { n: rname('TR').split(' ')[0] + ' ' + S.name.split(' ').slice(-1)[0], born: S.season - 2, tal: 0 } : null;
     if (S.fl.gurbet) S.gur ??= 'DE';
@@ -216,7 +216,7 @@ export function newCareer(o) {
     hid: { prof: 50, ego: 30, sad: 50 },
     fl: { okul: 1, ...(O.fl || {}) }, cd: {}, q: [], clubId: null, con: null, agent: null,
     inj: 0, ban: 0, banR: '', bench: 0, job: 0, assets: [], spon: [],
-    st: { apps: 0, g: 0, a: 0, rs: 0, cs: 0, lg: 0 }, car: { apps: 0, g: 0, a: 0, rs: 0, caps: 0, ng: 0 },
+    st: { apps: 0, g: 0, a: 0, rs: 0, cs: 0, lg: 0 }, car: { apps: 0, g: 0, a: 0, rs: 0, caps: 0, ng: 0, ycaps: 0, yng: 0 },
     hist: [], tro: [], news: [], lastR: [], lastAvg: 0, peak: 0, peakC: 0, since: 1,
     gen: {}, rt: {}, lg: {}, sc: {}, rival: null, over: null, tstat: 'mutlu', watch: [], loan: null, cup: null, euro: null, dream: null, perks: [], pp: 0, px: 0, ach: {}, feed: [], feedNew: 0, pop: [], mr: [], awards: 0, refs: [], refi: 0, fu: [], mates: [], net: [], quest: null, po: null, diff: o.diff || 'normal', num: clamp(+o.num || 9, 1, 99), cele: o.cele || 'kayarak', nick: o.nick || '', ht: o.ht || 'orta', build: o.build || 'atletik', style: o.style || 0,
   };
@@ -244,13 +244,23 @@ export function newCareer(o) {
     for (const id in W.cs || {}) if (W.cs[id].apps >= 15) (S.xl[id] || (S.xl[id] = [])).push({ n: W.name, g: W.cs[id].g, apps: W.cs[id].apps, y: W.year });
     S.parent = { n: W.name, peak: W.peak, rep: Math.round(W.rep) }; S.rel.aile = clamp(S.rel.aile + 10, 0, 100); S.rep = 3; S.fol = Math.round(500 + W.fol * .01); S.fl.torpil = 1;
   }
-  ntInit();
+  ntInit(); ntInit('yt');
   S.rival = { n: rname('TR'), ovr: OVR() + ri(1, 4), pot: ri(82, 90), c: '' };
   if (o.wait) return;   // arayüz: ilk kulüp deneme antrenmanlarıyla bulunur
   const lid = 'tr' + O.tier;
   // hızlı başlangıç: forma şansı bulabileceğin güçte bir takım
   const byR = [...S.lg[lid].t].sort((a, b) => S.rt[a] - S.rt[b]), fit = byR.filter(x => S.rt[x] <= OVR() + 1);
   signFirst({ id: pick(fit.length >= 2 ? fit.slice(-5) : byR.slice(0, 3)), role: '11' });
+}
+// Doğrudan teknik direktör ya da menajer olarak başlama: futbolcu geçmişi olmayan kısa bir kurulum.
+// bg: 'sifir' (tanınmayan biri) ya da 'eski' (adı bilinen eski futbolcu: biraz itibar ve birikim)
+export function newStaff(o) {
+  newCareer({ ...o, pos: 'OS', foot: 'Sağ', origin: 'mahalle', trait: 'sakin', ht: 'orta', build: 'atletik', style: 0, wait: true });
+  const old = o.bg === 'eski';
+  S.age = ri(33, 37); S.rep = old ? 30 : 10; S.money = old ? 400000 : 40000; S.fol = old ? ri(20000, 40000) : ri(300, 900); S.fl.staff = 1; delete S.fl.okul;
+  const low = [...S.lg[TRT[TRT.length - 1]].t].sort((a, b) => S.rt[a] - S.rt[b]);
+  signFirst({ id: low[0], role: '11', wage: 0 }); S.news = []; S.feed = []; S.feedNew = 0;
+  if (o.role === 'agent') bizStart('agent');
 }
 // İlk sözleşme: kulüp belli olunca sezonun geri kalanı kurulur
 export function signFirst(o) {
@@ -435,7 +445,7 @@ export function endWeek(own, ownCup, ownEuro, ownX) {
     if (s.assets.length < before) addNews(tt('Hesap ekside. Haftalık abonelikler iptal edildi.'));
   }
   s.spon = s.spon.filter(x => x.until > absWeek());
-  if (NATW.includes(s.week)) natApply(null);
+  if (NATW.includes(s.week)) { natApply(null); natApply(null, 'yt'); }
   invStep();
   if (s.kid && has('akademi')) s.kid.tal = clamp(s.kid.tal + .06, 0, 20);
   if ([7, 15, 26, 33].includes(s.week) && chance(.55)) crisisStep();
@@ -806,82 +816,87 @@ export function acceptOffer(o) {
 // ---------- milli takım ----------
 // Milli takım haftaları: iki sezonda altı eleme maçı, çift yıllarda yaz turnuvası
 // Kadınlarda turnuvalar tek yıllarda: 2027 Dünya Turnuvası, 2029 Avrupa Turnuvası, 2031 Dünya Turnuvası…
-const NATW = [9, 17, 27], NTN_E = { euro: 'Avrupa Turnuvası', wc: 'Dünya Turnuvası' }, NTN_K = { euro: 'Kadınlar Avrupa Turnuvası', wc: 'Kadınlar Dünya Turnuvası' };
+// Genç milli takım (erkeklerde U21, kadınlarda U19): aynı haftalarda kendi elemeleri, tek yıllarda (kadınlarda çift yıllarda) yaz turnuvası
+const NATW = [9, 17, 27], NTN_E = { euro: 'Avrupa Turnuvası', wc: 'Dünya Turnuvası', yeuro: 'U21 Avrupa Turnuvası' }, NTN_K = { euro: 'Kadınlar Avrupa Turnuvası', wc: 'Kadınlar Dünya Turnuvası', yeuro: 'U19 Kadınlar Avrupa Turnuvası' };
 let NTN = NTN_E;
 const WORLD_E = [['İngiltere', 87], ['Belçika', 82], ['Danimarka', 79], ['Brezilya', 87], ['Arjantin', 88], ['Uruguay', 81], ['Kolombiya', 80], ['ABD', 77], ['Meksika', 77], ['Japonya', 78], ['Güney Kore', 76], ['Fas', 80], ['Senegal', 78], ['Nijerya', 76], ['Avustralya', 73]];
 let WORLD = WORLD_E;
 export const myNat = () => NATN[S.nat] || 'Türkiye';
-const natR = n => (NATIONS.find(x => x[0] === n) || WORLD.find(x => x[0] === n) || [n, 75])[1];
+export const natR = n => (NATIONS.find(x => x[0] === n) || WORLD.find(x => x[0] === n) || [n, 75])[1];
 export const natOk = () => !S.mgr && OVR() >= (KW ? natR(myNat()) - 6 : 73) && S.rep >= (KW ? 35 : 45);
-function ntInit() {
-  const y = S.year + 1, ty = (y % 2 === 0) !== KW ? y : y + 1, me = myNat(), pool = NATIONS.filter(x => x[0] !== me), pk = f => pick(pool.filter(f))[0];
-  S.nt = { kind: ty % 4 === (KW ? 1 : 0) ? 'euro' : 'wc', year: ty, grp: [pk(x => x[1] >= 83), pk(x => x[1] >= 75 && x[1] < 83), pk(x => x[1] < 75)], tb: {}, md: ty === y ? 3 : 0, wk: 0, q: null, tour: null, last: null };
+export const YD = 16, yAge = () => (KW ? 19 : 21), ySuf = () => (KW ? ' U19' : ' U21');   // genç milli: güç farkı, yaş sınırı, takım eki
+export const yOk = () => !S.mgr && !natOk() && S.age <= yAge() && OVR() >= (KW ? natR(myNat()) - 22 : 50);
+function ntInit(k = 'nt') {
+  const y = S.year + 1, yt = k === 'yt', ty = yt ? ((y % 2 === 1) !== KW ? y : y + 1) : (y % 2 === 0) !== KW ? y : y + 1, me = myNat(), pool = NATIONS.filter(x => x[0] !== me), pk = f => pick(pool.filter(f))[0];
+  S[k] = { kind: yt ? 'yeuro' : ty % 4 === (KW ? 1 : 0) ? 'euro' : 'wc', year: ty, grp: [pk(x => x[1] >= 83), pk(x => x[1] >= 75 && x[1] < 83), pk(x => x[1] < 75)], tb: {}, md: ty === y ? 3 : 0, wk: 0, q: null, tour: null, last: null };
 }
-const ntMatch = () => { const t = S.nt, i = t.md % 3; return { opp: t.grp[i], home: t.md < 3 ? i % 2 === 0 : i % 2 === 1 }; };
+const ntMatch = (k = 'nt') => { const t = S[k], i = t.md % 3; return { opp: t.grp[i], home: t.md < 3 ? i % 2 === 0 : i % 2 === 1 }; };
 const tbRec = (tb, a, b, ag, bg) => {
   const row = n => tb[n] || (tb[n] = [0, 0, 0, 0, 0, 0]), A = row(a), B = row(b);
   A[0]++; B[0]++; A[4] += ag; A[5] += bg; B[4] += bg; B[5] += ag;
   if (ag > bg) { A[1]++; B[3]++; } else if (ag < bg) { B[1]++; A[3]++; } else { A[2]++; B[2]++; }
 };
 const tbSort = (tb, names) => names.map(n => { const r = tb[n] || [0, 0, 0, 0, 0, 0]; return { n, p: r[0], w: r[1], d: r[2], l: r[3], gd: r[4] - r[5], gf: r[4], pts: r[1] * 3 + r[2] }; }).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || natR(b.n) - natR(a.n));
-export const ntTable = () => tbSort(S.nt.tb, [myNat(), ...S.nt.grp]);
-export function ntInfo() {
-  const t = S.nt, nx = t.md < 6 ? ntMatch() : null, wk = NATW.find(w => w >= S.week);
+export const ntTable = (k = 'nt') => tbSort(S[k].tb, [myNat(), ...S[k].grp]);
+export function ntInfo(k = 'nt') {
+  const t = S[k], nx = t.md < 6 ? ntMatch(k) : null, wk = NATW.find(w => w >= S.week);
   return { name: NTN[t.kind], year: t.year, md: t.md, q: t.q, next: nx && wk ? { ...nx, week: wk } : null, last: t.last };
 }
 // Eleme maç günü. own: {us, opp} oynadıysan; yoksa simüle edilir
-export function natApply(own) {
-  const t = S.nt; if (!t || t.md >= 6 || t.wk === absWeek()) return;
+export function natApply(own, k = 'nt') {
+  const t = S[k]; if (!t || t.md >= 6 || t.wk === absWeek()) return;
   t.wk = absWeek();
-  const me = myNat(), m = ntMatch(); let us, op;
+  const me = myNat(), m = ntMatch(k), yt = k === 'yt', meN = yt ? me + ySuf() : me; let us, op;
   if (own) { us = own.us; op = own.opp; } else { const [h, a] = m.home ? simScore(natR(me), natR(m.opp)) : simScore(natR(m.opp), natR(me)); us = m.home ? h : a; op = m.home ? a : h; }
   tbRec(t.tb, me, m.opp, us, op);
   const rest = t.grp.filter(x => x !== m.opp), [h2, a2] = simScore(natR(rest[0]), natR(rest[1])); tbRec(t.tb, rest[0], rest[1], h2, a2);
   t.md++;
-  if (!own) addFeed('fed', tt('Milli Takımlar'), tt`${NTN[t.kind]} Elemeleri: ${me} ${us}-${op} ${m.opp}.`, 'haber');
+  if (!own && (!yt || yOk())) addFeed('fed', tt('Milli Takımlar'), tt`${NTN[t.kind]} Elemeleri: ${meN} ${us}-${op} ${m.opp}.`, 'haber');
   if (t.md === 6) {
-    const pos = ntTable().findIndex(r => r.n === me) + 1; t.q = pos <= 2;
-    addNews(t.q ? tt`${me}, ${t.year} ${NTN[t.kind]} biletini aldı!` : tt`${me} elemelerde ${pos}. oldu; ${t.year} ${NTN[t.kind]} hayali bitti.`, 'flag');
-    addFeed('basin', tt('Saha Kenarı'), t.q ? tt`${tt(me).toLocaleUpperCase(LC)} ${t.year} ${tt(NTN[t.kind]).toLocaleUpperCase(LC)}'NDA!` : tt`${me} ${NTN[t.kind]}'na gidemiyor.`, 'manset');
+    const pos = ntTable(k).findIndex(r => r.n === me) + 1; t.q = pos <= 2;
+    if (!yt || yOk() || S.car.ycaps) addNews(t.q ? tt`${meN}, ${t.year} ${NTN[t.kind]} biletini aldı!` : tt`${meN} elemelerde ${pos}. oldu; ${t.year} ${NTN[t.kind]} hayali bitti.`, 'flag');
+    if (!yt) addFeed('basin', tt('Saha Kenarı'), t.q ? tt`${tt(me).toLocaleUpperCase(LC)} ${t.year} ${tt(NTN[t.kind]).toLocaleUpperCase(LC)}'NDA!` : tt`${me} ${NTN[t.kind]}'na gidemiyor.`, 'manset');
   }
 }
 export function natFixture() {
   const s = S; if (!NATW.includes(s.week) || s.inj > 0 || s.ban > 0 || s.mgr) return null;
   const o = OVR(), me = myNat(); let lvl = null;
-  if (natOk()) lvl = 'A'; else if (KW ? s.age <= 19 && o >= natR(me) - 22 : s.age <= 21 && o >= 56) lvl = 'U21';   // kadınlarda genç milli takım U19
+  if (natOk()) lvl = 'A'; else if (yOk()) lvl = 'U21';   // kadınlarda genç milli takım U19
   if (!lvl) return null;
   if (lvl === 'A' && s.nt && s.nt.md < 6) { const m = ntMatch(); return { nat: true, lvl, q: true, name: NTN[s.nt.kind] + ' Elemeleri', usN: me, usR: natR(me), opp: { n: m.opp, r: natR(m.opp) }, home: m.home }; }
-  const op = pick(NATIONS.filter(x => x[0] !== me)), d = lvl === 'A' ? 0 : -16, suf = lvl === 'A' ? '' : KW ? ' U19' : ' U21';
+  if (lvl === 'U21' && s.yt && s.yt.md < 6) { const m = ntMatch('yt'); return { nat: true, lvl, q: true, k: 'yt', name: NTN.yeuro + ' Elemeleri', usN: me + ySuf(), usR: natR(me) - YD, opp: { n: m.opp + ySuf(), r: natR(m.opp) - YD }, home: m.home }; }
+  const op = pick(NATIONS.filter(x => x[0] !== me)), d = lvl === 'A' ? 0 : -YD, suf = lvl === 'A' ? '' : ySuf();
   return { nat: true, lvl, name: 'Hazırlık maçı', usN: me + suf, usR: natR(me) + d, opp: { n: op[0] + suf, r: op[1] + d }, home: true };
 }
 // Yaz turnuvası: sezon bittikten sonra çağrılır. Bilet yoksa null döner.
-export function tourStart() {
-  const t = S.nt; if (!t || t.year !== S.year || t.tour) return t && t.tour ? t.tour : null;
-  while (t.md < 6) { t.wk = -1; natApply(null); }
-  if (!t.q) { ntInit(); return null; }
-  const me = myNat(), key = {}, all = (t.kind === 'euro' ? NATIONS : [...NATIONS, ...WORLD]).filter(x => x[0] !== me);
+export function tourStart(k = 'nt') {
+  const t = S[k]; if (!t || t.year !== S.year || t.tour) return t && t.tour ? t.tour : null;
+  while (t.md < 6) { t.wk = -1; natApply(null, k); }
+  if (!t.q) { ntInit(k); return null; }
+  const yt = k === 'yt';
+  const me = myNat(), key = {}, all = (t.kind !== 'wc' ? NATIONS : [...NATIONS, ...WORLD]).filter(x => x[0] !== me);
   all.forEach(x => { key[x[0]] = x[1] + rnd(0, 9); });
   const field = all.map(x => x[0]).sort((a, b) => key[b] - key[a]).slice(0, 11), grp = shuffle([...field]).slice(0, 3);
-  t.tour = { name: `${t.year} ${NTN[t.kind]}`, me: natOk() && S.inj <= 0, grp, tb: {}, md: 0, st: 'g', pool: field.filter(x => !grp.includes(x)), res: [], next: null };
-  addFeed('fed', tt('Milli Takımlar'), tt`${t.tour.name} başlıyor. ${me} grubu: ${grp.map(x => tt(x)).join(', ')}.`, 'manset');
+  t.tour = { name: `${t.year} ${NTN[t.kind]}`, me: (yt ? yOk() : natOk()) && S.inj <= 0, grp, tb: {}, md: 0, st: 'g', pool: field.filter(x => !grp.includes(x)), res: [], next: null, k };
+  if (!yt || t.tour.me) addFeed('fed', tt('Milli Takımlar'), tt`${t.tour.name} başlıyor. ${yt ? me + ySuf() : me} grubu: ${grp.map(x => tt(x)).join(', ')}.`, 'manset');
   return t.tour;
 }
 const TRN = { qf: 'Çeyrek final', sf: 'Yarı final', f: 'Final' };
-export function tourFixture() {
-  const T = S.nt && S.nt.tour; if (!T || T.st === 'out' || T.st === 'champ') return null;
-  const me = myNat(), g = T.st === 'g', opp = g ? T.grp[T.md] : T.next;
-  return { nat: true, lvl: 'A', tour: true, kof: !g, final: T.st === 'f', name: T.name, round: g ? `Grup ${T.md + 1}/3` : TRN[T.st], usN: me, usR: natR(me), opp: { n: opp, r: natR(opp) } };
+export function tourFixture(k = 'nt') {
+  const T = S[k] && S[k].tour; if (!T || T.st === 'out' || T.st === 'champ') return null;
+  const me = myNat(), g = T.st === 'g', opp = g ? T.grp[T.md] : T.next, yt = k === 'yt', d = yt ? YD : 0, sf = yt ? ySuf() : '';
+  return { nat: true, lvl: yt ? 'U21' : 'A', k, tour: true, kof: !g, final: T.st === 'f', name: T.name, round: g ? `Grup ${T.md + 1}/3` : TRN[T.st], usN: me + sf, usR: natR(me) - d, opp: { n: opp + sf, r: natR(opp) - d }, oppN: opp };
 }
 // own: {us, opp, win} oynadıysan; yoksa simüle edilir
-export function tourRound(own) {
-  const T = S.nt.tour, me = myNat(), f = tourFixture(); if (!f) return;
+export function tourRound(own, k = 'nt') {
+  const T = S[k].tour, me = myNat(), f = tourFixture(k), yt = k === 'yt', meN = yt ? me + ySuf() : me; if (!f) return;
   let us, op, win;
   if (own) { us = own.us; op = own.opp; win = own.win; } else { [us, op] = simScore(f.usR - 2, f.opp.r); win = us > op || (us === op && chance(.5)); }
-  T.res.push([f.round, f.opp.n, us, op, f.kof ? (win ? 1 : 0) : us > op ? 1 : us < op ? 0 : 2]);
+  T.res.push([f.round, f.oppN, us, op, f.kof ? (win ? 1 : 0) : us > op ? 1 : us < op ? 0 : 2]);
   const draw = () => { T.pool.sort((a, b) => natR(b) - natR(a)); return T.pool.splice(ri(0, Math.min(3, T.pool.length - 1)), 1)[0]; };
   if (T.st === 'g') {
-    tbRec(T.tb, me, f.opp.n, us, op);
-    const rest = T.grp.filter(x => x !== f.opp.n), [h, a] = simScore(natR(rest[0]) - 2, natR(rest[1])); tbRec(T.tb, rest[0], rest[1], h, a);
+    tbRec(T.tb, me, f.oppN, us, op);
+    const rest = T.grp.filter(x => x !== f.oppN), [h, a] = simScore(natR(rest[0]) - 2, natR(rest[1])); tbRec(T.tb, rest[0], rest[1], h, a);
     T.md++;
     if (T.md === 3) { if (tbSort(T.tb, [me, ...T.grp]).findIndex(r => r.n === me) < 2) { T.st = 'qf'; T.next = draw(); } else T.st = 'out'; }
   } else if (!win) T.st = 'out';
@@ -890,12 +905,12 @@ export function tourRound(own) {
   if (T.st !== 'out' && T.st !== 'champ') return;
   const champ = T.st === 'champ', last = { name: T.name, res: T.res, champ, me: T.me, stage: champ ? 'Şampiyon' : T.res[T.res.length - 1][0] };
   if (champ) {
-    if (T.me) { S.tro.push(T.name); fx({ rep: 12, taraf: 10, mo: 20, fol: Math.round(5000 + S.fol * .3) }); unlock('milk'); }
-    addNews(tt`${me} ${T.name} ŞAMPİYONU!`, 'trophy'); addFeed('basin', tt('Saha Kenarı'), tt`TARİHÎ GECE: ${tt(me).toLocaleUpperCase(LC)} ${tt(T.name).toLocaleUpperCase(LC)} ŞAMPİYONU!`, 'manset');
-  } else addNews(tt`${me}, ${T.name} yolculuğunu ${tt(last.stage).toLocaleLowerCase(LC)} aşamasında noktaladı.`, 'flag');
-  ntInit(); S.nt.last = last;
+    if (T.me) { S.tro.push(T.name); fx(yt ? { rep: 5, taraf: 4, mo: 15, fol: Math.round(2000 + S.fol * .1) } : { rep: 12, taraf: 10, mo: 20, fol: Math.round(5000 + S.fol * .3) }); if (!yt) unlock('milk'); }
+    addNews(tt`${meN} ${T.name} ŞAMPİYONU!`, 'trophy'); addFeed('basin', tt('Saha Kenarı'), tt`TARİHÎ GECE: ${tt(meN).toLocaleUpperCase(LC)} ${tt(T.name).toLocaleUpperCase(LC)} ŞAMPİYONU!`, 'manset');
+  } else if (!yt || T.me) addNews(tt`${meN}, ${T.name} yolculuğunu ${tt(last.stage).toLocaleLowerCase(LC)} aşamasında noktaladı.`, 'flag');
+  ntInit(k); S[k].last = last;
 }
-export const tourTable = () => { const T = S.nt.tour; return T ? tbSort(T.tb, [myNat(), ...T.grp]) : []; };
+export const tourTable = (k = 'nt') => { const T = S[k].tour; return T ? tbSort(T.tb, [myNat(), ...T.grp]) : []; };
 
 
 // ---------- maç ----------
@@ -1043,7 +1058,11 @@ export function postMatch(M) {
   if (M.role === 'yedek') M.rt = 6 + (M.rt - 6) * 0.8;
   M.rt = clamp(Math.round(M.rt * 10) / 10, 3, 10);
   const rt = M.rt, cr = s.rt[s.clubId];
-  if (M.nat) {
+  if (M.nat && M.fxt.lvl === 'U21') {   // genç milli maçlar A milli sayısına yazılmaz
+    s.car.ycaps++; s.car.yng += M.pg;
+    fx({ rep: .6 + M.pg * .4, mo: win ? 4 : 0 });
+    lines.push(tt`${s.car.ycaps}. genç milli maçın.`); if (s.car.ycaps === 1) docAdd('gmilli', tt('Genç milli formayla ilk maç'), 4, 'flag');
+  } else if (M.nat) {
     s.car.caps++; s.car.ng += M.pg;
     fx({ rep: 1.5 + M.pg, mo: win ? 6 : 0 });
     lines.push(tt`${s.car.caps}. milli maçın.`); if (s.car.caps === 1) docAdd('milli', tt('Milli formayla ilk maç'), 6, 'flag');
@@ -2054,7 +2073,7 @@ function ivCtx(fxt, M) {
 // Duruma uyan, yakın zamanda sorulmamış n soru seçer
 export const ivDue = () => S.ivm !== 'final' && absWeek() >= (S.ivn || 0);   // mikrofonlar her hafta uzanmaz
 export function ivPick(kind, fxt, M, n = 2) {
-  if (kind !== 'imza') S.ivn = absWeek() + (S.ivm === 'sik' ? ri(2, 3) : ri(6, 9));
+  if (kind !== 'imza') S.ivn = absWeek() + (S.ivm === 'sik' ? ri(2, 3) : ri(10, 14));
   const c = ivCtx(fxt, M), seen = S.ivq || (S.ivq = []), ok = IVQ.filter(q => q.k === kind && (!q.if || q.if(c)));
   const w = {}; ok.forEach(q => { w[q.id] = (q.w || 1) * (q.if ? 2.5 : 1) * (seen.includes(q.id) ? .04 : 1); });
   const out = [];
@@ -2212,7 +2231,8 @@ export function mgrAfter(M, win) {
 // Transfer dönemi: üç hedef. plus: takım gücüne katkı
 export function mgrMarket() {
   const s = S, base = mgrBud(s.clubId), L = LMAP[leagueOf(s.clubId)];
-  return [.4, .8, 1.3].map((pl, i) => ({ n: rname(pick([L.c, L.c, 'TR', 'EN', 'ES'])), pos: pick([tt('Forvet'), tt('Kanat'), tt('Orta saha'), tt('Stoper'), tt('Kaleci')]), plus: +(pl + rnd(-.15, .2)).toFixed(1), cost: nice(base * [.6, 1.3, 2.4][i] * rnd(.85, 1.2)), age: ri(19, 31) }));
+  const loc = !L || (L.c === 'TR' && (L.tier || 1) >= tierCfg().low);   // alt liglerde ve amatörde yabancı oyuncu masaya gelmez
+  return [.4, .8, 1.3].map((pl, i) => ({ n: rname(loc ? 'TR' : pick([L.c, L.c, 'TR', 'EN', 'ES'])), pos: pick([tt('Forvet'), tt('Kanat'), tt('Orta saha'), tt('Stoper'), tt('Kaleci')]), plus: +(pl + rnd(-.15, .2)).toFixed(1), cost: nice(base * [.6, 1.3, 2.4][i] * rnd(.85, 1.2)), age: ri(19, 31) }));
 }
 export function mgrBuy(t) { const m = S.mgr; if (m.bud < t.cost) return false; m.bud -= t.cost; S.rt[S.clubId] = clamp(S.rt[S.clubId] + t.plus, 15, 95); m.conf = clamp(m.conf + 2, 0, 100); addFeed('basin', tt('Transfer Hattı'), tt`RESMÎ: ${t.n} artık ${club(S.clubId).n} oyuncusu.`, 'manset'); return true; }
 export function mgrSell() { const m = S.mgr, v = nice(mgrBud(S.clubId) * .9); m.bud += v; S.rt[S.clubId] = clamp(S.rt[S.clubId] - 1.3, 15, 95); m.conf = clamp(m.conf - 4, 0, 100); addFeed('taraftar', pick(FANS), tt('Yıldızımızı sattılar. Hayırlı olsun da kim oynayacak?')); return v; }
@@ -2232,25 +2252,27 @@ export function mgrSeason(rep) {
   return lines;
 }
 export function mgrEvent() {
-  const s = S, m = s.mgr; if (!chance(.16)) return null;
+  const s = S, m = s.mgr, now = absWeek(); if (now - (m.evw ?? -99) < 4 || !chance(.2)) return null;   // olaylar arasında en az dört hafta
   const id = s.clubId, up = v => { s.rt[id] = clamp(s.rt[id] + v, 15, 95); }, cf = v => { m.conf = clamp(m.conf + v, 0, 100); }, star = s.sc[id] && s.sc[id][0] ? s.sc[id][0][0] : 'Takımın yıldızı', b = mgrBud(id);
   const list = [
-    { p: 'takim', i: 'alert', t: tt('Yıldız gitmek istiyor'), d: tt`${star} kapını çaldı: "Üst ligden teklif var, beni bırakın."`, o: [
+    { id: 'yildiz', p: 'takim', i: 'alert', t: tt('Yıldız gitmek istiyor'), d: tt`${star} kapını çaldı: "Üst ligden teklif var, beni bırakın."`, o: [
       [tt('Sat, parayı al'), tt('Bütçe artar, takım zayıflar'), () => { m.bud += nice(b * .9); up(-1.2); cf(-3); return [tt('Bütçe +') + fmtS(nice(b * .9)), tt('Takım gücü −1,2'), tt('Güven −3')]; }],
       [tt('İkna et'), tt('Tutarsa kalır; tutmazsa küser'), () => (chance(.5 + s.rep / 300) ? (cf(2), [tt('Kaldı'), tt('Güven +2')]) : (up(-.5), [tt('Kaldı ama keyfi yok'), tt('Takım gücü −0,5')]))],
       [tt('Zam yap'), tt('Bütçeden gider'), () => { m.bud = Math.max(0, m.bud - nice(b * .3)); return [tt('Bütçe −') + fmtS(nice(b * .3))]; }]] },
-    { p: 'taraftar', i: 'users', t: tt('Tribün ses veriyor'), d: tt('Taraftar grubu tesis kapısında. Konuşmak istiyorlar.'), o: [
+    { id: 'tribun', p: 'taraftar', i: 'users', t: tt('Tribün ses veriyor'), d: tt('Taraftar grubu tesis kapısında. Konuşmak istiyorlar.'), o: [
       [tt('Yanlarına git'), tt('Yüzleş, dinle'), () => (chance(.65) ? (cf(4), [tt('Güven +4')]) : (cf(-2), [tt('Güven −2')]))],
       [tt('Arka kapıdan çık'), tt('Bugün uğraşma'), () => { cf(-3); return [tt('Güven −3')]; }]] },
-    { p: 'doktor', i: 'plus', t: tt('Sakatlık krizi'), d: tt('Bir haftada üç oyuncu revire girdi. Kadro daraldı.'), o: [
+    { id: 'sakat', p: 'doktor', i: 'plus', t: tt('Sakatlık krizi'), d: tt('Bir haftada üç oyuncu revire girdi. Kadro daraldı.'), o: [
       [tt('Takviye yap'), tt('Bütçeden gider'), () => { m.bud = Math.max(0, m.bud - nice(b * .35)); return [tt('Bütçe −') + fmtS(nice(b * .35))]; }],
       [tt('Altyapıdan tamamla'), tt('Bedava ama riskli'), () => (chance(.4) ? (up(.2), cf(2), [tt('Gençler şaşırttı'), tt('Takım gücü +0,2')]) : (up(-.6), [tt('Takım gücü −0,6')]))],
       [tt('İdare et'), tt('Kadro zayıflar'), () => { up(-.4); return [tt('Takım gücü −0,4')]; }]] },
-    { p: 'basin', i: 'mic', t: tt('Mikrofonlar sende'), d: tt('Canlı yayında soru geldi: "Bu sezon hedef ne?"'), o: [
+    { id: 'basin', p: 'basin', i: 'mic', t: tt('Mikrofonlar sende'), d: tt('Canlı yayında soru geldi: "Bu sezon hedef ne?"'), o: [
       [tt('Büyük konuş'), tt('Tutarsa alkış, tutmazsa yuh'), () => { cf(chance(.5) ? 5 : -4); return [tt('Söz ağızdan çıktı')]; }],
       [tt('Maç maç bakıyoruz'), tt('Güvenli cevap'), () => { cf(1); return [tt('Güven +1')]; }]] },
   ];
-  return pick(list);
+  const seen = m.evr || (m.evr = {}), ok = list.filter(e => now - (seen[e.id] ?? -99) >= 20);   // aynı olay yirmi hafta tekrar etmez
+  if (!ok.length) return null;
+  const e = pick(ok); seen[e.id] = now; m.evw = now; return e;
 }
 // Kenar kariyerinin özeti; kayıt silinmeden önce
 export function mgrEnd() {
@@ -3172,8 +3194,15 @@ export function bizSeason(rep) {
   return lines;
 }
 // İş hayatında karşına çıkanlar
+// İş hayatı olayları: arada en az dört hafta, aynı olay on altı hafta tekrar etmez
 export function bizEvent() {
-  const s = S, m = s.mgr; if (!chance(.14)) return null;
+  const m = S.mgr, now = absWeek(); if (now - (m.evw ?? -99) < 4) return null;
+  const e = bizEvent0(); if (!e) return null;
+  const seen = m.evr || (m.evr = {}); if (now - (seen[e.t] ?? -99) < 16) return null;
+  seen[e.t] = now; m.evw = now; return e;
+}
+function bizEvent0() {
+  const s = S, m = s.mgr; if (!chance(.16)) return null;
   if (m.role === 'pundit') return pick([
     { p: 'basin', i: 'alert', t: tt('Canlı yayında gaf'), d: tt('Mikrofon açıkken söylediğin bir söz sosyal medyada dönüyor.'), o: [
       [tt('Özür dile'), tt('Güven toparlanır, reyting düşer'), () => { m.cr = clamp(m.cr + 4, 0, 100); m.rt = clamp(m.rt - 3, 5, 100); return [tt('Güvenilirlik ') + sg(4), tt('Reyting ') + sg(-3)]; }],

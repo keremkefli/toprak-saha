@@ -203,7 +203,7 @@ export const EVENTS = [
       ...AGENTS.map((a, i) => ({ t: tt`${a.n} (%${Math.round(a.cut * 100)})`, s: a.d, run: () => { S.agent = { ...AGENTS[i] }; }, r: tt`${a.n} artık menajerin. Teklifler ve ücretler buna göre şekillenecek.` })),
       { t: tt('Şimdilik menajersiz'), r: tt('Kendi işini kendin göreceksin.') },
     ] },
-  { id: 'basin', w: 2.5, cd: 16, if: () => S.con.wage >= 8000,
+  { id: 'basin', w: 1, cd: 40, if: () => S.con.wage >= 8000,
     t: tt('Röportaj'), d: tt('Muhabir mikrofonu uzattı: "Bu sezonki hedefin ne?"'),
     o: [
       { t: tt('Takım ne isterse'), fx: { takim: 4, taraf: 2 }, r: tt('Mütevazı cevabın soyunma odasında beğenildi.') },
@@ -581,7 +581,8 @@ export function pickEvent() {
   const ok = e => !e.chain && (!e.once || !S.fl['e_' + e.id]) && (S.cd[e.id] || 0) <= now && (!e.if || e.if());
   const must = EVENTS.find(e => e.must && ok(e) && !(e.neg && goodRun() && e.id !== 'tukenmislik'));
   if (must) return inst(must);
-  if (!chance(.5)) return null;
+  if (now - (S.fl.lev ?? -9) < 2 || !chance(.45)) return null;   // rastgele olaylar art arda iki hafta gelmez
+  S.fl.lev = now;
   const good = goodRun(), trouble = S.hid.ego > 60 || S.hid.prof < 40 ? 2 : 1;
   const pool = EVENTS.filter(e => !e.must && e.w && ok(e) && !(e.neg && good));
   if (!pool.length) return null;
