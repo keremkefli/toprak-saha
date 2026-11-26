@@ -105,6 +105,13 @@ export const tier = () => LMAP[leagueOf(S.clubId)].tier;
 export const absWeek = () => (S.season - 1) * WEEKS + S.week;
 export const seasonLabel = () => `${S.year}/${String((S.year + 1) % 100).padStart(2, '0')}`;
 export const has = id => S.assets.includes(id);
+// Backer Sport maç günü tasarımı: afiş paylaşılınca takipçi ve taraftar ilgisi gelir (haftada bir)
+export function backerPost(f) {
+  const s = S; if (!has('backer') || s.fl.bkw === absWeek() || !f || !club(f.opp)) return 0;
+  s.fl.bkw = absWeek(); const g = Math.round((40 + s.fol * .012) * folF()); s.fol += g; s.rel.taraf = clamp(s.rel.taraf + 1, 0, 100);
+  addFeed('me', s.name, tt`MAÇ GÜNÜ | ${club(s.clubId).n} - ${club(f.opp).n}. Hazırız. Tasarım: Backer Sport`, 'ben');
+  return g;
+}
 export const eff = k => SHOP.reduce((s, i) => s + ((has(i.id) && i.e && i.e[k]) || 0), 0) + UPG.reduce((s, u) => s + ((u.e && u.e[k]) || 0) * ((S.up || {})[u.id] || 0), 0);
 export const wref = () => Math.max(S.con.wage, 1500);
 export function addNews(s, ic = 'news') { S.news.unshift({ w: `${S.week}. hafta`, s, ic }); if (S.news.length > 24) S.news.length = 24; }
@@ -162,7 +169,12 @@ const capF = v => clamp(1 - Math.pow(Math.max(0, v - 20) / (S.pot - 20), 2), 0, 
 export function grow(k, amt) { const g = amt * ageF() * capF(S.at[k]) * (S.dfocus ? (S.dfocus === k ? 1.5 : .85) : 1); S.at[k] = clamp(S.at[k] + g, 1, 99); return g; }   // dfocus: sezonluk gelişim odağı
 
 // ---------- dünya kurulumu ----------
+// İlçe adlarından benzersiz amatör kulüp adları: ilçe az olan ilde ekler sırayla döner
+const AMS = [' Belediyespor', ' Gençlikspor', ' Gücü', ' İdman Yurdu', ' Spor', ' Birlikspor', ' Yıldızspor', ' SK', ' Doğanspor', ' Anadolu SK', ' Gençler Gücü', ' Ova SK', ' Kartalspor', ' Demirspor'];
+const AMK = [' Kadın SK', ' Belediyespor', ' Kadın FK', ' Gençlikspor', ' Spor', ' Gücü', ' Yıldızspor', ' Birlikspor', ' SK', ' Kartalspor', ' Anadolu SK', ' Doğanspor', ' Gençler Gücü', ' Ova SK'];
+function amNames(D, n, suf) { const out = []; for (let r = 0; out.length < n && r < suf.length; r++) for (const d of D) { const x = d + suf[r]; if (out.length < n && !out.includes(x)) out.push(x); } return out; }
 function genAmateur(prov) {
+  if (!PROV[prov]) prov = 'İstanbul';
   const P = PROV[prov], keys = ['R', 'G', 'B', 'N', 'Y', 'O', 'M', 'P', 'S', 'T', 'K'];
   const rng = [[33, 41], [28, 35], [22, 30]];
   const mk = (lid, id, n, lo, hi) => {
@@ -172,11 +184,12 @@ function genAmateur(prov) {
   };
   if (KW) {   // Kadınlar 3. Ligi: ilin ilçe takımları
     S.lg.tr4 = { t: [], tb: {}, rd: 0, last: [] };
-    (KPROV[prov] || P.d).forEach((d, i) => mk('tr4', 'g4_' + i, d + [' Kadın SK', ' Belediyespor', ' Kadın FK', ' Gençlikspor'][i % 4], 25, 34));
+    amNames(KPROV[prov] || P.d, 14, AMK).forEach((n, i) => mk('tr4', 'g4_' + i, n, 25, 34));
     return;
   }
+  const all = P.l ? null : amNames(P.d, 42, AMS);
   ['tr6', 'tr7', 'tr8'].forEach((lid, ti) => {
-    const names = P.l ? P.l[ti] : P.d.map((d, i) => d + (ti === 0 ? ' Belediyespor' : ti === 1 ? ' Gençlikspor' : (i % 2 ? ' Gücü' : ' İdman Yurdu')));
+    const names = P.l ? P.l[ti] : all.slice(ti * 14, ti * 14 + 14);
     S.lg[lid] = { t: [], tb: {}, rd: 0, last: [] };
     names.forEach((n, i) => {
       const id = 'g' + (ti + 6) + '_' + i; let h = 0;

@@ -33,9 +33,9 @@ export const INTRO = {
   pas: [tt('PAS'), tt('Koşan arkadaşının önüne dokun.'), tt('Araya girmesinler.'), 'tap'],
   calim: [tt('ÇALIM'), tt('Soldaki analogla koş.'), tt('Kırmızı hattan çık. ÇALIM: ani sıçrama.'), 'drag'],
   savunma: [tt('SAVUNMA'), tt('Soldaki analogla önünü kes.'), tt('Halka yeşilken KAY tuşuna bas.'), 'drag'],
-  kurtaris: [tt('KURTARIŞ'), tt('Eldiveni topa yetiştir.'), '', 'drag'],
-  duvar: [tt('FRİKİK'), tt('Top barajı aşınca eldiveni yetiştir.'), tt('Kurduğun baraj vuruşun yönünü belirler.'), 'drag'],
-  penkurtar: [tt('PENALTI'), tt('Vuruş anını bekle, köşeyi tahmin et.'), tt('Erken oynarsan boş köşe kalır.'), 'drag'],
+  kurtaris: [tt('KURTARIŞ'), tt('Analogla kaleciyi kaydır.'), tt('UZAN: son anda topa atıl.'), 'drag'],
+  duvar: [tt('FRİKİK'), tt('Analogla kay, top gelince UZAN.'), tt('Kurduğun baraj vuruşun yönünü belirler.'), 'drag'],
+  penkurtar: [tt('PENALTI'), tt('Bekle, köşeye kay, UZAN ile atıl.'), tt('Erken oynarsan boş köşe kalır.'), 'drag'],
   kosu: [tt('KOŞU'), tt('Pas çıktıktan sonra, imleç yeşile girince dokun.'), tt('Erken koşarsan ofsayt, geç kalırsan top kaçar.'), 'tap'],
   cikis: [tt('YAN TOP'), tt('Top geldiğinde, imleç yeşile girince dokun.'), tt('Erken çıkarsan kale boş kalır.'), 'tap'],
   ribaund: [tt('DÖNEN TOP'), tt('Savunmadan önce topa dokun.'), tt('Ne kadar çabuk, o kadar net.'), 'tap'],
@@ -83,13 +83,13 @@ function stadium(g, t, crowd, net, bare) {
     g.font = '900 10px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillStyle = EV.tier >= 4 ? '#f5efe4' : '#ff6a2b';
     // LED pano gerçekteki gibi döner: önce logo, sonra yazı; her biri birkaç saniye kalır, yukarı kayarak değişir
     const ads = EV.ads && EV.ads.length ? EV.ads : ['@BACKER', tt('BURAYA REKLAM VEREBİLİRSİNİZ')], col = g.fillStyle, per = 3.4, ph = Math.floor(t / per), k = (t % per) / per;
-    const drawAd = (a, dy) => { const lg = a[0] === '@'; for (let x = 14; x < W; x += lg ? 96 : 236) { if (lg) logoD(g, x, gb - 7.5 + dy, a.slice(1), 11); else { g.fillStyle = col; g.fillText(a, x, gb - 7 + dy); } } };
+    const drawAd = (a, dy) => { const lg = a[0] === '@'; for (let x = 14; x < W; x += lg ? 96 : 236) { if (lg) logoI(g, x, gb - 7.5 + dy, 11, col); else { g.fillStyle = col; g.fillText(a, x, gb - 7 + dy); } } };
     g.save(); g.beginPath(); g.rect(0, gb - 15, W, 15); g.clip();
-    if (GFX.calm) { for (let x = 14, i = 0; x < W; i++) { const a = ads[i % ads.length]; if (a[0] === '@') { logoD(g, x, gb - 7.5, a.slice(1), 11); x += 96; } else { g.fillStyle = col; g.fillText(a, x, gb - 7); x += 236; } } }
+    if (GFX.calm) { for (let x = 14, i = 0; x < W; i++) { const a = ads[i % ads.length]; if (a[0] === '@') { logoI(g, x, gb - 7.5, 11, col); x += 96; } else { g.fillStyle = col; g.fillText(a, x, gb - 7); x += 236; } } }
     else { const sl = k > .88 ? (k - .88) / .12 : 0; drawAd(ads[ph % ads.length], -15 * sl); if (sl) drawAd(ads[(ph + 1) % ads.length], 15 * (1 - sl)); }
     g.restore();
   } else {   // mahalle sahası: tel örgüye asılı bez afiş
-    g.fillStyle = '#efe7d6'; g.fillRect(W / 2 - 96, gb - 36, 192, 15); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'center'; logoD(g, W / 2 - 90, gb - 28.5, 'BACKER', 9.5); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textAlign = 'left'; g.fillStyle = '#1b1712'; g.fillText(tt('BURAYA REKLAM VEREBİLİRSİNİZ'), W / 2 - 42, gb - 28, 132);
+    g.fillStyle = '#efe7d6'; g.fillRect(W / 2 - 96, gb - 36, 192, 15); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'center'; logoI(g, W / 2 - 90, gb - 28.5, 10, '#1b1712'); g.font = '900 9px "Big Shoulders Display", "Arial Narrow", sans-serif'; g.textAlign = 'left'; g.fillStyle = '#1b1712'; g.fillText(tt('BURAYA REKLAM VEREBİLİRSİNİZ'), W / 2 - 42, gb - 28, 132);
   }
   const [ta, tb] = turf(EV); let gr = g.createLinearGradient(0, gb, 0, H); gr.addColorStop(0, tb); gr.addColorStop(1, ta);
   g.fillStyle = gr; g.fillRect(0, gb, W, H - gb); patches(g, 0, gb, W, H - gb, EV);
@@ -110,12 +110,17 @@ function stadium(g, t, crowd, net, bare) {
   g.beginPath(); g.moveTo(gx, gb); g.lineTo(gx, gy); g.lineTo(gx + gw, gy); g.lineTo(gx + gw, gb); g.stroke();
 }
 // Pano logosu: beyaz kutu içinde koyu yazı markası, solunda turuncu işaret
-function logoD(g, x, y, name, size) {
-  g.save(); g.font = `900 ${size}px "Big Shoulders Display", "Arial Narrow", sans-serif`; g.textAlign = 'left'; g.textBaseline = 'middle';
-  const w = g.measureText(name).width + size * 1.5; g.fillStyle = '#f5efe4'; g.fillRect(x, y - size * .62, w, size * 1.24);
-  g.fillStyle = '#ff6a2b'; g.beginPath(); g.moveTo(x + size * .28, y - size * .34); g.lineTo(x + size * .82, y); g.lineTo(x + size * .28, y + size * .34); g.fill();
-  g.fillStyle = '#14110e'; g.fillText(name, x + size * 1.05, y + .5); g.restore();
+// Pano logosu: Backer Sport amblemi resim olarak çizilir, ad yazılmaz. Renk için boyanmış kopyalar önbellekte tutulur.
+const BLOGO = typeof Image !== 'undefined' ? Object.assign(new Image(), { src: 'img/backer.png' }) : null, BTINT = {};
+export const LOGO_R = 560 / 174;
+function bLogo(col) {
+  if (!BLOGO || !BLOGO.complete || !BLOGO.naturalWidth) return null;
+  if (!BTINT[col]) { const c = document.createElement('canvas'); c.width = BLOGO.naturalWidth; c.height = BLOGO.naturalHeight; const x = c.getContext('2d'); x.drawImage(BLOGO, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height); BTINT[col] = c; }
+  return BTINT[col];
 }
+// h: yükseklik; dönen değer çizilen genişlik
+function logoI(g, x, y, h, col) { const im = bLogo(col), w = h * LOGO_R; if (im) g.drawImage(im, x, y - h / 2, w, h); return w; }
+export { bLogo };
 function keeperD(g, x, base, col, lean, up = 0) {
   const mine = col === ME.c1, d = clamp(lean / 70, -1, 1);
   fig(g, x, base, 1, { c1: mine ? '#ffd23f' : col, c2: '#15120f', gk: 1, pat: 'duz', skin: mine ? ME.skin : undefined, hair: mine ? ME.hair : undefined, mud: EV.wx === 'camur',
@@ -519,16 +524,20 @@ function keepGame(m, o) {
   const corner = o.pen ? true : Math.random() < (W2 ? W2[0] : .6);
   const tx = corner ? (Math.random() < .5 ? gx + rnd(14, 64) : gx + gw - rnd(14, 64)) : gx + rnd(40, gw - 40);
   const ty = gy + rnd(14, gh - 14);
-  let wait = rnd(0.9, 2.1), phase = 'wait', fly = 0, t = 0, net = null, bp = null, bv = null;
+  let wait = rnd(0.9, 2.1), phase = 'wait', fly = 0, t = 0, net = null, bp = null, bv = null, dive = 0, dived = false;
   return {
     _s: { glove, tx, ty, fly: () => (phase === 'wait' ? -1 : fly), T },
+    act() { if (dived) return; dived = true; dive = .24; },   // UZAN: bir kez, kısa ve hızlı atılış
     update(dt) {
       t += dt;
-      if (m.hasP) {
+      const boost = dive > 0 ? 2.6 : 1; if (dive > 0) dive -= dt;
+      if (m.sx || m.sy) { glove.x += m.sx * gs * .8 * boost * dt; glove.y += m.sy * gs * .8 * boost * dt; }   // analog
+      else if (m.hasP) {
         const px = clamp(m.px, gx - 8, gx + gw + 8), py = clamp(m.py, gy - 8, gb);
         const dx = px - glove.x, dy = py - glove.y, L = Math.hypot(dx, dy);
-        if (L > 1) { const s = Math.min(gs * dt, L); glove.x += dx / L * s; glove.y += dy / L * s; }
+        if (L > 1) { const s = Math.min(gs * boost * dt, L); glove.x += dx / L * s; glove.y += dy / L * s; }
       }
+      glove.x = clamp(glove.x, gx + 6, gx + gw - 6); glove.y = clamp(glove.y, gy + 6, gb - 8);   // kaleci kalenin içinde kalır
       if (phase === 'wait') { wait -= dt; if (wait <= 0) { phase = 'fly'; sfx.kick(); } }
       else if (phase === 'fly') {
         fly += dt / T; pushTrail(trail, bx(fly), by(fly), br(fly));
@@ -555,7 +564,7 @@ function keepGame(m, o) {
         return;
       }
       stadium(g, t, crowd, net);
-      keeperD(g, glove.x, gb, o.cu, (glove.x - 180) * .5, Math.max(0, gy + 56 - glove.y) * .5);
+      keeperD(g, clamp(glove.x - (glove.x - 180) * .3, gx + 24, gx + gw - 24), gb, o.cu, (glove.x - 180) * .5, Math.max(0, gy + 56 - glove.y) * .5);   // gövde kalede kalır, kollar eldivene uzanır
       g.beginPath(); g.arc(glove.x, glove.y, R, 0, 7); g.fillStyle = 'rgba(255,210,63,.2)'; g.fill(); g.strokeStyle = '#ffd23f'; g.lineWidth = 2.5; g.stroke();
       figure(g, 150 + (phase === 'wait' ? Math.sin(t * 9) * 2 : 8), 430, o.co, 1.05, phase === 'wait' ? POSE.run(t, .5) : POSE.kick(.4 + clamp(fly * 1.6, 0, 1) * .6));
       if (phase === 'end' && bp) ballD(g, bp.x, bp.y, bp.r);
@@ -698,7 +707,7 @@ export const GAMES = {
   pas: passGame, calim: dribGame, savunma: defGame, kurtaris: keepGame, duvar: keepGame, penkurtar: (m, o) => keepGame(m, { ...o, pen: 1 }),
   kosu: (m, o) => timeGame(m, { ...o, variant: 'kosu' }), cikis: (m, o) => timeGame(m, { ...o, variant: 'cikis' }), ribaund: tapGame, markaj: trackGame,
 };
-const PADS = { calim: tt('ÇALIM'), savunma: tt('KAY'), markaj: tt('PRES') };   // analog + eylem tuşu kullanan oyunlar
+const PADS = { calim: tt('ÇALIM'), savunma: tt('KAY'), markaj: tt('PRES'), kurtaris: tt('UZAN'), duvar: tt('UZAN'), penkurtar: tt('UZAN') };   // analog + eylem tuşu kullanan oyunlar
 
 export class Mini {
   constructor(cv) {
