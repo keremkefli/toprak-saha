@@ -466,11 +466,11 @@ export const ATTR = { sut: tt('Şut'), pas: tt('Pas'), teknik: tt('Teknik'), hiz
 
 // w: genel güç ağırlıkları, m: maç anı ağırlıkları, b: başlangıç bonusu
 export const POS = {
-  KL: { n: tt('Kaleci'), w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 62, pas: 14, duvar: 8, penkurtar: 5, cikis: 12 }, b: { kaleci: 24, zihin: 3 } },
-  DF: { n: tt('Defans'), w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 42, markaj: 14, kafa: 12, pas: 20, orta: 12 }, b: { savunma: 9, guc: 5, kafa: 4 } },
-  OS: { n: tt('Orta Saha'), w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 28, sut: 14, calim: 12, savunma: 12, markaj: 6, frikik: 7, orta: 10, korner: 7, vole: 2, ribaund: 3 }, b: { pas: 8, teknik: 5, zihin: 3 } },
-  KN: { n: tt('Kanat'), w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 26, pas: 14, sut: 19, kafa: 4, orta: 22, vole: 5, korner: 6, kosu: 9 }, b: { hiz: 8, teknik: 6, pas: 2 } },
-  FV: { n: tt('Forvet'), w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 32, kafa: 12, calim: 13, pas: 10, penalti: 5, vole: 8, rovesata: 4, orta: 6, kosu: 11, ribaund: 8 }, b: { sut: 8, kafa: 4, teknik: 3 } },
+  KL: { n: tt('Kaleci'), w: { kaleci: .55, zihin: .2, guc: .1, pas: .08, hiz: .07 }, m: { kurtaris: 56, pas: 14, duvar: 8, penkurtar: 5, cikis: 12, birebir: 10 }, b: { kaleci: 24, zihin: 3 } },
+  DF: { n: tt('Defans'), w: { savunma: .35, guc: .18, kafa: .15, hiz: .12, zihin: .12, pas: .08 }, m: { savunma: 38, markaj: 14, kafa: 12, pas: 20, orta: 12, blok: 12 }, b: { savunma: 9, guc: 5, kafa: 4 } },
+  OS: { n: tt('Orta Saha'), w: { pas: .3, teknik: .2, zihin: .15, sut: .1, savunma: .1, guc: .08, hiz: .07 }, m: { pas: 26, sut: 14, calim: 12, savunma: 10, markaj: 6, frikik: 7, orta: 10, korner: 7, vole: 2, ribaund: 3, kesme: 10 }, b: { pas: 8, teknik: 5, zihin: 3 } },
+  KN: { n: tt('Kanat'), w: { hiz: .25, teknik: .25, pas: .18, sut: .17, zihin: .1, guc: .05 }, m: { calim: 24, pas: 12, sut: 19, kafa: 4, orta: 20, vole: 5, korner: 6, kosu: 9, verkac: 11 }, b: { hiz: 8, teknik: 6, pas: 2 } },
+  FV: { n: tt('Forvet'), w: { sut: .3, teknik: .18, hiz: .15, kafa: .12, zihin: .1, guc: .08, pas: .07 }, m: { sut: 30, kafa: 12, calim: 13, pas: 9, penalti: 5, vole: 8, rovesata: 4, orta: 6, kosu: 11, ribaund: 8, asirtma: 8 }, b: { sut: 8, kafa: 4, teknik: 3 } },
 };
 
 export const ORIGINS = {
@@ -600,6 +600,11 @@ export const MOM = {
   ribaund: { n: tt('Dönen top'), i: tt('Kaleci topu elinden kaçırdı, top ceza sahasında sekiyor!') },
   markaj: { n: tt('Markaj'), i: tt('Rakibin en tehlikeli adamı senin bölgende. Top aldırma!') },
   cikis: { n: tt('Yan topa çıkış'), i: tt('Kanattan orta geliyor, ceza sahası kalabalık. Çık ve al!') },
+  birebir: { n: tt('Bire bir'), i: tt('Savunma delindi, forvet topla tek başına geliyor!') },
+  blok: { n: tt('Şut bloku'), i: tt('Rakip ceza sahası önünde şut açısı arıyor. Önüne at kendini!') },
+  kesme: { n: tt('Pas arası'), i: tt('Rakip orta sahada topu döndürüyor. Araya gir!') },
+  verkac: { n: tt('Ver-kaç'), i: tt('Kanatta önünde bir adam var, arkadaşın içeride boşta.') },
+  asirtma: { n: tt('Aşırtma'), i: tt('Kaleciyle karşı karşıyasın ve o üstüne çıkıyor!') },
 };
 
 export const FILL = [

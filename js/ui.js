@@ -56,6 +56,8 @@ const EV = {
   hirsiz: ['golge', 'lock', 'risk'], akraba: ['baba', 'coin', 'life'], yalnizlik: ['anne', 'phone', 'life'], tukenmislik: ['doktor', 'heart', 'med'], reklam: ['sponsor', 'tag', 'fame'], vakif: ['taraftar', 'heart', 'life'],
   kas: ['doktor', 'clock', 'med'], kronik: ['doktor', 'plus', 'med'], kap_prim: ['baskan', 'coin', 'club'], kap_kavga: ['takim', 'alert', 'risk'], kap_genc: ['takim', 'users', 'club'], kap_ceza: ['takim', 'clock', 'club'], kap_al: ['hoca', 'crown', 'risk'],
   bootdeal: ['sponsor', 'shirt', 'fame'], bootshoot: ['sponsor', 'tag', 'fame'], lr_yeni: ['takim', 'users', 'club'], lr_klik: ['takim', 'alert', 'risk'], lr_patla: ['hoca', 'alert', 'risk'], oyuncu_antrenor: ['hoca', 'whistle', 'club'],
+  g_kuraklik: ['basin', 'ball', 'risk'], g_seri: ['basin', 'ball', 'fame'], g_kotuseri: ['takim', 'alert', 'risk'], g_iyiseri: ['baskan', 'coin', 'club'], g_zirve: ['hoca', 'trophy', 'club'], g_dusme: ['taraftar', 'down', 'risk'],
+  g_kontrat: ['menajer', 'pen', 'club'], g_parlak: ['scout', 'eye', 'fame'], g_dusukform: ['hoca', 'chart', 'risk'], g_kirmizi: ['takim', 'alert', 'risk'], g_donus: ['doktor', 'plus', 'med'], g_derbi: ['taraftar', 'bolt', 'fame'], g_cepbos: ['baba', 'coin', 'life'],
   net_abi: ['baskan', 'home', 'life'], net_yildiz: ['rakip', 'star', 'fame'], net_gazeteci: ['basin', 'mic', 'fame'], net_doktor: ['doktor', 'plus', 'med'], net_scout: ['scout', 'eye', 'fame'], net_marka: ['sponsor', 'tag', 'fame'], net_golge: ['golge', 'lock', 'risk'],
 };
 function art(p, icon, tn) {
@@ -84,7 +86,7 @@ async function tip(key, force) {
 const CTRL = { swipe: ['swap', tt('Kaydır')], tap: ['target', tt('Dokun')], drag: ['bolt', tt('Analog')] };
 async function tutFlow(force) {
   const s = G.S; if (AUTO || !s || (!force && seen['tut_' + s.pos])) return;
-  const ks = Object.entries(POS[s.pos].m).sort((a, b) => b[1] - a[1]).map(x => x[0]).filter(k => INTRO[k]).slice(0, 5);
+  const ks = Object.entries(POS[s.pos].m).sort((a, b) => b[1] - a[1]).map(x => x[0]).filter(k => INTRO[k]).slice(0, 6);
   const j = await dialog({ art: tt`<div class="art t-med"><div class="art-ic">${ic('train', 150)}</div><span class="art-n">${tt('Eğitim')}</span></div>`, k: POS[s.pos].n, t: tt('Mevkine özel eğitim'), body: `<p>${tt`Maçta sana gelecek ${ks.length} farklı anı birer kez dene. Sonuçlar kariyerine sayılmaz.`}</p><div class="tutl">${ks.map(k => `<span>${ic(CTRL[INTRO[k][3]][0], 14)}${INTRO[k][0]}</span>`).join('')}</div>`, opts: [{ t: tt('Eğitime başla'), i: 'right' }, { t: tt('Atla'), s: tt('Ayarlar > Nasıl oynanır içinden sonra açabilirsin'), c: 'ghost' }], cls: 'ev' });
   seen['tut_' + s.pos] = 1; try { localStorage.setItem(OKEY, JSON.stringify(seen)); } catch (e) { /* yok */ }
   if (j !== 0) return;
@@ -1948,7 +1950,7 @@ function chalWeek() { const d = new Date(), t = Date.UTC(d.getFullYear(), d.getM
 async function chalFlow() {
   const wk = chalWeek(); let h = 0; for (const ch of wk) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const rng = () => { h = (h + 0x6D2B79F5) >>> 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-  const pool = ['sut', 'kafa', 'frikik', 'penalti', 'pas', 'calim', 'savunma', 'orta', 'vole', 'kurtaris', 'kosu', 'ribaund', 'markaj'], kinds = Array.from({ length: 6 }, () => pool[Math.floor(rng() * pool.length)]), q = .3 + rng() * .35;
+  const pool = ['sut', 'kafa', 'frikik', 'penalti', 'pas', 'calim', 'savunma', 'orta', 'vole', 'kurtaris', 'kosu', 'ribaund', 'markaj', 'birebir', 'blok', 'kesme', 'verkac', 'asirtma'], kinds = Array.from({ length: 6 }, () => pool[Math.floor(rng() * pool.length)]), q = .3 + rng() * .35;
   let best = 0; try { const b = JSON.parse(localStorage.getItem(CKEY2)); if (b && b.wk === wk) best = b.best; } catch (e) { /* yok */ }
   const j = await dialog({ art: tt`<div class="art t-fame"><div class="art-ic">${ic('bolt', 150)}</div><span class="art-n">Hafta ${wk.split('-')[1]}</span></div>`, k: tt('Meydan okuma'), t: tt('Altı an, tek deneme'), body: tt`<p>Bu hafta herkes aynı altı anı, aynı zorlukta oynuyor: ${kinds.map(k => MOM[k].n).join(', ')}.</p><p>Her başarı 100 puan, üst üste başarılar seri primi kazandırır.</p>${best ? tt`<div class="kv">${ic('trophy', 16)}<span>Bu haftaki rekorun</span><b>${best}</b></div>` : ''}`, opts: [{ t: tt('Başla'), i: 'ball' }, { t: tt('Vazgeç'), c: 'ghost' }] });
   if (j !== 0) return;

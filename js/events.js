@@ -3,6 +3,7 @@
 import { tt } from './i18n.js';
 import { S, fx, rnd, ri, pick, chance, clamp, OVR, club, leagueOf, tier, absWeek, fmt, nice, addNews, wref, netAdd, rname, kidAge, myNat, KW, tierCfg, kx, kxAdd, klikAdj, tenAdj, newMate, bootMake, bootGoal, injPlan, loanOffer, acceptOffer, chantOpts, setChant } from './core.js';
 import { LMAP, AGENTS, SHOP, NATN, BOOTS } from './data.js';
+import { table, zones, fixture, isDerby } from './core.js';
 
 const inTR = () => LMAP[leagueOf(S.clubId)].c === 'TR';
 const amat = () => inTR() && tier() >= tierCfg().amat;
@@ -12,6 +13,14 @@ const later = (id, w, ctx) => S.q.push({ id, at: absWeek() + w, ctx });
 const own = id => S.assets.includes(id);
 // İşler yolundayken (form, moral, profesyonellik) olumsuz olaylar karşına çıkmaz
 const goodRun = () => form() >= 7 && S.mo >= 60 && S.hid.prof >= 45;
+// v25 gidişat yardımcıları: seriler ve lig sırası
+const trk = () => S.trk || { gs: 0, gd: 0, ws: 0, ls: 0, hi: 0 };
+const att = () => S.pos === 'FV' || S.pos === 'KN';
+function spot() {
+  const lid = leagueOf(S.clubId); if (!lid || !S.lg[lid] || S.loan) return null;
+  const tb = table(lid), i = tb.findIndex(r => r.id === S.clubId), z = zones(lid); if (i < 0 || tb[0].p < 10) return null;
+  return { pos: i + 1, n: tb.length, up: z.up + z.po, dz: z.down + z.out, gap: tb[0].pts - tb[i].pts };
+}
 const partner = () => S.fl.evli ? tt('eşine') : tt('sevgiline');
 
 function trialClub() {
@@ -561,6 +570,98 @@ export const EVENTS = [
       { t: tt('Soyadınla olan'), fx: { taraf: 4, mo: 5 }, run: () => { setChant(0); }, r: tt('İç saha maçlarında tribün artık adını söylüyor. Sahaya daha diri çıkarsın.') },
       { t: tt('Adınla olan'), fx: { taraf: 4, mo: 5 }, run: () => { setChant(1); }, r: tt('İç saha maçlarında tribün artık adını söylüyor. Sahaya daha diri çıkarsın.') },
       { t: tt('Forma numaranla olan'), fx: { taraf: 4, mo: 5 }, run: () => { setChant(2); }, r: tt('İç saha maçlarında tribün artık adını söylüyor. Sahaya daha diri çıkarsın.') },
+    ] },
+  // ---------- v25: gidişata göre olaylar (gol serisi, kuraklık, takım serisi, lig sırası, sözleşme, sakatlık dönüşü) ----------
+  { id: 'g_kuraklik', w: 7, cd: 10, if: () => att() && trk().gd >= 4 && S.st.apps >= 4, prep: () => ({ n: trk().gd }),
+    t: tt('Gol orucu'), d: c => tt`${c.n} maçtır gol yok. Gazeteler "kısır dönem" yazmaya başladı.`,
+    o: [
+      { t: tt('Ekstra bitiricilik çalış'), fx: { sut: 0.6, en: -12, hoca: 3 }, r: tt('Antrenmandan sonra yüz şut daha. Ayak ısınıyor.') },
+      { t: tt('Eski gollerini izle'), fx: { zihin: 0.5, mo: 5 }, r: tt('Gece eski gollerini izledin. Nasıl attığını hatırladın.') },
+      { t: tt('Basına tepki göster'), fx: { basin: -6, mo: 3, ego: 4 }, r: tt('"Gol gelecek" dedin, sertçe. Manşet oldun.') },
+    ] },
+  { id: 'g_seri', w: 6, cd: 12, if: () => att() && trk().gs >= 3, prep: () => ({ n: trk().gs }),
+    t: tt('Seri sürüyor'), d: c => tt`Üst üste ${c.n} maçtır golün var. Kulübün medya ekibi röportaj istiyor.`,
+    o: [
+      { t: tt('Takımı öne çıkar'), fx: { takim: 6, taraf: 3 }, r: tt('"Bu goller takımın" dedin. Soyunma odası seni sevdi.') },
+      { t: tt('Kendini anlat'), run: () => ({ fx: { fol: Math.round(200 + S.fol * .05), rep: 2, ego: 4 } }), r: tt('Röportaj çok izlendi. Takipçin arttı, egon da.') },
+      { t: tt('Sessiz kal, işine bak'), fx: { prof: 3, hoca: 4 }, r: tt('Kamerayı nazikçe geçtin. Hoca bunu fark etti.') },
+    ] },
+  { id: 'g_kotuseri', w: 6, cd: 12, if: () => trk().ls >= 3, prep: () => ({ n: trk().ls }),
+    t: tt('Kötü gidişat'), d: c => tt`Takım ${c.n} maçtır kaybediyor. Soyunma odasında kimse konuşmuyor.`,
+    o: [
+      { t: tt('Toplantı iste, konuş'), fx: { takim: 6, hoca: 3, mo: -2 }, r: tt('Herkesin önünde konuştun. Kimse itiraz etmedi.') },
+      { t: tt('Antrenmanda örnek ol'), fx: { prof: 4, en: -10, hoca: 5 }, r: tt('Herkes çıktıktan sonra sahada kaldın. Hoca gördü.') },
+      { t: tt('Kendi işine bak'), fx: { takim: -4, mo: 3 }, r: tt('Kafanı dağıtmadın ama takım bunu soğuk buldu.') },
+    ] },
+  { id: 'g_iyiseri', w: 5, cd: 14, if: () => trk().ws >= 4, prep: () => ({ n: trk().ws, p: nice(wref() * .8) }),
+    t: tt('Rüzgâr arkamızda'), d: c => tt`${c.n} maçtır kazanıyorsunuz. Başkan soyunma odasına geldi, prim dağıtıyor.`,
+    o: [
+      { t: tt('Primi al'), run: c => ({ fx: { para: c.p, mo: 4 } }), r: tt('Prim hesabına geçti. Moral yerinde.') },
+      { t: tt('Primini malzemecilere bırak'), fx: { takim: 7, taraf: 3, prof: 2 }, r: tt('Primini malzemecilere bıraktın. Kulüpte herkes duydu.') },
+      { t: tt('Kutlamaya katıl'), fx: { ark: 6, takim: 4, en: -10 }, r: tt('Gece uzun sürdü. Takım kenetlendi, bacaklar ağır.') },
+    ] },
+  { id: 'g_zirve', w: 6, cd: 16, if: () => { const p = spot(); return p && S.week >= 14 && p.pos <= Math.max(2, p.up) && p.gap <= 3; }, prep: () => ({ g: spot().gap, p: spot().pos }),
+    t: tt('Zirve yarışı'), d: c => (c.p === 1 ? tt('Liderlik sizde ama nefes ensende. Hoca seni odasına çağırdı: "Son haftalarda sana ihtiyacım var."') : tt`Liderle aranızda ${c.g} puan var. Hoca seni odasına çağırdı: "Son haftalarda sana ihtiyacım var."`),
+    o: [
+      { t: tt('Ağrıya rağmen oynarım'), fx: { hoca: 8, en: -8 }, run: () => (chance(.2) ? { fx: { inj: 1 }, r: tt('Söz verdin ama bacak sinyal verdi: bir hafta yoksun.') } : null), r: tt('Hoca omzuna vurdu. Sahada olacaksın.') },
+      { t: tt('Ekstra taktik çalış'), fx: { zihin: 0.6, en: -8, hoca: 4 }, r: tt('Rakip videolarını ezberledin.') },
+      { t: tt('Baskıyı umursama'), fx: { mo: 6 }, r: tt('"Her maç final değil" dedin. Rahat uyudun.') },
+    ] },
+  { id: 'g_dusme', w: 6, cd: 16, if: () => { const p = spot(); return p && S.week >= 14 && p.dz && p.pos > p.n - p.dz; },
+    t: tt('Düşme hattı'), d: tt('Takım küme hattında. Taraftar antrenmanı bastı, tel örgülere pankart asıldı.'),
+    o: [
+      { t: tt('Taraftarın karşısına çık'), fx: { taraf: 8, takim: 3 }, run: () => (chance(.25) ? { fx: { mo: -6 }, r: tt('Konuştun ama birkaç kişi üstüne yürüdü. Moralin bozuk.') } : null), r: tt('"Bu takımı düşürmeyeceğiz" dedin. Alkış aldın.') },
+      { t: tt('Antrenmana odaklan'), fx: { hoca: 4, prof: 3 }, r: tt('Kafanı kaldırmadın, işine baktın.') },
+      { t: tt('Yönetimi eleştir'), fx: { taraf: 6, hoca: -6, basin: 3 }, r: tt('Sözlerin manşet oldu. Taraftar arkanda, yönetim kızgın.') },
+    ] },
+  { id: 'g_kontrat', w: 5, cd: 40, if: () => !S.loan && S.con.until === S.season && S.week >= 24 && S.con.wage >= 500 && S.rel.hoca < 62,
+    t: tt('Sözleşmen bitiyor'), d: tt('Son aylardasın. Başka kulüpler menajerini arıyor, kulüp henüz masaya oturmadı.'),
+    o: [
+      { t: tt('"Kalmak istiyorum" de'), fx: { taraf: 5, hoca: 4 }, r: tt('Taraftar mesajını aldı. Yönetim de.') },
+      { t: tt('Piyasayı dinle'), fx: { rep: 2, taraf: -5 }, r: tt('Telefonlar açık. Tribün bunu sezdi.') },
+      { t: tt('Sezon bitsin, sonra konuşuruz'), fx: { prof: 3, mo: 2 }, r: tt('Kafan sahada. Masa sonra.') },
+    ] },
+  { id: 'g_parlak', w: 5, cd: 14, if: () => trk().hi >= 3,
+    t: tt('Herkes seni konuşuyor'), d: tt('Üç maçtır sahanın en iyilerindensin. Tribünde bir gözlemci varmış.'),
+    o: [
+      { t: tt('Mütevazı kal'), fx: { prof: 3, taraf: 3 }, r: tt('"Takım iyi, ben de iyiyim" dedin. Sade ve doğru.') },
+      { t: tt('Gazetecilere konuş'), run: () => ({ fx: { fol: Math.round(150 + S.fol * .04), basin: 6, ego: 4, rep: 1 } }), r: tt('Röportajın her yerde. Adın büyüyor.') },
+      { t: tt('Hocana teşekkür et'), fx: { hoca: 7 }, r: tt('Hocan bir şey demedi ama gözleri parladı.') },
+    ] },
+  { id: 'g_dusukform', neg: 1, w: 5, cd: 14, if: () => S.lastR.length >= 4 && form() < 5.9,
+    t: tt('Form düşüklüğü'), d: tt('Son maçlarda notların düşük. Hoca seni kenara çekti: "Kafan nerede?"'),
+    o: [
+      { t: tt('Spor psikoloğuyla görüş'), if: () => S.money >= nice(wref() * .5), run: () => ({ fx: { para: -nice(wref() * .5), mo: 10, zihin: 0.4 } }), r: tt('İki seans iyi geldi. Kafan daha net.') },
+      { t: tt('Ekstra antrenman'), fx: { en: -12, hoca: 5 }, r: tt('Sabah ilk sen geliyorsun, akşam son sen çıkıyorsun.') },
+      { t: tt('Bir hafta kafa dinle'), fx: { en: 15, mo: 4, hoca: -4 }, r: tt('Telefonu kapattın, denize baktın.') },
+    ] },
+  { id: 'g_kirmizi', w: 8, cd: 10, if: () => S.fl.redw && absWeek() - S.fl.redw <= 1,
+    t: tt('Kırmızı kart sonrası'), d: tt('Geçen maç atıldın, takım 10 kişi kaldı. Herkes senin ne diyeceğini bekliyor.'),
+    o: [
+      { t: tt('Takımdan özür dile'), fx: { takim: 6, hoca: 3, mo: -2 }, run: () => { delete S.fl.redw; }, r: tt('Soyunma odasında özür diledin. Kapanmış bir konu.') },
+      { t: tt('Hakemi eleştir'), fx: { taraf: 4, basin: -4 }, run: () => { delete S.fl.redw; if (chance(.3)) { S.ban += 1; return { r: tt('Federasyon sözlerini disipline sevk etti: bir maç ek ceza.') }; } }, r: tt('Taraftar arkanda ama federasyon dosyayı açtı, ceza çıkmadı.') },
+      { t: tt('Sus, cezanı çek'), fx: { prof: 3 }, run: () => { delete S.fl.redw; }, r: tt('Hiçbir şey demedin. Ders alındı.') },
+    ] },
+  { id: 'g_donus', w: 8, cd: 10, if: () => S.fl.injBack && absWeek() - S.fl.injBack <= 2,
+    t: tt('Sakatlıktan dönüş'), d: tt('Haftalar sonra yeniden takımla çalışıyorsun. Doktor "acele etme" diyor, hoca seni maçta istiyor.'),
+    o: [
+      { t: tt('Doktoru dinle, yavaş dön'), fx: { en: 10, hoca: -3 }, run: () => { delete S.fl.injBack; }, r: tt('Bir hafta daha yük almadın. Bacak sağlam.') },
+      { t: tt('Hemen oyna'), fx: { hoca: 6, mo: 5 }, run: () => { delete S.fl.injBack; if (chance(.18)) return { fx: { inj: 2 }, r: tt('İlk sprintte arka adale çekti. İki hafta daha.') }; }, r: tt('İlk antrenmanda tam gaz. Hoca memnun.') },
+      { t: tt('Fizyoterapiste özel para ver'), if: () => S.money >= nice(wref() * .6), run: () => { delete S.fl.injBack; return { fx: { para: -nice(wref() * .6), en: 15, hiz: 0.3 } }; }, r: tt('Özel program iyi geldi. Sakatlık öncesinden zinde hissediyorsun.') },
+    ] },
+  { id: 'g_derbi', w: 6, cd: 12, if: () => { const f = fixture(); return !!f && isDerby(S.clubId, f.opp); }, prep: () => ({ o: club(fixture().opp).n }),
+    t: tt('Derbi haftası'), d: c => tt`Bu hafta ${c.o} ile derbi var. Şehrin her köşesinde formalar, duvarlarda yazılar.`,
+    o: [
+      { t: tt('Rakibe gönderme yap'), fx: { taraf: 7, mo: 3 }, run: () => { S.hate = clamp((S.hate || 10) + 8, 0, 100); }, r: tt('Paylaşımın tribünü ateşledi. Karşı taraf da.') },
+      { t: tt('Saygılı konuş'), fx: { basin: 5, prof: 2 }, r: tt('"Kazanan futbol olsun" dedin. Herkes beğendi.') },
+      { t: tt('Taraftarla antrenmana çık'), fx: { taraf: 5, en: -5 }, r: tt('Açık antrenmanda tribün doluydu. Sana tezahürat yapıldı.') },
+    ] },
+  { id: 'g_cepbos', w: 5, cd: 20, if: () => S.age >= 18 && S.money < wref() * .4 && !S.fl.dar, prep: () => ({ a: nice(wref()) }),
+    t: tt('Cep boş'), d: tt('Ay sonu geldi, hesapta para kalmadı. Fatura, yol, yemek.'),
+    o: [
+      { t: tt('Kulüpten avans iste'), run: c => ({ fx: { para: c.a, hoca: -3 } }), r: tt('Avans geldi ama başkan kaşlarını kaldırdı.') },
+      { t: tt('Hafta sonu ek iş'), fx: { para: 1500, en: -15 }, r: tt('Pazar günü ek işe gittin. Para geldi, bacaklar yorgun.') },
+      { t: tt('Aileden iste'), run: c => ({ fx: { para: nice(c.a * .6), aile: -6 } }), r: tt('Baban gönderdi ama sesi buruktu.') },
     ] },
 ];
 
