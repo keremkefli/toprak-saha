@@ -2,6 +2,20 @@
 // d: işaretli metinler. v: kayıtta Türkçe duran adlar (ülke, kupa, tur); yalnızca gösterilirken çevrilir.
 // p: kayıtta Türkçe duran bileşik adlar için kalıplar [düzenli ifade, karşılık]; {1}, {2} yakalanan gruplardır ve ayrıca çevrilir.
 globalThis.__TS_EN = { d: {
+  "{0} hak kaldı": "{0} left",
+  "mevkin için en önemli": "most important for your position",
+  "potansiyele kalan": "room to potential",
+  "Enerji +{0}": "Energy +{0}",
+  "Moral +{0}": "Morale +{0}",
+  "Takipçi artışı": "Faster follower growth",
+  "Antrenman +%{0}": "Training +{0}%",
+  "Haftalık +{0}": "Weekly +{0}",
+  "Sende": "Owned",
+  "Haftalık gelir": "Weekly income",
+  "Gider": "Costs",
+  "Senin notun": "Your rating",
+  "Kulübedesin": "On the bench",
+  "{0} gol · {1}/{2} an": "{0} goals · {1}/{2} moments",
   "MAÇ GÜNÜ | {0} - {1}. Hazırız. Tasarım: Backer Sport": "MATCHDAY | {0} - {1}. We're ready. Design: Backer Sport",
   "Backer Sport · maç günü tasarımı": "Backer Sport · matchday design",
   "Her maç gününe özel afişin hazırlanır, sosyal medyanda paylaşılır. Takipçi ve taraftar ilgisi artar.": "A poster is designed for every matchday and shared on your social media. More followers and fan attention.",
