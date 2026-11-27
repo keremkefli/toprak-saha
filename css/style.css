@@ -918,3 +918,10 @@ main > .bsum { break-inside: avoid; margin-bottom: 12px; }
 .shop.shc.feat > .aic { grid-area: logo; } .shop.shc.feat > div:not(.mdm) { grid-area: text; } .shop.shc.feat > .mdm { grid-area: poster; grid-row: auto; } .shop.shc.feat > .mini-b, .shop.shc.feat > .own { grid-area: btn; }
 @media (max-width: 380px) { .shopg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 340px) { .shopg { grid-template-columns: 1fr; } }
+/* maç içi baskı (momentum) grafiği */
+.momc { display: grid; gap: 3px; } .momc svg { display: block; width: 100%; height: 40px; border-radius: 4px; background: var(--p1); border: 1px solid var(--ln); }
+.momc line { stroke: var(--ln); stroke-width: .3; vector-effect: non-scaling-stroke; } .momc #mnow { stroke: var(--tx); stroke-width: 1.2; }
+.momc #mau { fill: color-mix(in srgb, var(--ye) 42%, transparent); } .momc #mao { fill: color-mix(in srgb, var(--rd) 38%, transparent); }
+.momc #mal { fill: none; stroke: var(--ye); stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.mcl { display: flex; justify-content: space-between; font-size: 11px; color: var(--mu); }
+@media (max-width: 999px) { .match .momc svg { height: 32px; } }
