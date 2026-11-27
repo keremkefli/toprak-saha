@@ -1,6 +1,6 @@
 // Toprak Saha — oyun çekirdeği: durum, lig simülasyonu, sezon, transfer, ekonomi
 import { tt, LC, NLOC, DSEP } from './i18n.js';
-import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR, UPG, SESS, PROLE, SCENS, COLK, SPN, KLIK, PTAG , REN } from './data.js';
+import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HATERS, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR, UPG, SESS, PROLE, SCENS, COLK, SPN, KLIK, PTAG , REN } from './data.js';
 
 export let S = null;
 export const WEEKS = 38;
@@ -459,6 +459,7 @@ export function endWeek(own, ownCup, ownEuro, ownX) {
   }
   s.spon = s.spon.filter(x => x.until > absWeek());
   if (NATW.includes(s.week)) { natApply(null); natApply(null, 'yt'); }
+  s.hate = clamp((s.hate ?? 10) * .94, 0, 100);   // eleştiri zamanla söner
   invStep();
   if (s.kid && has('akademi')) s.kid.tal = clamp(s.kid.tal + .06, 0, 20);
   if ([7, 15, 26, 33].includes(s.week) && chance(.55)) crisisStep();
@@ -1081,6 +1082,8 @@ export function postMatch(M) {
     lines.push(tt`${s.car.caps}. milli maçın.`); if (s.car.caps === 1) docAdd('milli', tt('Milli formayla ilk maç'), 6, 'flag');
   } else {
     s.st.apps++; s.st.g += M.pg; s.st.a += M.pa; s.st.rs += rt; if (!M.cup) s.st.lg += M.pg;
+    s.lm = { w: absWeek(), us: M.usG, op: M.oppG, win, lose, rt, pg: M.pg };   // sosyal medya için son maç
+    s.hate = clamp((s.hate || 10) + (lose ? 6 : 0) + (rt < 6 ? 5 : 0) - (win && rt >= 7.5 ? 5 : 0) + (s.fol > 50000 ? 1 : 0), 0, 100);
     const cs = s.cs[s.clubId] || (s.cs[s.clubId] = { apps: 0, g: 0 }); cs.apps++; cs.g += M.pg;
     if (s.con.app) { s.money += s.con.app; lines.push(tt`Maç başı prim: ${fmt(s.con.app)}`); }
     recTrack(M, lines); docMatch(M, rt, win);
@@ -1206,8 +1209,8 @@ export function dreamInfo() {
 // ---------- sosyal medya akışı ----------
 // a: 'me' | karakter anahtarı | 'c:<kulüp id>', k: tür (fan, haber, manset, kulup, rakip, ben)
 export function addFeed(a, n, t, k = 'fan') {
-  S.feed.unshift({ a, n, t, k, l: Math.round(rnd(.2, 1.6) * (20 + S.fol * (k === 'ben' ? .06 : .01) + S.rep * 8)), w: S.week });
-  if (S.feed.length > 40) S.feed.length = 40;
+  S.feed.unshift({ id: (S.fid = (S.fid || 0) + 1), a, n, t, k, l: Math.round(rnd(.2, 1.6) * (20 + S.fol * (k === 'ben' ? .06 : .01) + S.rep * 8)), w: S.week });
+  if (S.feed.length > 60) S.feed.length = 60;
   S.feedNew = (S.feedNew || 0) + 1;
 }
 // Kalıplar: aynı cümle art arda dönmesin diye son kullanılanlar S.fu içinde tutulur
@@ -1265,16 +1268,80 @@ function feedWeek() {
   if (S.st.apps >= 6 && chance(.12)) addFeed('basin', tt('Rakamlarla Futbol'), say('stat', fctx()), 'haber');
   if (S.week === 19 || S.week === 38) addFeed('basin', tt('Transfer Hattı'), tt('Transfer dönemi açılıyor. Telefonlar şimdiden çalıyor.'), 'manset');
 }
-export const canPost = p => (!p.need || p.need.some(has)) && (!p.spon || S.spon.length > 0);
+// ---------- sosyal medya: paylaşımlar, eleştirmenler, canlı akış ----------
+const nextOpp = () => { const f = fixture() || sideFixture(); return f && !f.nat && club(f.opp) ? f : null; };
+const fillT = t => { const f = nextOpp(), lm = S.lm; return t.replace(/\{(\w+)\}/g, (m, k) => ({ ad: S.name.split(' ')[0], kulup: club(S.clubId).n, rakip: f ? club(f.opp).n : S.rival && S.rival.c || tt('rakip'), il: S.prov, skor: lm ? `${lm.us}-${lm.op}` : '', num: String(S.num) })[k] ?? m); };
+const fresh = (list, key) => { const q = S.fq || (S.fq = []), ok = list.filter(t => !q.includes(t)), t = pick(ok.length ? ok : list); q.push(t); if (q.length > 40) q.shift(); return t; };   // yakında yazılanı tekrar etme
+export const canPost = p => {
+  if (p.need && !p.need.some(has)) return false; if (p.spon && !S.spon.length) return false;
+  const f = nextOpp();
+  switch (p.id) {
+    case 'mac': return !!S.lm && absWeek() - S.lm.w <= 1;
+    case 'derbi': return !!f && isDerby(S.clubId, f.opp);
+    case 'sakat': return S.inj > 0;
+    case 'meydan': return !!f;
+    case 'hayir': return S.money >= hayirCost();
+    case 'cevap': return (S.hate || 0) >= 25;
+    case 'idman': case 'taraf': case 'soru': return true;
+  }
+  return true;
+};
+export const hayirCost = () => nice(Math.max(500, (S.con ? S.con.wage : 0) * .5));
 export function post(id) {
   const p = POSTS.find(x => x.id === id); S.used++; questHit('post');
   const g = Math.round((30 + S.rep * S.rep * 2) * rnd(.6, 1.4) * (1 + eff('fol')) * p.f * (perk('sahne') ? 1.5 : 1));
-  const f = { ...p.fx, fol: g }; if (p.spon) f.para = nice(S.spon.reduce((a, x) => a + x.wk, 0) * .5);
-  addFeed('me', S.name, pick(p.t), 'ben');
+  const f = { ...p.fx, fol: g }; if (p.spon) f.para = nice(S.spon.reduce((a, x) => a + x.wk, 0) * .5); if (p.cost) f.para = -hayirCost();
+  const list = p.id === 'mac' ? p[S.lm.win ? 'w' : S.lm.lose ? 'l' : 'd'] : p.t;
+  addFeed('me', S.name, fillT(fresh(list)), 'ben');
+  if (p.hate) S.hate = clamp((S.hate || 10) + p.hate, 0, 100);
+  // yanıtlar: taraftar sever, eleştirmen bulduğu her fırsatta yazar
+  const hateP = clamp((S.hate || 10) / 100 + (p.id === 'luks' || p.id === 'meydan' ? .3 : 0), .05, .85);
   if (id === 'luks' && chance(.3)) addFeed('taraftar', pick(FANS), tt('Biz bilet parası biriktirirken...'));
-  else { addFeed('taraftar', pick(FANS), say('reply')); if (chance(.4)) addFeed('taraftar', pick(FANS), say('reply')); }
+  else addFeed('taraftar', pick(FANS), say('reply'));
+  if (chance(hateP)) hater(); else if (chance(.4)) addFeed('taraftar', pick(FANS), say('reply'));
   S.feedNew = 0;
   return fx(f);
+}
+// Eleştirmen yorumu: son maç, form ve paylaşımlara göre
+const HTX = {
+  gen: [tt('{ad} abartılıyor. Bir iki iyi maçla yıldız olunmuyor.'), tt('Sosyal medyası futbolundan iyi.'), tt('Bu seviyede oynayacak adam değil, söyleyeyim.'), tt('Menajeri iyi iş çıkarıyor, o kadar.'), tt('Forma ağır geliyor bence.'), tt('Kamera görünce koşuyor, gerisi yok.'), tt('Takipçi sayısı arttıkça futbol düşüyor.'), tt('Bu kadar övülecek bir şey göremedim ben.')],
+  lose: [tt('Yine kaybettik, {ad} yine yoktu.'), tt('{skor}... Bu kadroyla küme düşeriz, ilki de {ad}.'), tt('Maçtan sonra paylaşım yapacağına idmana kal.'), tt('Taraftarı üzüp sonra kalp atıyor. Yemezler.')],
+  luks: [tt('Araba güzel, keşke gol de atsa.'), tt('Biz bilet alamıyoruz, adam villa paylaşıyor.'), tt('Önce sahada göster, sonra lüks.')],
+  low: [tt('Bugünkü performansla amatöre dönsün.'), tt('Bu notla bu maaş mı? Ayıp.'), tt('Kaç top kaybetti sayamadım.')],
+};
+export function hater(kind) {
+  const lm = S.lm, k = kind || (lm && lm.lose && absWeek() - lm.w <= 1 ? 'lose' : lm && lm.rt < 6 && absWeek() - lm.w <= 1 ? 'low' : 'gen');
+  addFeed('golge', pick(HATERS), fillT(fresh(HTX[k] || HTX.gen)), 'hater');
+}
+// Canlı akış: Sosyal açıkken birkaç saniyede bir yeni gönderi (haftada sınırlı)
+const LTX = {
+  fan: [tt('{kulup} bu sezon başka oynuyor, söylemiş olayım.'), tt('{ad} topu alınca tribün ayağa kalkıyor.'), tt('Cumartesi stat dolsun! Herkes formasıyla gelsin.'), tt('{num} numaralı formayı aldım, oğlum çıkarmıyor.'), tt('Kale arkasında yerimizi ayırdık. Sesimizi duyacaklar.'), tt('{ad} bizim mahalleden. Gurur duyuyoruz.'), tt('Bu takımın bir hikâyesi var, izlemeye değer.'), tt('Hocanın sistemi oturdu, sabırlı olun.')],
+  win: [tt('{skor}! Gece boyunca kornalar susmadı.'), tt('{ad} bugün sahnenin sahibiydi.'), tt('Böyle oynarsak kimse tutamaz.')],
+  lose: [tt('{skor}... Moraller bozuk ama sezon uzun.'), tt('Bugün olmadı, cumartesi rövanş.'), tt('Takım yorgun görünüyordu, hoca rotasyon yapmalı.')],
+  rakip: [tt('{rakip} taraftarı şimdiden atıp tutuyor, sahada görüşürüz.'), tt('{rakip} maçı için bilet kuyruğu sokağa taştı.'), tt('{rakip} savunması bu hafta {ad} için özel önlem alıyormuş.')],
+  haber: [tt('Kulislerde {ad} için gözlemci geldiği konuşuluyor.'), tt('{kulup} antrenmanında {ad} göz doldurdu.'), tt('Yerel basın: {kulup} bu hafta kampa giriyor.'), tt('{il} amatör futbolu bu sezon ilgi rekoru kırıyor.')],
+  trend: [tt('#{kulup} gündemde ilk 10\'a girdi.'), tt('#{ad}{num} etiketi bugün trend oldu.'), tt('Maç günü paylaşımları: tribün koreografisi hazır.')],
+};
+export function liveFeed() {
+  const s = S, wk = absWeek(); if (s.mgr) return null;
+  if (s.lfw !== wk) { s.lfw = wk; s.lfn = 0; }
+  if (s.lfn >= 12) return null; s.lfn++;
+  const lm = s.lm && wk - s.lm.w <= 1 ? s.lm : null, f = nextOpp(), r = Math.random(), hp = clamp((s.hate || 10) / 160, .05, .45);
+  if (r < hp) { hater(); return s.feed[0]; }
+  const pool = r < .55 ? (lm ? (lm.win ? 'win' : lm.lose ? 'lose' : 'fan') : 'fan') : r < .7 && f ? 'rakip' : r < .87 ? 'haber' : r < .95 ? 'trend' : 'fan';
+  const a = pool === 'haber' ? 'basin' : pool === 'rakip' ? 'golge' : 'taraftar', n = pool === 'haber' ? pick([tt('Saha Kenarı'), tt('Amatörün Sesi'), tt('Spor Muhabiri')]) : pool === 'rakip' ? club(f.opp).n.replace(/\s+/g, '').toLocaleLowerCase(LC) + '_fan' : pool === 'trend' ? tt('Gündem') : pick(FANS);
+  addFeed(a, n, fillT(fresh(LTX[pool])), pool === 'haber' ? 'haber' : pool === 'trend' ? 'trend' : 'fan');
+  return s.feed[0];
+}
+// Eleştirmene cevap: 0 kibar, 1 sert, 2 esprili, 3 görmezden gel
+export function hateReply(id, k) {
+  const p = S.feed.find(x => x.id === id); if (!p || p.k !== 'hater' || p.r) return null; p.r = k + 1;
+  const out = k === 0 ? fx({ basin: 2, taraf: 1 }) : k === 1 ? fx({ ego: 3, taraf: 2, basin: -3, fol: Math.round(60 + S.fol * .02) }) : k === 2 ? fx({ taraf: 2, fol: Math.round(40 + S.fol * .03) }) : [];
+  S.hate = clamp((S.hate || 10) + [-5, 8, -8, -2][k], 0, 100);
+  const say2 = [tt('Eleştirin için teşekkürler, sahada daha iyisini göstereceğim.'), tt('Klavyenin arkasından kolay. Gel cumartesi tribünde söyle.'), tt('Haklısın, bir dahaki golü sana armağan ederim.'), ''][k];
+  if (say2) addFeed('me', S.name, '@' + p.n + ' ' + say2, 'ben');
+  S.feedNew = 0;
+  return out;
 }
 
 // ---------- arkadaş aktiviteleri ----------

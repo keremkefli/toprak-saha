@@ -630,17 +630,39 @@ function feedAv(p) {
   if (p.a.startsWith('c:')) return crest(G.club(p.a.slice(2)) ? p.a.slice(2) : s.clubId, 40);
   return tt`<div class="avw sm">${persona(p.a, c, G.KW)}</div>`;
 }
+// Akıştaki tek gönderi: eleştirmen yorumlarına cevap düğmesi var
+function fdHTML(p, hd) {
+  if (p.k === 'manset') return tt`<article class="fd manset"><small>${ic('news', 14)}${esc(p.n)} · ${p.w}. hafta</small><b>${esc(p.t)}</b></article>`;
+  const tag2 = p.k === 'ben' ? hd : p.k === 'fan' || p.k === 'hater' ? '@' + esc(p.n) : p.k === 'haber' ? tt('haber') : p.k === 'trend' ? tt('gündem') : '';
+  const rep = p.k === 'hater' ? (p.r ? `<em class="hrd">${ic('check', 12)}${tt('yanıtlandı')}</em>` : `<button class="mini-b hr" data-a="hrep" data-v="${p.id}">${tt('Yanıtla')}</button>`) : '';
+  return tt`<article class="fd k-${p.k}" data-id="${p.id || ''}">${feedAv(p)}<div><div class="fd-h"><b>${esc(p.n)}</b><small>${tag2} · ${p.w}. hf</small>${p.k === 'hater' ? `<em class="htg">${tt('eleştirmen')}</em>` : ''}</div><p>${esc(p.t)}</p><div class="fd-f">${ic('heart', 14)}<span>${num(p.l)}</span>${ic('swap', 14)}<span>${num(p.l / 9)}</span>${rep}</div></div></article>`;
+}
+const sosHd = () => '@' + G.S.name.toLocaleLowerCase(LC).replace(/[^a-zçğıöşü0-9]+/g, '');
 function vSocial() {
-  const s = G.S, left = G.slots() - s.used, hd = '@' + s.name.toLocaleLowerCase(LC).replace(/[^a-zçğıöşü0-9]+/g, '');
+  const s = G.S, left = G.slots() - s.used, hd = sosHd();
   s.feedNew = 0;
   const dots = Array.from({ length: G.slots() }, (_, i) => `<i class="${i < s.used ? 'u' : ''}"></i>`).join('');
   const posts = POSTS.filter(G.canPost).map(p => tt`<button class="pst" data-a="post" data-v="${p.id}" ${left <= 0 ? 'disabled' : ''}>${ic(p.i, 20)}<span>${p.n}</span></button>`).join('');
-  const feed = s.feed.map(p => p.k === 'manset'
-    ? tt`<article class="fd manset"><small>${ic('news', 14)}${esc(p.n)} · ${p.w}. hafta</small><b>${esc(p.t)}</b></article>`
-    : tt`<article class="fd k-${p.k}">${feedAv(p)}<div><div class="fd-h"><b>${esc(p.n)}</b><small>${p.k === 'ben' ? hd : p.k === 'fan' ? '@' + esc(p.n) : p.k === 'haber' ? 'haber' : ''} · ${p.w}. hf</small></div><p>${esc(p.t)}</p><div class="fd-f">${ic('heart', 14)}<span>${num(p.l)}</span>${ic('swap', 14)}<span>${num(p.l / 9)}</span></div></div></article>`).join('');
-  return tt`<section class="card soc">${me()}<div><b>${esc(s.name)}</b><small>${hd}</small></div><div class="soc-f"><b>${s.fol >= 1e6 ? dec(s.fol / 1e6, 1) + tt(' Mn', 'para') : num(s.fol)}</b><small>takipçi</small></div></section>
+  const feed = s.feed.map(p => fdHTML(p, hd)).join('');
+  const hate = Math.round(s.hate || 0), c = G.club(s.clubId), f = G.fixture(), tag0 = x => '#' + x.replace(/\s+/g, '');
+  const trends = [tag0(c.n), tag0(s.name.split(' ')[0]) + s.num, ...(f && !f.nat && G.club(f.opp) ? [tag0(G.club(f.opp).n) + tt('Maçı')] : [])];
+  return tt`<section class="card soc">${me()}<div><b>${esc(s.name)}</b><small>${hd}</small></div><div class="soc-f"><b>${s.fol >= 1e6 ? dec(s.fol / 1e6, 1) + tt(' Mn', 'para') : num(s.fol)}</b><small>takipçi</small></div>
+      <div class="hate"><span>${ic('alert', 14)}${tt('Eleştiri')}</span><u><i style="width:${hate}%"></i></u><b>${hate < 25 ? tt('sakin') : hate < 55 ? tt('hareketli') : tt('alevli')}</b></div></section>
+    <div class="trends">${trends.map(t => `<span>${esc(t)}</span>`).join('')}</div>
     ${s.mgr ? '' : tt`<section><div class="sh"><h4>Paylaş</h4><div class="dots">${dots}</div></div><div class="psts">${posts}</div></section>`}
-    <section><div class="sh"><h4>Akış</h4></div><div class="feedl">${feed || tt('<p class="mut sm pad">Akış boş. İlk maçından sonra dolmaya başlar.</p>')}</div></section>`;
+    <section><div class="sh"><h4>Akış</h4><em class="live">${tt('CANLI')}</em></div><div class="feedl" id="feedl">${feed || tt('<p class="mut sm pad">Akış boş. İlk maçından sonra dolmaya başlar.</p>')}</div></section>`;
+}
+// Sosyal açıkken akış canlı akar: birkaç saniyede bir yeni gönderi üstten kayarak gelir
+let LIVE = null;
+function liveSet() {
+  const on = V.scr === 'hub' && V.tab === 'sos' && G.S && !G.S.mgr && !AUTO;
+  if (on && !LIVE) LIVE = setInterval(() => {
+    if (busy || !$modal.hidden || document.hidden) return;
+    const p = G.liveFeed(), box = $('#feedl'); if (!p || !box) return;
+    box.insertAdjacentHTML('afterbegin', fdHTML(p, sosHd())); const el = box.firstElementChild; if (el) el.classList.add('new');
+    G.S.feedNew = 0; G.save();
+  }, 4200);
+  if (!on && LIVE) { clearInterval(LIVE); LIVE = null; }
 }
 
 // Geniş ekranda sol menünün tepesindeki kimlik kartı
@@ -665,7 +687,7 @@ function render() {
   else if (V.scr === 'create') app.innerHTML = vCreate();
   else if (V.scr === 'hub') app.innerHTML = vHub();
   else if (V.scr === 'end') app.innerHTML = endHTML;
-  app.dataset.scr = V.scr; polish();
+  app.dataset.scr = V.scr; polish(); liveSet();
   if (V.scr === 'hub' && G.S && G.S.pop.length && !busy) { toast(G.S.pop.splice(0).slice(0, 3).join(' · '), 'star'); sfx.up(); }
 }
 
@@ -2501,6 +2523,11 @@ const ACT = {
   },
   msim: (v, el) => { mSim = true; el.disabled = true; el.textContent = tt('Simüle ediliyor'); },
   ck: v => { V.ck = v; render(); },
+  hrep: async v => {
+    if (busy || !$modal.hidden) return; const id = +v, p = G.S.feed.find(x => x.id === id); if (!p) return;
+    const j = await dialog({ art: art('golge', 'mic', 'risk'), k: '@' + p.n, t: tt('Nasıl cevap vereceksin?'), body: `<p>“${esc(p.t)}”</p>`, opts: [{ t: tt('Kibar cevap'), s: tt('Basın ve taraftar sever; eleştiri azalır'), i: 'heart' }, { t: tt('Sert cevap'), s: tt('Taraftar coşar, takipçi gelir; tartışma büyür'), i: 'alert' }, { t: tt('Esprili cevap'), s: tt('Gülümsetir, eleştiriyi söndürür'), i: 'star' }, { t: tt('Görmezden gel'), s: tt('Hiçbir şey olmamış gibi'), c: 'ghost' }], cls: 'ev' });
+    const ch = G.hateReply(id, j); if (ch) { if (ch.length) toast(ch.join(' · '), 'phone'); sfx.pop(); G.save(); render(); }
+  },
   post: v => { if (busy || G.S.used >= G.slots()) return; const ch = G.post(v); sfx.pop(); toast(ch.join(' · '), 'phone'); G.save(); render(); },
   perk: v => { if (G.buyPerk(v)) { sfx.up(); toast(tt('Yetenek açıldı'), 'star'); G.save(); render(); } },
   dream: async () => { if (busy) return; busy = true; try { await dreamFlow(); } finally { busy = false; } },
