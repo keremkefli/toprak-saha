@@ -69,6 +69,7 @@ export function load() {
   try {
     const j = localStorage.getItem(KEY); if (!j) return false; S = JSON.parse(renameText(j)); S.nm = 2; setWorld(S.w);
     // eski kayıtları yeni alanlarla tamamla
+    S.uid ??= Math.random().toString(36).slice(2, 12);   // kariyer kimliği: bulut kodu yanlış kariyerin üzerine yazmasın
     S.look ??= { skin: 1, hair: 0, hc: 0 }; S.tstat ??= 'mutlu'; S.watch ??= []; S.loan ??= null; S.st.lg ??= S.st.g;
     if (S.con && S.con.rel == null) S.con.rel = nice(value() * 4);
     if (!S.cup) initCup();
@@ -222,6 +223,7 @@ export function newCareer(o) {
   for (const k in Tr.at || {}) at[k] += Tr.at[k];
   for (const mod of [HT[o.ht], BUILD[o.build], (STYLES[o.pos] || [])[o.style]]) for (const k in (mod && mod.at) || {}) at[k] += mod.at[k];
   S = {
+    uid: Math.random().toString(36).slice(2, 12),
     v: 1, w: KW ? 'k' : undefined, name: o.name, pos: o.pos, foot: o.foot, prov: o.prov, origin: o.origin, trait: o.trait, nat: 'TR', look: o.look || { skin: 1, hair: 0, hc: 0 },
     age: 16, year: 2026, season: 1, week: 1, used: 0, at, pot: clamp(ri(80, 91) + (O.pot || 0) + Math.floor(leg / 2) + (W ? clamp(Math.floor(((W.kid && W.kid.tal) || 0) / 4), 0, 4) : 0), 78, 96),
     en: 80, mo: 65, money: O.money, fol: ri(80, 200), rep: 1, egt: 20 + (O.egt || 0), dil: O.dil || 0,

@@ -7,6 +7,7 @@ import { Mini, Pitch, PSLOT, INTRO } from './mini.js';
 import { StadView, GFX, fig, POSE, backdrop, lockerDraw, injuryDraw } from './scene.js';
 import { ic, avatar, persona, crestSvg, radar, ring, PERS, SKIN, HAIRC, HAIRS, euLogo, trophySvg } from './art.js';
 import { sfx, spiker } from './sfx.js';
+import * as CL from './cloud.js';
 
 const app = document.getElementById('app'), $modal = document.getElementById('modal'), $mini = document.getElementById('mini'), $toast = document.getElementById('toast');
 const $ = s => document.querySelector(s);
@@ -171,6 +172,114 @@ async function unpackSave(code) {
   throw new Error('kod');
 }
 
+// ---------- bulut kaydı (isteğe bağlı): hesapsız, kodla. Oyuncu açmadıkça istek yapılmaz ----------
+let cloudBusy = false;
+function cloudRec() {   // bu yuvanın bulut bilgisi; yuvada artık başka kariyer varsa bağ kopar
+  const n = G.curSlot(), r = CL.cloudGet(n); if (!r || !G.S) return null;
+  if (r.uid && G.S.uid && r.uid !== G.S.uid) { CL.cloudSet(n, null); return null; }
+  return r;
+}
+const agoTxt = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? tt('az önce') : m < 60 ? tt`${m} dk önce` : m < 1440 ? tt`${Math.round(m / 60)} sa önce` : tt`${Math.round(m / 1440)} gün önce`; };
+function cloudCard() {
+  if (!CL.cloudOn() || !G.S) return '';
+  const rec = cloudRec();
+  if (!rec) return tt`<section class="card hv-ayar cld">${tag(tt('Bulut kaydı'))}<p class="mut sm">Kariyerini buluta kaydet, sana bir kod verelim. Başka cihazda giriş ekranındaki "Bulut koduyla devam et" ile kaldığın yerden sürersin. Hesap ya da e-posta gerekmez.</p><button class="opt sm" data-a="cup">${ic('up', 20)}<span><b>Buluta kaydet</b><small>Kod al; her hafta sonunda otomatik eşitlensin</small></span></button></section>`;
+  return tt`<section class="card hv-ayar cld">${tag(tt('Bulut kaydı'), 'ye')}
+    <div class="ccode"><b>${esc(rec.code)}</b><button class="mini-b" data-a="ccopy">${tt('Kopyala')}</button></div>
+    <p class="mut sm">${tt('Bu kodu bilen kariyerini açabilir; kimseyle paylaşma.')}</p>
+    ${rec.cf ? tt`<div class="stn st-kilit">${ic('alert', 16)}<span>Bulutta daha yeni bir kayıt var<small>Başka bir cihazda oynanmış. Hangisi kalsın?</small></span></div>
+      <button class="opt sm" data-a="cpull">${ic('down', 20)}<span><b>Buluttakini indir</b><small>Bu cihazdaki ilerleme silinir</small></span></button>
+      <button class="opt sm" data-a="cforce">${ic('up', 20)}<span><b>Bu cihazdakini yükle</b><small>Buluttaki ilerleme silinir</small></span></button>` : ''}
+    <div class="kv">${ic('clock', 16)}<span>${tt('Son eşitleme')}</span><b>${rec.at ? agoTxt(rec.at) : '–'}</b></div>
+    ${rec.err ? tt`<p class="mut sm neg">Son deneme olmadı: internet yok ya da sunucuya ulaşılamadı.</p>` : ''}
+    <div class="seg"><button data-a="csync">${tt('Şimdi eşitle')}</button><button class="${rec.auto ? 'on' : ''}" data-a="cauto">${rec.auto ? tt('Otomatik: açık') : tt('Otomatik: kapalı')}</button></div>
+    <button class="link" data-a="cdel">${tt('Buluttan sil')}</button></section>`;
+}
+async function cloudConsent() {
+  if (CL.consent()) return true;
+  const sec = (h, p) => `<div class="lgl"><b>${h}</b><p>${p}</p></div>`;
+  const j = await dialog({ art: tt`<div class="art t-med"><div class="art-ic">${ic('up', 150)}</div><span class="art-n">${tt('Bulut kaydı')}</span></div>`, k: tt('İsteğe bağlı'), t: tt('Buluta ne gidiyor?'),
+    body: sec(tt('Ne saklanır'), tt('Kariyer kaydın (oyuncuna verdiğin ad dahil) Supabase altyapısında, Avrupa Birliği\'ndeki (Frankfurt) bir sunucuda saklanır. Hesap, e-posta ya da telefon istenmez.'))
+      + sec(tt('Kod'), tt('Kayıt sana verilen kodla eşleşir; sunucuda kodun kendisi değil, geri çevrilemeyen özeti durur. Kodu bilen herkes kariyerini açabilir, kimseyle paylaşma.'))
+      + sec(tt('Bağlantı'), tt('Eşitleme sırasında IP adresin, bağlantının teknik gereği servis sağlayıcıya ulaşır. Reklam, analitik ya da çerez yoktur.'))
+      + sec(tt('Silme'), tt('12 ay dokunulmayan kayıtlar silinir. İstediğin an Ayarlar > Bulut kaydı > "Buluttan sil" ile kendin silebilirsin.')),
+    opts: [{ t: tt('Anladım, devam et'), i: 'check' }, { t: tt('Vazgeç'), c: 'ghost' }], auto: 0 });
+  if (j !== 0) return false;
+  CL.setConsent(); return true;
+}
+async function cloudSync(manual, force) {
+  const n = G.curSlot(), rec = cloudRec(); if (!rec || cloudBusy || !G.S) return false;
+  cloudBusy = true; let ok = false;
+  try {
+    const v = (force ? Math.max(rec.ver, rec.cf || 0) : rec.ver) + 1, r = await CL.cloudPut(rec.code, await packSave(), v);
+    if (r && r.ok) { rec.ver = r.ver; rec.at = Date.now(); delete rec.err; delete rec.cf; ok = true; if (manual) toast(tt('Bulut kaydı güncellendi'), 'check'); }
+    else { rec.cf = r ? r.ver : rec.ver + 1; toast(tt('Bulutta daha yeni bir kayıt var. Ayarlar > Bulut kaydı'), 'alert'); }
+  } catch (e) { rec.err = 1; if (manual) toast(tt('Buluta ulaşılamadı. İnternetini kontrol et.'), 'alert'); }
+  CL.cloudSet(n, rec); cloudBusy = false;
+  if (manual) render();
+  return ok;
+}
+function cloudAuto() {   // hafta sonunda arka planda; oyunu bekletmez
+  if (AUTO || !CL.cloudOn() || !G.S || cloudBusy) return;
+  const rec = cloudRec(); if (!rec || !rec.auto || rec.cf || !navigator.onLine || Date.now() - (rec.at || 0) < 15000) return;
+  cloudSync(false);
+}
+async function cloudPullInto(code, r) {   // buluttaki kaydı bu yuvaya yaz
+  const ok = G.importData(await unpackSave(r.data)); if (!ok) return false;
+  CL.cloudSet(G.curSlot(), { code, ver: r.ver, auto: 1, at: Date.now(), uid: G.S.uid });
+  return true;
+}
+const CLOUD_ACT = {
+  cup: async () => {
+    if (busy || !G.S) return; busy = true;
+    try {
+      if (!await cloudConsent()) return;
+      const code = CL.newCode(), n = G.curSlot(); if (!G.S.uid) { G.S.uid = Math.random().toString(36).slice(2, 12); G.save(); }
+      let r = null; try { r = await CL.cloudPut(code, await packSave(), 1); } catch (e) { r = null; }
+      if (!r || !r.ok) { toast(tt('Buluta ulaşılamadı. İnternetini kontrol et.'), 'alert'); return; }
+      CL.cloudSet(n, { code, ver: 1, auto: 1, at: Date.now(), uid: G.S.uid }); sfx.up();
+      const j = await dialog({ art: tt`<div class="art t-fame"><div class="art-ic">${ic('check', 150)}</div><span class="art-n">${tt('Buluta kaydedildi')}</span></div>`, k: tt('Bulut kaydı'), t: tt('Kodun hazır'),
+        body: tt`<div class="ccode big"><b>${code}</b></div><p>Başka cihazda giriş ekranında "Bulut koduyla devam et"e bu kodu yaz. Her hafta sonunda kayıt kendiliğinden eşitlenir.</p><p class="mut sm">Kodu bir yere not et. Kaybedersen bu cihazda Ayarlar > Bulut kaydı'nda yine görünür.</p>`,
+        opts: [{ t: tt('Kodu kopyala'), i: 'swap' }, { t: tt('Tamam') }], auto: 1 });
+      if (j === 0) { try { await navigator.clipboard.writeText(code); toast(tt('Kod panoya kopyalandı'), 'check'); } catch (e) { toast(tt('Kopyalanamadı; kodu elle not et.'), 'alert'); } }
+    } finally { busy = false; render(); }
+  },
+  ccopy: async () => { const r = cloudRec(); if (!r) return; try { await navigator.clipboard.writeText(r.code); toast(tt('Kod panoya kopyalandı'), 'check'); } catch (e) { toast(tt('Kopyalanamadı; kodu elle not et.'), 'alert'); } },
+  csync: () => cloudSync(true),
+  cauto: () => { const n = G.curSlot(), r = cloudRec(); if (!r) return; r.auto = r.auto ? 0 : 1; CL.cloudSet(n, r); render(); },
+  cforce: () => cloudSync(true, true),
+  cpull: async () => {
+    const rec = cloudRec(); if (!rec || busy) return; busy = true;
+    try {
+      let r = null; try { r = await CL.cloudFetch(rec.code); } catch (e) { r = null; }
+      if (!r) { toast(tt('Buluta ulaşılamadı. İnternetini kontrol et.'), 'alert'); return; }
+      if (await cloudPullInto(rec.code, r)) { V.scr = 'hub'; V.tab = 'ev'; toast(tt('Buluttaki kayıt yüklendi'), 'check'); } else toast(tt('Buluttaki kayıt okunamadı'), 'alert');
+    } finally { busy = false; render(); }
+  },
+  cdel: async () => {
+    const rec = cloudRec(); if (!rec || busy) return; busy = true;
+    try {
+      const j = await dialog({ k: tt('Bulut kaydı'), t: tt('Buluttan silinsin mi?'), body: tt('<p>Buluttaki kopya kalıcı olarak silinir ve kod artık çalışmaz. Bu cihazdaki kariyerin yerinde kalır.</p>'), opts: [{ t: tt('Buluttan sil'), i: 'x' }, { t: tt('Vazgeç'), c: 'ghost' }], auto: 1 });
+      if (j !== 0) return;
+      try { await CL.cloudDel(rec.code); } catch (e) { toast(tt('Buluta ulaşılamadı. İnternetini kontrol et.'), 'alert'); return; }
+      CL.cloudSet(G.curSlot(), null); toast(tt('Buluttaki kayıt silindi'), 'check');
+    } finally { busy = false; render(); }
+  },
+  cload: async () => {
+    if (busy) return; busy = true;
+    try {
+      const j = await dialog({ k: tt('Bulut kaydı'), t: tt('Bulut koduyla devam et'), body: tt('<p>Diğer cihazda Ayarlar > Bulut kaydı\'nda görünen kodu yaz. Bu yuvadaki kariyerin üzerine yazılır.</p><input id="ckod" class="cin" placeholder="TS-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false">'), opts: [{ t: tt('Kariyeri getir'), i: 'down' }, { t: tt('Vazgeç'), c: 'ghost' }] });
+      if (j !== 0) return;
+      const code = CL.normCode(($('#ckod') || {}).value);
+      if (!code) { toast(tt('Kod biçimi yanlış: TS-XXXX-XXXX-XXXX'), 'alert'); return; }
+      if (!await cloudConsent()) return;
+      let r; try { r = await CL.cloudFetch(code); } catch (e) { toast(tt('Buluta ulaşılamadı. İnternetini kontrol et.'), 'alert'); return; }
+      if (!r) { toast(tt('Bu kodla bir kayıt bulunamadı'), 'alert'); return; }
+      if (await cloudPullInto(code, r)) { V.scr = 'hub'; V.tab = 'ev'; toast(tt('Kariyer buluttan geldi'), 'check'); } else toast(tt('Buluttaki kayıt okunamadı'), 'alert');
+    } finally { busy = false; render(); }
+  },
+};
+
 // ---------- tema: vurgu rengi kulübünden gelir ya da elle seçilir ----------
 const TKEY = 'toprak-saha-tema', THEMES = [['kulup', tt('Kulüp'), null], ['toprak', tt('Toprak'), '#ff6a2b'], ['cim', tt('Çim'), '#2fbf71'], ['gece', tt('Gece'), '#58a6ff'], ['ates', tt('Ateş'), '#ff4d4d'], ['altin', tt('Altın'), '#ffd23f']];
 const lum = h => { const n = parseInt((h || '#000000').slice(1), 16), f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(n >> 16) + .7152 * f((n >> 8) & 255) + .0722 * f(n & 255); };
@@ -200,7 +309,7 @@ function vTitle() {
     </div>
     ${m.n ? tt`<p class="meta">${ic('trophy', 16)} ${m.n} kariyer · en iyi ${num(m.best || 0)} puan${m.leg ? tt` · miras +${m.leg}` : ''}</p>` : ''}
     <button class="cta ghost chb" data-a="chal">${ic('bolt', 20)} Haftanın meydan okuması</button>
-    <div class="tlinks"><label class="link imp">Kayıt dosyası yükle<input type="file" accept=".json,application/json" data-c="imp" hidden></label><button class="link" data-a="kod">Kodla yükle</button>${(G.hasSave() ? slotDelBtn() : '') + legalBtn()}</div>
+    <div class="tlinks"><label class="link imp">Kayıt dosyası yükle<input type="file" accept=".json,application/json" data-c="imp" hidden></label><button class="link" data-a="kod">Kodla yükle</button>${CL.cloudOn() ? tt('<button class="link" data-a="cload">Bulut koduyla devam et</button>') : ''}${(G.hasSave() ? slotDelBtn() : '') + legalBtn()}</div>
     <button class="icb snd" data-a="snd" aria-label="Ses">${ic(sfx.on ? 'vol' : 'mute', 22)}</button>
     <div class="tlang">${langBtns(1)}</div>
   </div>`;
@@ -615,7 +724,7 @@ function vLife() {
     <section class="card hv-ayar">${tag(tt('Para birimi'))}<div class="seg">${Object.keys(G.CUR).map(k => `<button class="${G.curKey() === k ? 'on' : ''}" data-a="cur" data-v="${k}">${G.CUR[k][0]} ${G.CUR[k][2]}</button>`).join('')}</div></section>
     <section class="card hv-ayar">${tag(tt('Tema'))}<div class="thm">${THEMES.map(([k, n, c2]) => `<button class="${theme() === k ? 'on' : ''}" data-a="theme" data-v="${k}"><i style="background:${c2 || 'conic-gradient(#d81e2c, #ffd21a, #0f8a4b, #1c57c4, #d81e2c)'}"></i>${n}</button>`).join('')}</div></section>
     <section class="card hv-ayar">${tag(tt('Dil'))}<div class="seg">${langBtns()}</div></section>
-    <button class="opt sm hv-ayar" data-a="exp">${ic('down', 20)}<span><b>${tt('Kaydı dosyaya aktar')}</b></span></button>
+    ${cloudCard()}<button class="opt sm hv-ayar" data-a="exp">${ic('down', 20)}<span><b>${tt('Kaydı dosyaya aktar')}</b></span></button>
     ${mgrSetBtns()}${legalOpt()}
     <button class="link hv-ayar" data-a="menu">${tt('Ana menü')}</button></div>`;
   }
@@ -646,7 +755,7 @@ function vLife() {
     ${gfxCard()}${ivCard()}${legalOpt()}
     ${spiker.ok ? tt`<button class="opt sm hv-ayar" data-a="spk">${ic('mic', 20)}<span><b>Spiker sesi: ${spiker.on ? tt('açık') : tt('kapalı')}</b><small>Maçta goller ve anlar sesli okunur</small></span></button>` : ''}
     <button class="opt sm hv-ayar" data-a="howto">${ic('book', 20)}<span><b>Nasıl oynanır?</b><small>Rehberi baştan göster</small></span></button>
-    <button class="opt sm hv-ayar" data-a="kodal">${ic('swap', 20)}<span><b>Aktarım kodunu kopyala</b><small>Başka cihazda giriş ekranında "Kodla yükle"</small></span></button>
+    ${cloudCard()}<button class="opt sm hv-ayar" data-a="kodal">${ic('swap', 20)}<span><b>Aktarım kodunu kopyala</b><small>Başka cihazda giriş ekranında "Kodla yükle"</small></span></button>
     <button class="opt sm hv-ayar" data-a="exp">${ic('down', 20)}<span><b>Kaydı dosyaya aktar</b><small>Başka cihazda başlık ekranından yüklersin</small></span></button>
     <button class="opt sm hv-ayar" data-a="share">${ic('right', 20)}<span><b>Kariyerini paylaş</b><small>Özet metni paylaşım menüsüne ya da panoya gider</small></span></button>
     <button class="link hv-ayar" data-a="menu">Ana menü</button></div>`;
@@ -1863,7 +1972,7 @@ async function bizStep() {
     if (G.S) G.save();
   } finally {
     busy = false;
-    if (G.S) { V.scr = 'hub'; V.tab = goDesk ? 'kar' : 'ev'; if (goDesk) V.kv = 'tr'; goDesk = false; render(); if (!AUTO) window.scrollTo(0, 0); }
+    if (G.S) { V.scr = 'hub'; V.tab = goDesk ? 'kar' : 'ev'; if (goDesk) V.kv = 'tr'; goDesk = false; render(); if (!AUTO) window.scrollTo(0, 0); cloudAuto(); }
   }
 }
 // Yeni sayfa: görevi bırakınca açılan yollar. true: yeni işe başlandı
@@ -2106,7 +2215,7 @@ async function nextStep() {
     if (G.S) G.save();
   } finally {
     busy = false; sfx.ambOff();
-    if (G.S) { V.scr = 'hub'; V.tab = goDesk ? 'kar' : 'ev'; if (goDesk) V.kv = 'tr'; goDesk = false; render(); if (!AUTO) window.scrollTo(0, 0); }
+    if (G.S) { V.scr = 'hub'; V.tab = goDesk ? 'kar' : 'ev'; if (goDesk) V.kv = 'tr'; goDesk = false; render(); if (!AUTO) window.scrollTo(0, 0); cloudAuto(); }
   }
 }
 
@@ -2128,14 +2237,15 @@ const legalBtn = () => `<button class="link" data-a="legal">${tt('Gizlilik ve k�
 const legalOpt = () => `<button class="opt sm hv-ayar" data-a="legal">${ic('lock', 20)}<span><b>${tt('Gizlilik ve künye')}</b><small>${tt('Hangi veri nerede tutuluyor, kim sorumlu')}</small></span></button>`;
 async function legalFlow() {
   const sec = (h, ps) => `<div class="lgl"><b>${h}</b>${ps.map(p => `<p>${p}</p>`).join('')}</div>`;
-  const body = sec(tt('Kısaca'), [tt('Toprak Saha hesap istemez, reklam ve analitik aracı kullanmaz, çerez koymaz. Geliştirici hiçbir kişisel veriyi toplamaz, görmez, sunucuya göndermez.')])
+  const body = sec(tt('Kısaca'), [tt('Toprak Saha hesap istemez, reklam ve analitik aracı kullanmaz, çerez koymaz. İsteğe bağlı bulut kaydını sen açmadıkça hiçbir veri sunucuya gönderilmez.')])
     + sec(tt('Cihazında saklananlar'), [tt('Kariyer kayıtların ve ayarların (dil, ses, tema, para birimi) tarayıcının yerel depolamasında yalnızca bu cihazda durur. Oyunun çalışması için gereklidir; başka bir amaçla kullanılmaz.'), tt('Oyuncuna verdiğin ad da yalnızca cihazında kalır. Gerçek adını yazmak zorunda değilsin.')])
     + sec(tt('Barındırma'), [tt('Site GitHub Pages üzerinde yayınlanır. Sayfayı açtığında IP adresin, bağlantının teknik gereği olarak GitHub sunucularına ulaşır; GitHub bunu kendi gizlilik bildirimine göre güvenlik amacıyla işler. Yazı tipleri ve sesler aynı sunucudan gelir, başka bir şirkete istek yapılmaz.')])
+    + sec(tt('Bulut kaydı (isteğe bağlı)'), [tt('Ayarlar > Bulut kaydı ile açarsan kariyer kaydın (oyuncuna verdiğin ad dahil) Supabase altyapısında, Avrupa Birliği\'ndeki (Frankfurt) bir sunucuda saklanır. Hesap, e-posta ya da telefon istenmez; kayıt sana verilen rastgele kodla eşleşir ve sunucuda kodun kendisi değil geri çevrilemeyen özeti durur.'), tt('Eşitleme sırasında IP adresin, bağlantının teknik gereği servis sağlayıcıya ulaşır. Kodu bilen herkes kariyeri açabilir; kodu paylaşmak senin tercihin. 12 ay dokunulmayan kayıtlar silinir; "Buluttan sil" ile istediğin an kendin silebilirsin.')])
     + sec(tt('Paylaşım ve aktarım'), [tt('Kariyer özeti, aktarım kodu ve kayıt dosyası yalnızca sen düğmeye basarsan oluşur; cihazının paylaşım menüsüne, panoya ya da indirme klasörüne gider. Nereye göndereceğini sen seçersin.')])
-    + sec(tt('Silme ve hakların'), [tt('Ana menüdeki "Bu yuvayı sil" düğmesiyle bir kariyeri, tarayıcı ayarlarından site verilerini temizleyerek tüm kayıtları silebilirsin. Geliştiricide senin hakkında veri olmadığı için silinecek başka bir şey kalmaz.'), tt('6698 sayılı KVKK kapsamındaki soruların ve başvuruların için aşağıdaki iletişim kanalını kullanabilirsin.')])
+    + sec(tt('Silme ve hakların'), [tt('Ana menüdeki "Bu yuvayı sil" düğmesiyle bir kariyeri, tarayıcı ayarlarından site verilerini temizleyerek tüm kayıtları silebilirsin. Bulut kaydı açtıysan Ayarlar > Bulut kaydı > "Buluttan sil" ile sunucudaki kopyayı da silersin; geliştiricide bunun dışında senin hakkında veri yoktur.'), tt('6698 sayılı KVKK kapsamındaki soruların ve başvuruların için aşağıdaki iletişim kanalını kullanabilirsin.')])
     + sec(tt('Künye'), [tt('Toprak Saha bağımsız bir hayran yapımıdır; ücretsizdir, uygulama içi satın alma ve gerçek parayla oynanan hiçbir bölüm yoktur.'), tt('Kulüp adları şehir ve semt adlarından türetilmiştir; lig ve turnuva adları kurgudur. Oyunun hiçbir kulüp, federasyon ya da organizasyonla bağı yoktur, onlarca onaylanmamıştır. Armalar oyun içinde baş harflerden üretilir; resmî logo kullanılmaz.'), tt('Oyuncular, hocalar, hakemler ve diğer kişiler kurgudur; gerçek kişilerle benzerlik tesadüftür. Bahis, şike ve doping olayları kurgudur ve cezalarıyla birlikte gösterilir; gerçek bahsi özendirmez.'), tt('Yazı tipleri: Barlow ve Big Shoulders Display, SIL Open Font License 1.1.')])
     + sec(tt('İletişim'), [`<a href="${REPO}/issues" target="_blank" rel="noopener">${REPO.replace('https://', '')}/issues</a>`])
-    + `<p class="note">${tt('Son güncelleme: 23 Kasım 2026')}</p>`;
+    + `<p class="note">${tt('Son güncelleme: 27 Kasım 2026')}</p>`;
   await dialog({ k: tt('Bilgilendirme'), t: tt('Gizlilik ve künye'), body, opts: [{ t: tt('Tamam') }], auto: 0 });
 }
 const slotDelBtn = () => `<button class="link" data-a="slotdel">${tt('Bu yuvayı sil')}</button>`;
@@ -2546,6 +2656,7 @@ const ACT = {
   inv: v => { const stp = G.nice(Math.max(5000, G.S.money * .2)); if (G.invest(v, stp)) { sfx.coin(); toast(tt`${INV[v][0]}: ${G.fmtS(stp)} yatırıldı`, 'chart'); G.save(); render(); } },
   div: v => { const x = G.divest(v); if (x) { sfx.coin(); toast(tt`${INV[v][0]}: ${G.fmtS(x)} hesabına geçti`, 'coin'); G.save(); render(); } },
   spk: () => { spiker.toggle(); render(); },
+  ...CLOUD_ACT,
   legal: async () => { if (busy) return; busy = true; try { await legalFlow(); } finally { busy = false; } },
   howto: async () => { if (busy) return; busy = true; try { await tip('hub', 1); await tip('mac', 1); await tip('transfer', 1); if (G.S && !G.S.mgr) await tutFlow(true); } finally { busy = false; } },
   kodal: async () => { try { const c = await packSave(); await navigator.clipboard.writeText(c); toast(tt`Kod panoya kopyalandı (${Math.round(c.length / 1024)} KB)`, 'check'); } catch (e) { toast(tt('Kopyalanamadı. Dosyaya aktarmayı dene.'), 'alert'); } },
