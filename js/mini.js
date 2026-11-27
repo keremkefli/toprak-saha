@@ -33,7 +33,7 @@ export const INTRO = {
   pas: [tt('PAS'), tt('Koşan arkadaşının önüne dokun.'), tt('Araya girmesinler.'), 'tap'],
   calim: [tt('ÇALIM'), tt('Soldaki analogla koş.'), tt('Kırmızı hattan çık. ÇALIM: ani sıçrama.'), 'drag'],
   savunma: [tt('SAVUNMA'), tt('Soldaki analogla önünü kes.'), tt('Halka yeşilken KAY tuşuna bas.'), 'drag'],
-  kurtaris: [tt('KURTARIŞ'), tt('Analogla kaleciyi kaydır.'), tt('UZAN: son anda topa atıl.'), 'drag'],
+  kurtaris: [tt('KURTARIŞ'), tt('Analogla kay ya da kaleye dokunup atıl.'), tt('Şuttan önce sarı çizgi yönü gösterir.'), 'drag'],
   duvar: [tt('FRİKİK'), tt('Analogla kay, top gelince UZAN.'), tt('Kurduğun baraj vuruşun yönünü belirler.'), 'drag'],
   penkurtar: [tt('PENALTI'), tt('Bekle, köşeye kay, UZAN ile atıl.'), tt('Erken oynarsan boş köşe kalır.'), 'drag'],
   kosu: [tt('KOŞU'), tt('Pas çıktıktan sonra, imleç yeşile girince dokun.'), tt('Erken koşarsan ofsayt, geç kalırsan top kaçar.'), 'tap'],
@@ -516,18 +516,21 @@ function crossGame(m, o) {
 }
 
 // ---------- kurtarış ----------
+// Vuruşçunun bakışı: şuttan hemen önce topun gideceği yöne kısa, kesikli bir ipucu
+function cue(g, x0, y0, x1, y1, k) { g.save(); g.globalAlpha = .55 * k; g.strokeStyle = '#ffd23f'; g.lineWidth = 2.5; g.setLineDash([5, 7]); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + (x1 - x0) * .38, y0 + (y1 - y0) * .38); g.stroke(); g.restore(); }
 function keepGame(m, o) {
   const { gx, gy, gw, gh } = GOAL, gb = gy + gh, glove = { x: 180, y: gy + 56 }, crowd = mkCrowd(o), trail = [], eye = !!o.pen;   // eye: penaltıda kaleci gözünden
   const bx = f => lerp(180, tx, f), by = f => (eye ? lerp(292, ty, f) - Math.sin(f * Math.PI) * 10 : lerp(396, ty, f) - Math.sin(f * Math.PI) * 14), br = f => (eye ? 3 + 13 * f : 13 - 7 * f);
   // pen: penaltı düellosu (çok hızlı, hep köşe). wall: kurduğun baraj [köşe olasılığı, hız çarpanı]
-  const W2 = o.wall || null, T = clamp(0.54 - o.oppQ * 0.2, .3, .56) / o.hard * (o.pen ? .62 : W2 ? W2[1] : 1) / ((o.vr || {}).sp || 1), R = 20 + o.skill * 14 + (o.pen ? 6 : 0), gs = (330 + o.skill * 260) * ((o.pk || {}).refleks ? 1.2 : 1) * (o.pen ? 1.25 : 1);
+  const W2 = o.wall || null, T = clamp(0.84 - o.oppQ * 0.22, .54, .84) / o.hard * (o.pen ? .74 : W2 ? W2[1] : 1) / ((o.vr || {}).sp || 1), R = 26 + o.skill * 14 + (o.pen ? 6 : 0), gs = (430 + o.skill * 260) * ((o.pk || {}).refleks ? 1.2 : 1) * (o.pen ? 1.25 : 1);
   const corner = o.pen ? true : Math.random() < (W2 ? W2[0] : .6);
   const tx = corner ? (Math.random() < .5 ? gx + rnd(14, 64) : gx + gw - rnd(14, 64)) : gx + rnd(40, gw - 40);
   const ty = gy + rnd(14, gh - 14);
   let wait = rnd(0.9, 2.1), phase = 'wait', fly = 0, t = 0, net = null, bp = null, bv = null, dive = 0, dived = false;
   return {
     _s: { glove, tx, ty, fly: () => (phase === 'wait' ? -1 : fly), T },
-    act() { if (dived) return; dived = true; dive = .24; },   // UZAN: bir kez, kısa ve hızlı atılış
+    act() { if (dived) return; dived = true; dive = .26; },   // UZAN: bir kez, kısa ve hızlı atılış
+    down() { if (!dived && phase !== 'wait') { dived = true; dive = .26; } },   // kaleye dokun: oraya atıl (top çıktıktan sonra)
     update(dt) {
       t += dt;
       const boost = dive > 0 ? 2.6 : 1; if (dive > 0) dive -= dt;
@@ -560,7 +563,7 @@ function keepGame(m, o) {
         g.strokeStyle = '#f6f6f6'; g.lineWidth = 7; g.lineJoin = 'round'; g.beginPath(); g.moveTo(gx - 6, H); g.lineTo(gx - 6, gy - 6); g.lineTo(gx + gw + 6, gy - 6); g.lineTo(gx + gw + 6, H); g.stroke();
         for (const dx of [-13, 13]) { g.fillStyle = '#fff'; rr(g, glove.x + dx - 10, glove.y - 13, 20, 26, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = 2; g.stroke(); g.fillStyle = ME.c1; g.fillRect(glove.x + dx - 10, glove.y + 9, 20, 5); }
         g.beginPath(); g.arc(glove.x, glove.y, R, 0, 7); g.strokeStyle = '#ffd23f'; g.lineWidth = 2.5; g.stroke();
-        if (phase === 'wait') head(g, tt('HAZIR OL'), 180, 390, 22, 'rgba(255,255,255,.85)');
+        if (phase === 'wait') { head(g, tt('HAZIR OL'), 180, 390, 22, 'rgba(255,255,255,.85)'); if (wait < .5) cue(g, bx(0), by(0), tx, ty, 1 - wait / .5); }
         return;
       }
       stadium(g, t, crowd, net);
@@ -569,7 +572,7 @@ function keepGame(m, o) {
       figure(g, 150 + (phase === 'wait' ? Math.sin(t * 9) * 2 : 8), 430, o.co, 1.05, phase === 'wait' ? POSE.run(t, .5) : POSE.kick(.4 + clamp(fly * 1.6, 0, 1) * .6));
       if (phase === 'end' && bp) ballD(g, bp.x, bp.y, bp.r);
       else { trailD(g, trail); ballD(g, bx(fly), by(fly), br(fly)); }
-      if (phase === 'wait') head(g, tt('HAZIR OL'), 180, 300, 22, 'rgba(255,255,255,.85)');
+      if (phase === 'wait') { head(g, tt('HAZIR OL'), 180, 300, 22, 'rgba(255,255,255,.85)'); if (wait < .5) cue(g, bx(0), by(0), tx, ty, 1 - wait / .5); }
     },
   };
 }
@@ -738,7 +741,7 @@ export class Mini {
       [this.px, this.py] = pos(e); this.hasP = true;
       if (this.res && this.cam && this.endT > 1.5) { this.endT = 9; return; }   // tekrarı geç
       if (!this.game || this.res) return;
-      if (!this.started) { this.started = true; this.skipUp = true; sfx.whistle(1); return; }
+      if (!this.started) { this.started = true; this.skipUp = true; this.hasP = false; sfx.whistle(1); return; }   // başlatma dokunuşu oyunu yönlendirmesin
       if (this.game.down) this.game.down(this.px, this.py);
     });
     cv.addEventListener('pointermove', e => { [this.px, this.py] = pos(e); if (this.game && this.started && !this.res && this.game.move) this.game.move(this.px, this.py); });

@@ -513,8 +513,8 @@ export const SHOP = [
   { id: 'halisaha', n: tt('Halı saha işletmesi'), d: tt('Haftalık ₺45.000 gelir.'), p: 3000000, e: { inc: 45000 } },
   { id: 'ev', n: tt('Ev satın al'), d: tt('Aile rahat eder. Enerji +3, moral +6.'), p: 6000000, e: { en: 3, mo: 6 } },
   { id: 'spor', n: tt('Spor araba'), d: tt('Göz alıcı. Moral +5, takipçi artışı.'), p: 12000000, e: { mo: 5, fol: .5 } },
-  { id: 'kofte', n: tt('Islama köfte restoranı'), d: tt('Adapazarı\'nda şube. Haftalık ₺240.000 gelir.'), p: 15000000, e: { inc: 240000 } },
-  { id: 'villa', n: tt('Sapanca\'da villa'), d: tt('Göl manzarası. Enerji +4, moral +8.'), p: 60000000, e: { en: 4, mo: 8 } },
+  { id: 'kofte', n: tt('Memleket lezzeti dükkânı'), d: tt('Memleketinin meşhur lezzetini satan dükkân. Haftalık ₺240.000 gelir.'), p: 15000000, e: { inc: 240000 }, loc: 1 },
+  { id: 'villa', n: tt('Manzaralı villa'), d: tt('Doğanın içinde, sakin bir ev. Enerji +4, moral +8.'), p: 60000000, e: { en: 4, mo: 8 } },
   // ikinci kademe: ilk kademedeki kalıcı her şey alınınca açılır (t2)
   { id: 'muze', t2: 1, n: tt('Kişisel müze'), d: tt('Formaların, kupaların sergide. Takipçi artışı hızlanır.'), p: 60000000, e: { fol: .6 } },
   { id: 'tekne', t2: 1, n: tt('Tekne'), d: tt('Maç sonrası açık deniz. Moral +6.'), p: 90000000, e: { mo: 6 } },
@@ -523,6 +523,35 @@ export const SHOP = [
   { id: 'hisse', t2: 1, n: tt('Kulüp hissesi'), d: tt('Bir kulübe ortak oldun. Haftalık ₺2.200.000 gelir.'), p: 250000000, e: { inc: 2200000 } },
   { id: 'yali', t2: 1, n: tt('Boğaz\'da yalı'), d: tt('Şehrin en iyi adresi. Enerji +3, moral +10.'), p: 400000000, e: { en: 3, mo: 10 } },
 ];
+
+// Memleket lezzeti: ilin meşhur yemeğine ya da ürününe göre işletme adı ve açıklaması (yoksa genel lokanta)
+export const YEREL = {
+  'Adana': [tt('Adana kebap salonu'), tt('Acılı, zırhla çekilmiş kebap. Kuyruk kapıya kadar.')], 'Adıyaman': [tt('Çiğ köfte dükkânı'), tt('Elde yoğrulmuş çiğ köfte, yanında ayran.')],
+  'Afyonkarahisar': [tt('Sucuk ve kaymak dükkânı'), tt('Afyon sucuğu, kaymaklı lokum.')], 'Amasya': [tt('Elma ve çörek dükkânı'), tt('Misket elması, Amasya çöreği.')],
+  'Ankara': [tt('Ankara tava lokantası'), tt('Fırında tava, yanında simit.')], 'Antalya': [tt('Piyaz ve şiş köfte salonu'), tt('Tahinli piyaz, közde şiş köfte.')],
+  'Aydın': [tt('İncir ve çöp şiş dükkânı'), tt('Kuru incir, çöp şiş, bol yeşillik.')], 'Balıkesir': [tt('Höşmerim tatlıcısı'), tt('Peynirli höşmerim, sıcak servis.')],
+  'Bolu': [tt('Aşçılar lokantası'), tt('Mengen ustalarının tencere yemekleri.')], 'Bursa': [tt('İskender kebap salonu'), tt('Tereyağlı iskender, yanında kestane şekeri.')],
+  'Çanakkale': [tt('Peynir helvası dükkânı'), tt('Sıcak peynir helvası, Ezine peyniri.')], 'Çorum': [tt('Leblebi dükkânı'), tt('Taze kavrulmuş leblebi çeşitleri.')],
+  'Denizli': [tt('Kebap ve leblebi salonu'), tt('Fırın kebabı, yanında ayran.')], 'Diyarbakır': [tt('Ciğer kebap salonu'), tt('Közde ciğer, yanında soğan salatası.')],
+  'Edirne': [tt('Tava ciğer lokantası'), tt('İnce kıyılmış tava ciğer, kızarmış biber.')], 'Elazığ': [tt('Orcik ve köfte dükkânı'), tt('Harput köftesi, cevizli orcik.')],
+  'Erzincan': [tt('Tulum peyniri dükkânı'), tt('Şavak tulumu, köy ekmeği.')], 'Erzurum': [tt('Cağ kebap salonu'), tt('Şişte cağ kebabı, lavaşla.')],
+  'Eskişehir': [tt('Çibörek salonu'), tt('Çıtır çibörek, yanında ayran.')], 'Gaziantep': [tt('Baklava ve kebap salonu'), tt('Fıstıklı baklava, beyran çorbası.')],
+  'Giresun': [tt('Fındık ve hamsi dükkânı'), tt('Kavrulmuş fındık, tavada hamsi.')], 'Hatay': [tt('Künefe tatlıcısı'), tt('Sıcak künefe, Antakya usulü.')],
+  'Isparta': [tt('Gül ürünleri dükkânı'), tt('Gül lokumu, gül reçeli, gül suyu.')], 'Mersin': [tt('Tantuni dükkânı'), tt('Sacda tantuni, yanında şalgam.')],
+  'İstanbul': [tt('Balık ekmek teknesi'), tt('Sahilde balık ekmek, turşu suyu.')], 'İzmir': [tt('Boyoz ve kumru fırını'), tt('Sabah boyozu, öğlen kumru.')],
+  'Kahramanmaraş': [tt('Dövme dondurma dükkânı'), tt('Keçi sütüyle dövülmüş dondurma.')], 'Kars': [tt('Kaşar ve kaz lokantası'), tt('Kars kaşarı, fırında kaz.')],
+  'Kastamonu': [tt('Etli ekmek ve pastırma dükkânı'), tt('Taşköprü sarımsağıyla pastırma.')], 'Kayseri': [tt('Mantı ve pastırma dükkânı'), tt('El açması mantı, pastırma, sucuk.')],
+  'Kocaeli': [tt('Pişmaniye dükkânı'), tt('Tel tel pişmaniye, kutu kutu.')], 'Konya': [tt('Etli ekmek fırını'), tt('Upuzun etli ekmek, fırından yeni çıkmış.')],
+  'Malatya': [tt('Kayısı dükkânı'), tt('Gün kurusu kayısı, kayısı pestili.')], 'Manisa': [tt('Mesir macunu dükkânı'), tt('Kırk bir baharatlı mesir macunu.')],
+  'Mardin': [tt('Kaburga dolması lokantası'), tt('İçli kaburga, Mardin çöreği.')], 'Nevşehir': [tt('Testi kebabı lokantası'), tt('Masada kırılan testi kebabı.')],
+  'Ordu': [tt('Fındık ezmesi dükkânı'), tt('Fındık ezmesi, fındıklı kurabiye.')], 'Rize': [tt('Çay bahçesi'), tt('Demli Rize çayı, yanında muhlama.')],
+  'Sakarya': [tt('Islama köfte salonu'), tt('Islama köfte, ekmeği suya batırılmış.')], 'Samsun': [tt('Pide salonu'), tt('Bafra pidesi, kapalı ve açık.')],
+  'Sivas': [tt('Sivas köftesi salonu'), tt('Uzun uzun köfte, közde biber.')], 'Şanlıurfa': [tt('Lahmacun ve ciğer salonu'), tt('İnce lahmacun, sabah ciğeri.')],
+  'Tekirdağ': [tt('Köfte salonu'), tt('Tekirdağ köftesi, yanında piyaz.')], 'Tokat': [tt('Tokat kebabı lokantası'), tt('Patlıcanlı, odun ateşinde kebap.')],
+  'Trabzon': [tt('Pide ve hamsi lokantası'), tt('Akçaabat köftesi, hamsili pilav.')], 'Van': [tt('Kahvaltı salonu'), tt('Otlu peynir, murtuğa, kahvaltı sabaha kadar.')],
+  'Yozgat': [tt('Testi kebabı ve tandır lokantası'), tt('Tandır kebabı, arabaşı çorbası.')], 'Zonguldak': [tt('Kömürcü lokantası'), tt('Maden işçilerinin sofrası, bol porsiyon.')],
+  'Sinop': [tt('Mantı ve balık lokantası'), tt('Sinop mantısı, taze balık.')], 'Bayburt': [tt('Tandır ve lor dolması lokantası'), tt('Bayburt tandırı, lor dolması.')],
+};
 // Kademeli yatırımlar: her seviye daha pahalı. e: seviye başına etki, max: en yüksek seviye, need: açılma koşulu (2 = ikinci kademe)
 export const UPG = [
   { id: 'salon', n: tt('Ev spor salonu'), d: tt('Her seviye antrenman verimini %3 artırır.'), i: 'train', base: 800000, k: 1.7, max: 8, e: { tr: .03 } },

@@ -1323,9 +1323,7 @@ const LTX = {
   trend: [tt('#{kulup} gündemde ilk 10\'a girdi.'), tt('#{ad}{num} etiketi bugün trend oldu.'), tt('Maç günü paylaşımları: tribün koreografisi hazır.')],
 };
 export function liveFeed() {
-  const s = S, wk = absWeek(); if (s.mgr) return null;
-  if (s.lfw !== wk) { s.lfw = wk; s.lfn = 0; }
-  if (s.lfn >= 12) return null; s.lfn++;
+  const s = S, wk = absWeek(); if (s.mgr) return null;   // Sosyal açık kaldıkça akar; akış 60 gönderide kırpılır
   const lm = s.lm && wk - s.lm.w <= 1 ? s.lm : null, f = nextOpp(), r = Math.random(), hp = clamp((s.hate || 10) / 160, .05, .45);
   if (r < hp) { hater(); return s.feed[0]; }
   const pool = r < .55 ? (lm ? (lm.win ? 'win' : lm.lose ? 'lose' : 'fan') : 'fan') : r < .7 && f ? 'rakip' : r < .87 ? 'haber' : r < .95 ? 'trend' : 'fan';

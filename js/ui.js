@@ -1,7 +1,7 @@
 // Toprak Saha — arayüz ve oyun akışı
 import { tt, lang, LC, NLOC, DSEP, LANGS, setLang } from './i18n.js';
 import * as G from './core.js';
-import { LEAGUES, LMAP, POS, ATTR, ORIGINS, TRAITS, PROV, SHOP, TRAIN, COUNTRIES, ROLE, MOM, TSTAT, STANCE, PERKS, HANG, POSTS, ACH, DEC, HT, BUILD, STYLES, CELE, NET, MACT, DIFF, TACT, PERKS2, FREE, NATN, NATC, WX, INV, SCN, MVAR, UPG, SESS, PTAG, SCENS, COLK, CAMP, NEGO, AGTOP, AGBR } from './data.js';
+import { LEAGUES, LMAP, POS, ATTR, ORIGINS, TRAITS, PROV, SHOP, YEREL, TRAIN, COUNTRIES, ROLE, MOM, TSTAT, STANCE, PERKS, HANG, POSTS, ACH, DEC, HT, BUILD, STYLES, CELE, NET, MACT, DIFF, TACT, PERKS2, FREE, NATN, NATC, WX, INV, SCN, MVAR, UPG, SESS, PTAG, SCENS, COLK, CAMP, NEGO, AGTOP, AGBR } from './data.js';
 import { pickEvent, resolve } from './events.js';
 import { Mini, Pitch, PSLOT, INTRO } from './mini.js';
 import { StadView, GFX, fig, POSE, backdrop, lockerDraw, injuryDraw } from './scene.js';
@@ -573,7 +573,8 @@ function vLife() {
   const shopC = i => {
     const own = G.has(i.id), cost = i.p || G.yrPrice(i), price = i.p ? G.fmtS(i.p) : tt`${G.fmtS(cost)}/sezon`;
     const btn = own ? tt`<span class="own">${ic('check', 16)} ${tt('Sende')}</span>` : tt`<button class="mini-b" data-a="buy" data-v="${i.id}" ${s.money < cost ? 'disabled' : ''}>${price}</button>`;
-    return tt`<div class="shop shc ${own ? 'has' : ''}${i.img ? ' feat' : ''}"><span class="aic${i.img ? ' blg' : ''}">${i.img ? `<img src="${i.img}" alt="">` : ic(SIC[i.id] || 'cart', 22)}</span><div><b>${i.n}</b><small>${G.tl(i.d)}</small><span class="efx">${gain(i.e)}</span></div>${i.img ? mdMini() : ''}${btn}</div>`;
+    const Y = i.loc ? YEREL[s.prov] || [tt('Memleket lokantası'), tt('Ev yemekleri, esnaf lokantası usulü.')] : null, nm = Y ? Y[0] : i.n, ds = Y ? Y[1] + ' ' + tt`Haftalık ${G.fmtS(i.e.inc)} gelir.` : G.tl(i.d);   // memleket lezzeti: ile göre
+    return tt`<div class="shop shc ${own ? 'has' : ''}${i.img ? ' feat' : ''}"><span class="aic${i.img ? ' blg' : ''}">${i.img ? `<img src="${i.img}" alt="">` : ic(SIC[i.id] || 'cart', 22)}</span><div><b>${nm}</b><small>${ds}</small><span class="efx">${gain(i.e)}</span></div>${i.img ? mdMini() : ''}${btn}</div>`;
   };
   const list = SHOP.filter(i => (!i.t2 || G.shopTier() >= 2) && !(s.mgr && i.img)), feat = list.filter(i => i.img), shop0 = feat.map(shopC).join('') + `<div class="shopg">${list.filter(i => !i.img).map(shopC).join('')}</div>`, shop = s.mgr ? shop0 : shop0 + shopExtra();
   const send = G.nice(Math.max(1000, s.con.wage));
@@ -642,14 +643,13 @@ function vSocial() {
   const s = G.S, left = G.slots() - s.used, hd = sosHd();
   s.feedNew = 0;
   const dots = Array.from({ length: G.slots() }, (_, i) => `<i class="${i < s.used ? 'u' : ''}"></i>`).join('');
-  const posts = POSTS.filter(G.canPost).map(p => tt`<button class="pst" data-a="post" data-v="${p.id}" ${left <= 0 ? 'disabled' : ''}>${ic(p.i, 20)}<span>${p.n}</span></button>`).join('');
   const feed = s.feed.map(p => fdHTML(p, hd)).join('');
   const hate = Math.round(s.hate || 0), c = G.club(s.clubId), f = G.fixture(), tag0 = x => '#' + x.replace(/\s+/g, '');
   const trends = [tag0(c.n), tag0(s.name.split(' ')[0]) + s.num, ...(f && !f.nat && G.club(f.opp) ? [tag0(G.club(f.opp).n) + tt('Maçı')] : [])];
   return tt`<section class="card soc">${me()}<div><b>${esc(s.name)}</b><small>${hd}</small></div><div class="soc-f"><b>${s.fol >= 1e6 ? dec(s.fol / 1e6, 1) + tt(' Mn', 'para') : num(s.fol)}</b><small>takipçi</small></div>
       <div class="hate"><span>${ic('alert', 14)}${tt('Eleştiri')}</span><u><i style="width:${hate}%"></i></u><b>${hate < 25 ? tt('sakin') : hate < 55 ? tt('hareketli') : tt('alevli')}</b></div></section>
     <div class="trends">${trends.map(t => `<span>${esc(t)}</span>`).join('')}</div>
-    ${s.mgr ? '' : tt`<section><div class="sh"><h4>Paylaş</h4><div class="dots">${dots}</div></div><div class="psts">${posts}</div></section>`}
+    ${s.mgr ? '' : `<button class="sbtn" data-a="share" ${left <= 0 ? 'disabled' : ''}>${ic('phone', 20)}<span>${tt('Paylaşım yap')}</span><span class="dots">${dots}</span></button>`}
     <section><div class="sh"><h4>Akış</h4><em class="live">${tt('CANLI')}</em></div><div class="feedl" id="feedl">${feed || tt('<p class="mut sm pad">Akış boş. İlk maçından sonra dolmaya başlar.</p>')}</div></section>`;
 }
 // Sosyal açıkken akış canlı akar: birkaç saniyede bir yeni gönderi üstten kayarak gelir
@@ -657,11 +657,13 @@ let LIVE = null;
 function liveSet() {
   const on = V.scr === 'hub' && V.tab === 'sos' && G.S && !G.S.mgr && !AUTO;
   if (on && !LIVE) LIVE = setInterval(() => {
-    if (busy || !$modal.hidden || document.hidden) return;
+    if (busy || !$modal.hidden || document.hidden || Math.random() < .25) return;   // 2,5 sn'de bir, ara ara boşluk: gerçek akış gibi düzensiz
     const p = G.liveFeed(), box = $('#feedl'); if (!p || !box) return;
+    const e = box.querySelector('.pad'); if (e) e.remove();
     box.insertAdjacentHTML('afterbegin', fdHTML(p, sosHd())); const el = box.firstElementChild; if (el) el.classList.add('new');
-    G.S.feedNew = 0; G.save();
-  }, 4200);
+    while (box.children.length > 60) box.lastElementChild.remove();
+    G.S.feedNew = 0; if (Math.random() < .2) G.save();
+  }, 2500);
   if (!on && LIVE) { clearInterval(LIVE); LIVE = null; }
 }
 
@@ -2523,6 +2525,11 @@ const ACT = {
   },
   msim: (v, el) => { mSim = true; el.disabled = true; el.textContent = tt('Simüle ediliyor'); },
   ck: v => { V.ck = v; render(); },
+  share: async () => {
+    if (busy || !$modal.hidden || !G.S || G.S.mgr) return; const ps = POSTS.filter(G.canPost), left = G.slots() - G.S.used; if (left <= 0) return;
+    const j = await dialog({ k: tt`${left} hak`, t: tt('Ne paylaşacaksın?'), opts: [...ps.map(p => ({ t: p.n, i: p.i })), { t: tt('Vazgeç'), c: 'ghost' }], grid: true, cls: 'ev' });
+    if (j < ps.length) ACT.post(ps[j].id);
+  },
   hrep: async v => {
     if (busy || !$modal.hidden) return; const id = +v, p = G.S.feed.find(x => x.id === id); if (!p) return;
     const j = await dialog({ art: art('golge', 'mic', 'risk'), k: '@' + p.n, t: tt('Nasıl cevap vereceksin?'), body: `<p>“${esc(p.t)}”</p>`, opts: [{ t: tt('Kibar cevap'), s: tt('Basın ve taraftar sever; eleştiri azalır'), i: 'heart' }, { t: tt('Sert cevap'), s: tt('Taraftar coşar, takipçi gelir; tartışma büyür'), i: 'alert' }, { t: tt('Esprili cevap'), s: tt('Gülümsetir, eleştiriyi söndürür'), i: 'star' }, { t: tt('Görmezden gel'), s: tt('Hiçbir şey olmamış gibi'), c: 'ghost' }], cls: 'ev' });
