@@ -1000,3 +1000,10 @@ main { min-width: 0; } main > * { min-width: 0; max-width: 100%; }
 .oct th { text-align: left; color: var(--mu); font-weight: 600; padding: 7px 6px; white-space: nowrap; } .oct td { padding: 7px 6px; border-top: 1px solid var(--ln); text-align: center; white-space: nowrap; }
 .oct td.oh { border-top: 0; vertical-align: bottom; } .oct td.oh b { display: block; font: 800 13px/1.05 var(--fh); text-transform: uppercase; margin-top: 4px; white-space: normal; }
 .oct td.bst { color: var(--ye); font-weight: 800; }
+
+/* bulut kaydı */
+.ccode { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: var(--p2); border: 1px dashed color-mix(in srgb, var(--ye) 45%, var(--ln)); border-radius: 5px; }
+.ccode b { font: 700 18px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; color: var(--ye); overflow-wrap: anywhere; }
+.ccode.big { justify-content: center; padding: 16px 10px; } .ccode.big b { font-size: 22px; }
+.cld .neg { color: var(--rd); }
+.cin { width: 100%; padding: 12px; background: var(--p2); border: 1px solid var(--ln); border-radius: 4px; color: var(--tx); font: 700 18px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; }
