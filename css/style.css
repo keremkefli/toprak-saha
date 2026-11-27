@@ -925,3 +925,20 @@ main > .bsum { break-inside: avoid; margin-bottom: 12px; }
 .momc #mal { fill: none; stroke: var(--ye); stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .mcl { display: flex; justify-content: space-between; font-size: 11px; color: var(--mu); }
 @media (max-width: 999px) { .match .momc svg { height: 32px; } }
+/* sosyal: uzun kullanıcı adı ya da etiket sayfayı genişletip ekranı küçültmesin */
+html, body { overflow-x: clip; }
+.fd { min-width: 0; } .fd > div { min-width: 0; } .fd-h { flex-wrap: wrap; min-width: 0; } .fd-h b, .fd-h small, .fd p, .fd.manset b { overflow-wrap: anywhere; word-break: break-word; }
+main { min-width: 0; } main > * { min-width: 0; max-width: 100%; }
+/* sosyal: eleştiri göstergesi, gündem etiketleri, canlı akış, eleştirmen gönderileri */
+.soc .hate { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 12px; color: var(--mu); margin-top: 6px; }
+.soc .hate span { display: inline-flex; align-items: center; gap: 4px; } .soc .hate u { height: 5px; border-radius: 3px; background: var(--ln); overflow: hidden; } .soc .hate u i { display: block; height: 100%; background: var(--rd); } .soc .hate b { font: 800 12px/1 var(--fp, Barlow), sans-serif; text-transform: none; color: var(--tx); }
+.trends { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; } .trends span { flex: none; padding: 5px 10px; border-radius: 14px; background: var(--p2); border: 1px solid var(--ln); font-size: 12.5px; font-weight: 700; color: var(--bl); }
+.sh .live { font-style: normal; font: 800 11px/1 var(--fh); letter-spacing: .1em; padding: 3px 7px; border-radius: 3px; background: var(--rd); color: #fff; animation: livep 1.6s ease-in-out infinite; }
+@keyframes livep { 50% { opacity: .45; } }
+.fd.k-hater { border-left: 3px solid var(--rd); } .fd .htg { font-style: normal; font-size: 10.5px; padding: 1px 6px; border-radius: 3px; background: color-mix(in srgb, var(--rd) 30%, var(--p2)); }
+.fd.k-trend { border-left: 3px solid var(--bl); }
+.fd-f .hr { margin-left: auto; padding: 5px 10px; font-size: 13px; } .fd-f .hrd { margin-left: auto; font-style: normal; font-size: 12px; color: var(--gr); display: inline-flex; align-items: center; gap: 3px; }
+.fd.new { animation: fdin .45s ease-out; } @keyframes fdin { from { opacity: 0; transform: translateY(-10px); } }
+/* paylaşım seçenekleri çoğaldı: yana kaymak yerine ızgara */
+.psts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; } .pst { width: auto; min-width: 0; }
+@media (max-width: 560px) { .psts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
