@@ -893,6 +893,15 @@ export const CAMP = [
 ];
 
 // ---------- sözleşme pazarlığı maddeleri ----------
+// v26: kulüplerin teklifle birlikte yaptığı sunumlar; dinleyince sözleşmeye bir madde eklenir
+export const PITCH = {
+  hoca: { n: tt('Teknik direktör aradı'), d: tt('"Seni sistemimin merkezine koyacağım. Her hafta sahada olacaksın."'), e: tt('Rol sözü bir basamak yükselir, hocanın güveni yüksek başlar.'), i: 'whistle', p: 'hoca' },
+  baskan: { n: tt('Başkan kapını çaldı'), d: tt('Elinde bir dosya: "İmza parasını konuşuruz, yeter ki gel."'), e: tt('İmza parası %25 artar.'), i: 'coin', p: 'baskan' },
+  taraftar: { n: tt('Taraftar videosu'), d: tt('Tribün liderleri senin için bir video çekmiş: "Bu forma seni bekliyor."'), e: tt('Taraftar sevgisi yüksek başlar.'), i: 'heart', p: 'taraftar' },
+  proje: { n: tt('Proje sunumu'), d: tt('Sportif direktör üç yıllık planı anlattı: kupa, altyapı, Avrupa.'), e: tt('Serbest kalma bedeli düşük tutulur; kariyer basamağı olarak kapın açık kalır.'), i: 'chart', p: 'scout' },
+  kaptan: { n: tt('Liderlik teklifi'), d: tt('"Soyunma odasının lideri olacaksın. Pazubent senin."'), e: tt('Sözleşmeye kaptanlık maddesi eklenir.'), i: 'crown', p: 'baskan' },
+};
+
 export const NEGO = [
   { id: 'wage', n: tt('Ücret'), d: tt('Haftalık ücrete %12 zam'), i: 'coin' },
   { id: 'sign', n: tt('İmza parası'), d: tt('İmza parasını %35 artır'), i: 'pen' },

@@ -1,6 +1,6 @@
 // Toprak Saha — oyun çekirdeği: durum, lig simülasyonu, sezon, transfer, ekonomi
 import { tt, LC, NLOC, DSEP } from './i18n.js';
-import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HATERS, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR, UPG, SESS, PROLE, SCENS, COLK, SPN, KLIK, PTAG , REN } from './data.js';
+import { LEAGUES, LMAP, CLUBS, PAL, PROV, NAMES, POS, ATTR, ORIGINS, TRAITS, SHOP, TRAIN, NATIONS, FILL, CUPS, PERKS, HANG, POSTS, FANS, ACH, HATERS, HT, BUILD, STYLES, CELE, NET, MACT, DERBY, XIDS, TACT, PERKS2, ROLE, WIDS, AGENTS, NATN, WX, INV, DIFF, KPROV, KWORLD, setWorld as setData, SCN, MVAR, UPG, SESS, PROLE, SCENS, COLK, SPN, KLIK, PTAG , REN , PITCH } from './data.js';
 
 export let S = null;
 export const WEEKS = 38;
@@ -480,7 +480,7 @@ export function endWeek(own, ownCup, ownEuro, ownX) {
   s.rep = clamp(s.rep + (tgt - s.rep) * 0.04, 0, 100);
   s.fol = Math.round(s.fol + (s.fol * 0.002 + s.rep * s.rep * 0.5) * (1 + eff('fol')) * folF());
   if (s.job && s.con.wage > 20000) { s.job = 0; addNews(tt('Maaşın artık yetiyor; fabrikadaki işten ayrıldın.')); }
-  watchStep(); feedWeek(); checkAch();
+  watchStep(); offerWeek(); feedWeek(); checkAch();
   for (const m of s.mates) m.b = clamp(m.b - .5, 0, 100);
   for (const c of s.net) c.b = clamp(c.b - .7, 0, 100);
   for (const c of s.net.filter(x => x.b < 4)) addNews(tt`${c.n} ile bağın koptu.`, 'users');
@@ -785,6 +785,111 @@ export function genOffers(kind) {
   return out;
 }
 
+// ---------- v26: teklif masası ----------
+// Teklifler tek seferde gelmez: transfer dönemine yaklaşırken ve dönem boyunca haftalık düşer. Her teklifin son günü var;
+// bekletebilir, sunumu dinleyebilir, pazarlık edebilir ya da reddedebilirsin. Rakip teklif gören kulüp artırır, bekletilen kulüp acele eder,
+// kulübün seni kaybetmemek için yeni sözleşme önerir. Pencere kapalıyken anlaşırsan transfer pencere açılınca gerçekleşir.
+const wkAbs = (se, w) => (se - 1) * WEEKS + w;
+export const twin = (w = S.week) => (w >= 1 && w <= 6 ? 'yaz' : w >= 18 && w <= 22 ? 'kis' : null);   // oyuncu transfer pencereleri
+const preFree = () => !S.loan && S.con.until === S.season;   // sözleşmesi bu sezon bitiyor: bedelsiz ön anlaşma
+// Haftanın teklif dönemi: hangi pencereye yönelik ve son gün en geç ne zaman
+function offerSeason(w) {
+  if (twin(w)) return { win: twin(w), last: wkAbs(S.season, w <= 6 ? 6 : 22) };
+  if (w >= 14 && w < 18) return { win: 'kis', last: wkAbs(S.season, 22), early: 1 };
+  if (preFree() && w >= 24) return { win: 'yaz', last: wkAbs(S.season + 1, 6), early: 1, free: 1 };
+  if (w >= 32) return { win: 'yaz', last: wkAbs(S.season + 1, 6), early: 1 };
+  return null;
+}
+export const inbox = () => (S.inb || []).filter(o => !o.end);
+export const pendingMove = () => S.pre || null;
+function offerMk(id, D, x = {}) {
+  const s = S, now = absWeek(), o = makeOffer(id, x), free = D.free || s.con.until < s.season;
+  if (!free && !o.loan && !o.renew) { o.fee = nice(value() * rnd(.75, 1.35)); o.ask = askPrice(); o.st = o.fee >= o.ask || o.fee >= (s.con.rel || Infinity) ? 'ok' : 'red'; }
+  const pk = Object.keys(PITCH).filter(k => (k !== 'kaptan' || OVR() >= s.rt[id] + 1) && (k !== 'baskan' || o.sign > 0));
+  return Object.assign(o, { at: now, exp: Math.min(D.last, now + (D.early ? ri(4, 7) : ri(2, 4))), win: D.win, pt: o.loan || o.renew ? null : pick(pk), bids: 0, log: [], nw: 1 });
+}
+export function offerWeek() {
+  const s = S; if (s.mgr || s.over || !s.clubId) return;
+  const box = s.inb || (s.inb = []), now = absWeek() + 1, w = s.week + 1, D = s.pre || w > WEEKS ? null : offerSeason(w);   // sezonun son haftasında yeni teklif yok, yaz dönemi yeni sezonda başlar
+  const open = () => box.filter(o => !o.end);
+  for (const o of open()) {
+    if (now > o.exp) { o.end = 'sure'; addNews(tt`${club(o.id).n} cevap alamadı, teklifini geri çekti.`, 'clock'); continue; }
+    const riv = open().filter(x => x !== o && !x.renew && !x.loan).length;
+    if (!o.renew && !o.loan && riv && o.bids < 2 && chance(.2 + riv * .08)) {   // rakip teklif var: kulüp artırır
+      o.bids++; o.nw = 1; o.wage = nice(o.wage * rnd(1.06, 1.14)); o.sign = nice(o.sign * rnd(1.1, 1.3));
+      if (o.role === 'genc' && chance(.5)) o.role = 'rot'; else if (o.role === 'rot' && chance(.35)) o.role = '11';
+      o.log.unshift(tt`Rakip teklifleri duydular: ücreti ${fmt(o.wage)} yaptılar.`); addNews(tt`${club(o.id).n} teklifini yükseltti.`, 'up');
+    }
+    if (o.fee && o.st === 'red' && chance(.3)) {   // bonservis reddedildi: alıcı kulüp bedeli artırır
+      o.fee = nice(o.fee * rnd(1.08, 1.2)); o.nw = 1; if (o.fee >= o.ask) o.st = 'ok';
+      o.log.unshift(o.st === 'ok' ? tt`Bonservisi ${fmt(o.fee)} yaptılar: kulübün kabul etti.` : tt`Bonservisi ${fmt(o.fee)} yaptılar, kulübün hâlâ ${fmt(o.ask)} istiyor.`);
+    }
+    if (o.wait && o.exp - now > 1 && chance(.15)) { o.exp = now + 1; o.nw = 1; o.log.unshift(tt('Kulüp acele ediyor: bu hafta cevap bekliyor.')); }
+  }
+  if (!D || open().length >= 6) return;
+  const P = profile(), th = (D.free || s.con.until < s.season ? 28 : D.win === 'kis' ? 58 : 50) - (s.agent ? s.agent.pw * 8 : 0) + (D.early ? 6 : 0);
+  let n = 0;
+  for (const x of [...s.watch].sort((a, b) => b.lv - a.lv)) {
+    if (n >= (D.early ? 1 : 2) || open().length >= 6) break;
+    if (x.lv < th || x.id === s.clubId || banned(x.id) || box.some(o => o.id === x.id && (!o.end || now - o.at < 10))) continue;
+    if (!chance(clamp(.22 + (x.lv - th) / 55, .15, .75) * (D.early ? .6 : 1))) continue;
+    const o = offerMk(x.id, D); box.push(o); n++;
+    addNews(tt`${club(o.id).n} resmî teklif yaptı. Son gün: ${o.exp - now + 1} hafta.`, 'swap'); addFeed('basin', tt('Transfer Hattı'), say('rumor', { c: club(o.id).n, me: s.name }), 'haber');
+  }
+  // menajerin masaya getirdiği kulüp
+  if (s.agent && !D.early && !s.loan && P.form >= .5 && open().length < 6 && chance(.12 + s.agent.pw * .18)) {
+    const cur = s.rt[s.clubId], pool = [];
+    for (const lid in s.lg) { if (LMAP[lid].c !== 'TR' && !P.abroad) continue; for (const id of s.lg[lid].t) { const r = s.rt[id]; if (id !== s.clubId && !banned(id) && !box.some(o => o.id === id && !o.end) && r >= Math.max(cur + 1, P.lvl - 4) && r <= P.hi) pool.push(id); } }
+    if (pool.length) { const o = offerMk(pick(pool), D, { via: 1 }); box.push(o); addNews(tt`Menajerin ${club(o.id).n} teklifini masaya getirdi.`, 'pen'); }
+  }
+  // oynamayan oyuncuya devre arası/yaz kiralık teklifi
+  if (!D.early && !s.loan && s.con.until > s.season && (s.tstat === 'kiralik' || role() === 'yok' || s.bench >= 2) && !open().some(o => o.loan) && chance(.35)) {
+    const cur = s.rt[s.clubId], o2 = OVR(), cc = LMAP[leagueOf(s.clubId)].c, pool = [];
+    for (const lid in s.lg) { if (LMAP[lid].c !== cc) continue; for (const id of s.lg[lid].t) { const r = s.rt[id]; if (id !== s.clubId && r < cur - 1 && r >= o2 - 6 && r <= o2 + 2) pool.push(id); } }
+    if (pool.length) { const o = offerMk(pick(pool), D, { loan: true, len: 1, wage: s.con.wage, sign: 0, goalB: s.con.goalB || 0 }); box.push(o); addNews(tt`${club(o.id).n} seni kiralamak istiyor.`, 'clock'); }
+  }
+  // kulübün karşı hamlesi: masada teklif biriktikçe seni tutmak ister
+  if (!s.loan && s.rel.hoca >= 40 && open().filter(o => !o.renew && !o.loan).length >= (D.early ? 2 : 1) && !open().some(o => o.renew) && !box.some(o => o.renew && now - o.at < 12) && chance(.4)) {
+    const r = renewal(); if (r && r.wage) { r.wage = nice(Math.max(r.wage, s.con.wage * 1.2)); r.sign = nice(r.wage * 3); box.push(offerMk(s.clubId, D, r)); addNews(tt('Kulübün seni kaybetmemek için yeni sözleşme önerdi.'), 'pen'); }
+  }
+  s.inb = box.filter(o => !o.end || now - o.at < 16).slice(-24);
+}
+// Sunumu dinle: kulübün sözü sözleşmeye madde olarak girer
+export function pitchHear(o) {
+  if (!o.pt || o.ph) return null; o.ph = 1; o.nw = 0;
+  const k = o.pt;
+  if (k === 'hoca') { o.role = o.role === 'genc' ? 'rot' : '11'; o.hb = 8; }
+  else if (k === 'baskan') o.sign = nice(o.sign * 1.25);
+  else if (k === 'taraftar') o.tb = 12;
+  else if (k === 'proje') o.relF = 2.6;
+  else if (k === 'kaptan') o.kap = 1;
+  return PITCH[k];
+}
+export function offerWait(o) { o.wait = 1; o.nw = 0; }
+export function offerDecline(o) {
+  o.end = 'red'; addNews(tt`${club(o.id).n} teklifini reddettin.`, 'x');
+  if (o.renew) return fx({ hoca: -4, sad: -3 });
+  return [];
+}
+// İmza: pencere açıksa hemen, kapalıysa ön anlaşma (pencere açılınca gidersin)
+export function offerSign(o) {
+  const s = S, now = absWeek();
+  for (const x of inbox()) if (x !== o) x.end = 'kapandi';
+  o.end = 'imza';
+  if (o.renew || twin() || o.loan) { acceptOffer(o); return { done: 1 }; }
+  s.pre = o; const ch = fx({ hoca: -5, taraf: -6, mo: 4 });
+  addNews(tt`${club(o.id).n} ile anlaştın. Transfer ${o.win === 'kis' ? tt('devre arasında') : tt('sezon sonunda')} gerçekleşecek.`, 'pen');
+  addFeed('basin', tt('Transfer Hattı'), tt`ÖZEL: ${s.name}, ${club(o.id).n} ile anlaştı. İmzalar pencere açılınca.`, 'manset');
+  return { done: 0, ch, at: now };
+}
+// Pencere açıldı: ön anlaşma gerçekleşir
+export function preDue() {
+  const o = S.pre; if (!o || twin() !== o.win) return null;
+  S.pre = null;
+  if (o.fee && S.con.until < S.season) delete o.fee;   // sözleşmen bittiyse bonservis düşer
+  acceptOffer(o); return o;
+}
+
 export function negotiate(o) {
   o.neg = true;
   const p = 0.3 + (S.agent ? S.agent.pw * 0.4 : 0) + (OVR() - o.r) * 0.03;
@@ -813,8 +918,10 @@ export function acceptOffer(o) {
     matesToNet(); s.clubId = o.id; genMates(); genRival();
     s.rel.hoca = { '11': 60, rot: 46, genc: 34 }[o.role];
     s.rel.takim = 45; s.rel.taraf = clamp(28 + s.rep * 0.3 - (s.fl.hain ? 8 : 0), 0, 100); delete s.fl.hain;
+    if (o.hb) s.rel.hoca = clamp(s.rel.hoca + o.hb, 0, 100); if (o.tb) s.rel.taraf = clamp(s.rel.taraf + o.tb, 0, 100);   // sunumda verilen sözler
     if (s.net.some(c => c.org === o.id)) { s.rel.takim += 8; s.rel.hoca += 4; }
     s.bench = 0; s.since = s.season; s.watch = []; s.tstat = 'mutlu';
+    for (const x of s.inb || []) if (!x.end) x.end = 'kapandi'; s.pre = null;   // yeni kulüpte masa temizlenir
     delete s.fl.kaptan; delete s.fl.dilBar; delete s.fl.istek; delete s.fl.pc; s.spb = {}; s.lr = { ten: 20 };
     const L = LMAP[leagueOf(o.id)];
     if (L.c !== 'TR') { s.fl.yurtdisi = 1; if (s.dil < 40 && !(s.fl.gurbet && L.c === (s.gur || 'DE'))) s.fl.dilBar = 1; }

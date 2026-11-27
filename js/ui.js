@@ -1,7 +1,7 @@
 // Toprak Saha — arayüz ve oyun akışı
 import { tt, lang, LC, NLOC, DSEP, LANGS, setLang } from './i18n.js';
 import * as G from './core.js';
-import { LEAGUES, LMAP, POS, ATTR, ORIGINS, TRAITS, PROV, SHOP, YEREL, TRAIN, COUNTRIES, ROLE, MOM, TSTAT, STANCE, PERKS, HANG, POSTS, ACH, DEC, HT, BUILD, STYLES, CELE, NET, MACT, DIFF, TACT, PERKS2, FREE, NATN, NATC, WX, INV, SCN, MVAR, UPG, SESS, PTAG, SCENS, COLK, CAMP, NEGO, AGTOP, AGBR } from './data.js';
+import { PITCH, LEAGUES, LMAP, POS, ATTR, ORIGINS, TRAITS, PROV, SHOP, YEREL, TRAIN, COUNTRIES, ROLE, MOM, TSTAT, STANCE, PERKS, HANG, POSTS, ACH, DEC, HT, BUILD, STYLES, CELE, NET, MACT, DIFF, TACT, PERKS2, FREE, NATN, NATC, WX, INV, SCN, MVAR, UPG, SESS, PTAG, SCENS, COLK, CAMP, NEGO, AGTOP, AGBR } from './data.js';
 import { pickEvent, resolve } from './events.js';
 import { Mini, Pitch, PSLOT, INTRO } from './mini.js';
 import { StadView, GFX, fig, POSE, backdrop, lockerDraw, injuryDraw } from './scene.js';
@@ -322,7 +322,7 @@ function vHome() {
   const news = s.news.slice(0, 4).map(n => tt`<li><span class="nic">${ic(n.ic || 'news', 18)}</span><div>${esc(n.s)}<small>${n.w}</small></div></li>`).join('');
   const play = (fxt || cf) && G.canPlay() && !s.fl.skip;
   return tt`${hero(false, `<div class="hbars">${sbar(s.en, tt('Enerji'), 'en')}${sbar(s.mo, tt('Moral'), 'mo')}${sbar(s.rel.hoca, tt('Hoca'), 'ho')}${sbar(s.rel.taraf, tt('Taraftar'), 'ta')}</div>`)}
-    ${dailyCard()}<section class="wkact"><div class="sh"><h4>Bu hafta</h4><div class="dots">${dots}</div></div><div class="acts">${acts}</div></section>
+    ${dailyCard()}${inboxCard()}<section class="wkact"><div class="sh"><h4>Bu hafta</h4><div class="dots">${dots}</div></div><div class="acts">${acts}</div></section>
     ${s.quest ? tt`<div class="quest ${s.quest.p >= s.quest.n ? 'ok' : ''}">${ic(s.quest.p >= s.quest.n ? 'check' : 'target', 18)}<span>Haftanın görevi: ${s.quest.t}</span><b>${Math.min(s.quest.p, s.quest.n)}/${s.quest.n}</b></div>` : ''}
     ${cf ? fixCard(cf, true) : ''}
     ${fxt ? fixCard(fxt) : cf ? '' : tt`<section class="vsc off">${ic('cal', 26)}<div><b>Maçsız hafta</b><small>${s.inj > 0 || s.ban > 0 ? roleText() : tt('Bir eylem hakkın fazla.')}</small></div></section>`}
@@ -438,7 +438,7 @@ function vTransfer() {
   const s = G.S, I = G.clubInfo(s.clubId), left = G.slots() - s.used, can = G.canPropose() && left > 0, T = TACT[I.tac];
   const mk = G.market().map(id => { const w = s.watch.find(x => x.id === id); return tt`<div class="mkr">${cl(id, tt`${crest(id, 34)}<div><b>${esc(G.club(id).n)}</b><small>${offerSub(id)} · uyum %${G.tacFit(id)}</small></div>`, 'wt')}<button class="mini-b" data-a="prop" data-v="${id}" ${can && !w ? '' : 'disabled'}>${w ? tt('İzliyor') : tt('Öner')}</button></div>`; }).join('');
   const moves = s.moves.slice().reverse().map(m => tt`<div class="kv">${ic(m.loan ? 'clock' : 'swap', 16)}<span>${m.y} · ${esc(G.club(m.from).n)} → ${esc(G.club(m.to).n)}</span><b>${m.loan ? tt('Kiralık') : m.fee ? G.fmtS(m.fee) : tt('Bedelsiz')}</b></div>`).join('');
-  return profCard() + tt`${transferCenter()}
+  return offerDesk() + profCard() + tt`${transferCenter()}
     <section class="card">${tag(tt('Kulübündeki yerin'))}
       <div class="tgrid">
         <div>${ic('pen', 16)}<small>Sözleşmedeki rol</small><b>${ROLE[s.con.role] || ROLE['11']}</b></div>
@@ -870,9 +870,103 @@ async function trialFlow(cid) {
   } else await info(tt`${ok}/3 başarılı`, tt('Yetmedi. "Seni izlemeye devam edeceğiz" dediler.'), tt('Deneme'), clubArt(cid, tt('Deneme antrenmanı')));
 }
 
+
+// ---------- v26: teklif masası ----------
+const oLeft = o => o.exp - G.absWeek();   // 0: son hafta
+const oDue = o => (oLeft(o) <= 0 ? tt('Son hafta') : tt`${oLeft(o) + 1} hafta`);
+function oChips(o) {
+  const c = [];
+  if (o.nw) c.push(['nw', tt('Yeni')]);
+  if (o.renew) c.push(['', tt('Kulübünün teklifi')]); if (o.loan) c.push(['', tt('Kiralık')]); if (o.via) c.push(['', tt('Menajerin')]);
+  if (o.bids) c.push(['up', tt`Artırdı ×${o.bids}`]);
+  if (o.fee && o.st === 'red') c.push(['lo', tt('Bonservis reddi')]);
+  if (o.pt && !o.ph) c.push(['pt', tt('Sunum var')]);
+  if (o.wait) c.push(['', tt('Bekletiyorsun')]);
+  return c.map(([k, t]) => `<i class="${k}">${esc(t)}</i>`).join('');
+}
+function inboxCard() {
+  const s = G.S; if (!s || s.mgr) return '';
+  const pm = G.pendingMove();
+  if (pm) return tt`<button class="inbx pm" data-a="inbox">${crest(pm.id, 34)}<div><b>${esc(G.club(pm.id).n)} ile anlaştın</b><small>${pm.win === 'kis' ? tt('Transfer devre arasında gerçekleşecek') : tt('Transfer sezon sonunda gerçekleşecek')}</small></div>${ic('pen', 20)}</button>`;
+  const L = G.inbox(); if (!L.length) return '';
+  const soon = Math.min(...L.map(oLeft)), nw = L.filter(o => o.nw).length;
+  return tt`<button class="inbx" data-a="inbox"><span class="ix">${ic('swap', 22)}${nw ? `<em>${nw}</em>` : ''}</span><div><b>Teklif masası · ${L.length}</b><small>${G.twin() ? tt('Transfer dönemi açık') : tt('Pencere açılınca imza')} · ${soon <= 0 ? tt('bir teklifin son haftası') : tt`en yakın son gün ${soon + 1} hafta`}</small></div><span class="crs">${L.slice(0, 4).map(o => crest(o.id, 24)).join('')}</span></button>`;
+}
+function offerDesk() {
+  const L = G.inbox(), pm = G.pendingMove();
+  if (pm) return tt`<section class="card desk">${tag(tt('Teklif masası'))}<div class="ofr pm">${crest(pm.id, 34)}<div><b>${esc(G.club(pm.id).n)}</b><small>${tt('Anlaştın')} · ${ROLE[pm.role]} · ${pm.wage ? G.fmtS(pm.wage) + tt('/hf') : tt('amatör')}</small></div><em><b>${ic('pen', 18)}</b><small>${pm.win === 'kis' ? tt('devre arası') : tt('sezon sonu')}</small></em></div><p class="note">${tt('Pencere açılınca imzalar atılır. O zamana kadar başka teklif dinlemiyorsun.')}</p></section>`;
+  if (!L.length) return tt`<section class="card desk">${tag(tt('Teklif masası'))}<p class="mut sm">${G.twin() ? tt('Transfer dönemi açık. Teklifler haftalık gelir; seni izleyen kulüplerin ilgisi arttıkça masan dolar.') : tt('Masa boş. Teklifler devre arasından önce (14. hafta) ve sezon sonuna doğru (32. hafta) gelmeye başlar. Sözleşmen bitiyorsa 24. haftadan itibaren bedelsiz anlaşabilirsin.')}</p></section>`;
+  return tt`<section class="card desk">${tag(tt('Teklif masası'), 'ye')}<p class="mut sm">${G.twin() ? tt('Transfer dönemi açık: imzaladığın an gidersin.') : tt('Pencere kapalı: anlaşırsan transfer pencere açılınca gerçekleşir.')} ${tt('Her teklifin son günü var. Rakip teklif gören kulüp artırabilir, bekletilen kulüp acele edebilir.')}</p>
+    ${L.map((o, i) => `<button class="ofr ${o.nw ? 'nw' : ''}" data-a="offer" data-v="${i}">${crest(o.id, 34)}<div><b>${esc(G.club(o.id).n)}</b><small>${offerSub(o.id)} · ${ROLE[o.role]} · ${o.wage ? G.fmtS(o.wage) + tt('/hf') : tt('amatör')}</small><span class="och">${oChips(o)}</span></div><em class="${oLeft(o) <= 0 ? 'lo' : ''}"><b>${oLeft(o) <= 0 ? '!' : oLeft(o) + 1}</b><small>${oLeft(o) <= 0 ? tt('son hafta') : tt('hafta')}</small></em></button>`).join('')}
+    ${L.length >= 2 ? tt`<button class="opt sm" data-a="ocmp">${ic('chart', 20)}<span><b>Teklifleri karşılaştır</b></span></button>` : ''}</section>`;
+}
+function pitchHTML(o) {
+  const P = o.pt && PITCH[o.pt]; if (!P) return '';
+  return o.ph ? `<div class="opch on"><span class="aic">${ic(P.i, 18)}</span><div><b>${esc(P.n)}</b><small>${esc(P.e)}</small></div></div>`
+    : `<div class="opch"><span class="aic">${ic(P.i, 18)}</span><div><b>${esc(P.n)}</b><small>${tt('Sunumu dinlemedin. Dinlersen sözleşmeye bir madde eklenir.')}</small></div></div>`;
+}
+function cmpTable(L) {
+  const best = f => { const v = L.map(f), b = Math.max(...v); return v.map(x => x === b && v.some(y => y !== b)); };
+  const RR = { genc: 0, rot: 1, '11': 2 }, bw = best(o => o.wage || 0), bs = best(o => o.sign || 0), br = best(o => RR[o.role]), bp = best(o => G.S.rt[o.id] || 0), bt = best(oLeft);
+  const row = (l, f, b) => `<tr><th>${l}</th>${L.map((o, i) => `<td class="${b && b[i] ? 'bst' : ''}">${f(o)}</td>`).join('')}</tr>`;
+  return `<div class="oct"><table><tr><th></th>${L.map(o => `<td class="oh">${crest(o.id, 26)}<b>${esc(G.club(o.id).n)}</b></td>`).join('')}</tr>
+    ${row(tt('Lig'), o => esc((LMAP[G.leagueOf(o.id)] || {}).name || '–'))}
+    ${row(tt('Güç'), o => Math.round(G.S.rt[o.id]), bp)}
+    ${row(tt('Rol'), o => ROLE[o.role], br)}
+    ${row(tt('Ücret/hf'), o => (o.wage ? G.fmtS(o.wage) : '–'), bw)}
+    ${row(tt('İmza parası'), o => (o.sign ? G.fmtS(o.sign) : '–'), bs)}
+    ${row(tt('Süre'), o => (o.loan ? tt('Kiralık') : tt`${o.len} sezon`))}
+    ${row(tt('Bonservis'), o => (o.renew || o.loan || !o.fee ? '–' : o.st === 'ok' ? tt('Onaylı') : tt('Reddedildi')))}
+    ${row(tt('Sunum'), o => (o.pt ? (o.ph ? tt('Dinlendi') : tt('Bekliyor')) : '–'))}
+    ${row(tt('Son gün'), oDue, bt)}</table></div>`;
+}
+async function offerFlow(o) {
+  for (;;) {
+    if (o.end) return;
+    const left = oLeft(o), red = o.st === 'red', win = !!(G.twin() || o.renew || o.loan), P = o.pt && PITCH[o.pt]; o.nw = 0;
+    const acts = [], opts = [];
+    if (red) { acts.push('push'); opts.push({ t: tt('Transfer isteği ver'), s: tt('Kulübü zorla: hoca ve taraftar tepki gösterir'), i: 'alert', dis: o.pushed }); }
+    else { acts.push('sign'); opts.push({ t: win ? tt('İmzala') : tt('Anlaş'), s: win ? '' : o.win === 'kis' ? tt('Devre arasında gidersin; haber sızar') : tt('Sezon sonunda gidersin; haber sızar'), i: 'pen' }); }
+    if (P && !o.ph) { acts.push('pitch'); opts.push({ t: tt('Sunumu dinle'), s: P.n, i: P.i }); }
+    acts.push('nego'); opts.push({ t: tt('Pazarlık yap'), s: tt('Madde madde: ücret, imza parası, primler, süre'), i: 'coin', dis: !o.wage || o.loan || red || !!(o.ng && (o.ng.end || o.ng.pat <= 0)) });
+    acts.push('wait'); opts.push({ t: tt('Düşüneceğim'), s: tt('Teklif masada kalır; kulüp acele edebilir'), i: 'clock' });
+    acts.push('no'); opts.push({ t: tt('Reddet'), c: 'ghost' });
+    const body = (o.renew ? '' : citySvg(cityOf(o.id), G.club(o.id).c1)) + offerHTML(o) + negoHTML(o) + pitchHTML(o)
+      + (o.log.length ? `<div class="olog">${o.log.slice(0, 3).map(x => `<p>${ic('news', 14)}<span>${esc(x)}</span></p>`).join('')}</div>` : '')
+      + `<div class="odl ${left <= 0 ? 'lo' : ''}">${ic('clock', 16)}<span>${left <= 0 ? tt('Son hafta: cevap vermezsen teklif düşer.') : tt`Cevap için ${left + 1} haftan var.`}${win ? '' : ' ' + tt('Pencere kapalı: anlaşırsan transfer pencere açılınca gerçekleşir.')}</span></div>`
+      + (o.renew ? '' : cmpHTML(G.moveInfo(o)));
+    const j = await dialog({ art: clubArt(o.id, offerSub(o.id)), k: o.loan ? tt('Kiralık teklif') : o.renew ? tt('Kulübünün teklifi') : o.via ? tt('Menajerin getirdi') : tt('Transfer teklifi'), t: G.club(o.id).n, body, opts });
+    const a = acts[j];
+    if (a === 'push') { const r = G.pushTransfer(o); if (r.ok) sfx.up(); else sfx.bad(); await dialog({ art: art('baskan', 'lock', 'risk'), t: r.ok ? tt('Kapı açıldı') : tt('Kulüp direniyor'), body: tt`<p>${esc(r.text)}</p>${chips(r.ch)}`, opts: [{ t: tt('Devam') }], auto: 0 }); continue; }
+    if (a === 'pitch') { const p = G.pitchHear(o); sfx.up(); await dialog({ art: art(p.p, p.i, 'fame'), k: tt('Sunum'), t: p.n, body: `<p>${esc(p.d)}</p><div class="opch on"><span class="aic">${ic('check', 18)}</span><div><b>${tt('Sözleşmeye eklendi')}</b><small>${esc(p.e)}</small></div></div>`, opts: [{ t: tt('Devam') }], auto: 0, cls: 'ev' }); continue; }
+    if (a === 'nego') { const gone = await negoFlow(o); if (gone) { o.end = 'geri'; return; } continue; }
+    if (a === 'wait') { G.offerWait(o); toast(tt`${G.club(o.id).n}: teklif masada bekliyor.`, 'clock'); return; }
+    if (a === 'no') { const ch = G.offerDecline(o); toast(tt`${G.club(o.id).n} teklifini reddettin.` + (ch.length ? ' · ' + ch.join(' · ') : ''), 'x'); return; }
+    const r = G.offerSign(o); sfx.sign();   // imza ya da ön anlaşma
+    if (r.done) { toast(o.renew ? tt('Sözleşmeni yeniledin.') : `${G.club(o.id).n}: ${o.loan ? tt('kiralık gidiyorsun') : tt('imza atıldı')}.`, 'pen'); if (!AUTO && !o.loan && !o.renew) { await signFlow(o); if (G.chance(.5)) await ivFlow('imza'); } }
+    else await dialog({ art: clubArt(o.id, offerSub(o.id)), k: tt('Ön anlaşma'), t: tt`${G.club(o.id).n} ile anlaştın`, body: tt`<p>${o.win === 'kis' ? tt('Devre arası penceresi açılınca imzalar atılacak.') : tt('Sezon bitince imzalar atılacak.')} Haber sızdı: kulübünde hava biraz soğudu.</p>${chips(r.ch)}`, opts: [{ t: tt('Devam') }], auto: 0 });
+    return;
+  }
+}
+async function preMoveFlow(o) {
+  sfx.sign(); toast(tt`${G.club(o.id).n}: imzalar atıldı.`, 'pen');
+  if (AUTO) return;
+  await dialog({ art: clubArt(o.id, offerSub(o.id)), k: tt('Transfer tamam'), t: G.club(o.id).n, body: tt('<p>Pencere açıldı, anlaştığın kulübe imzanı attın.</p>'), opts: [{ t: tt('Yeni kulübüme'), i: 'right' }], auto: 0 });
+  if (!o.loan && !o.renew) await signFlow(o);
+}
+let goDesk = false;   // pencere açılış diyaloğundan teklif masasına geçiş
 async function transferWindow(kind) {
   const s = G.S, expired = s.con.until < s.season;
-  let offers = G.genOffers(kind);
+  const pm = G.preDue(); if (pm) { await preMoveFlow(pm); return; }
+  if (!AUTO && !expired) {   // teklifler artık masada birikir; dönem açılışında hatırlat
+    const L = G.inbox(); if (!L.length) return;
+    const j = await dialog({ art: tt`<div class="art t-fame"><div class="art-ic">${ic('swap', 150)}</div><div class="art-av">${persona(s.agent ? 'menajer' : 'baskan')}</div><span class="art-n">${kind === 'kis' ? tt('Devre arası') : tt('Yaz dönemi')}</span></div>`,
+      k: kind === 'kis' ? tt('Devre arası') : tt('Yaz dönemi'), t: tt('Transfer dönemi açıldı'), body: tt`<p>Masanda ${L.length} teklif var. Dönem boyunca yenileri gelebilir; her teklifin son günü var.</p>`, opts: [{ t: tt('Teklif masasına git'), i: 'swap' }, { t: tt('Sonra bakarım'), c: 'ghost' }] });
+    if (j === 0) goDesk = true;
+    return;
+  }
+  let offers = expired ? G.inbox().filter(o => !o.loan) : G.genOffers(kind);
+  if (expired) for (const o of G.genOffers(kind)) if (!offers.some(x => x.id === o.id)) offers.push(o);
   if (offers.length) await tip('transfer');
   if (expired) { const ren = G.renewal(); if (ren) offers.unshift(ren); if (!offers.length) offers = G.genOffers('serbest'); }
   if (!offers.length) return;
@@ -929,7 +1023,7 @@ async function runMatch(fxt, rl, mode) {
       <canvas id="stad" class="stad"></canvas>
       <div class="sb sb-t${ENVM.tier}${ENVM.tod === 'gun' ? ' sb-day' : ''}"><div class="tm">${home ? usC : opC}<span>${esc(home ? usN : opN)}</span></div><div class="scr"><b id="sc">0 - 0</b><small id="mn">0'</small></div><div class="tm">${home ? opC : usC}<span>${esc(home ? opN : usN)}</span></div></div>
       ${sim ? '' : `<div class="myr" id="myr"><span>${M.on ? tt('Senin notun') : tt('Kulübedesin')}</span></div>`}${fxt.agg ? tt`<div class="aggb">${ic('swap', 14)}İlk maç ${fxt.agg[0]}-${fxt.agg[1]} · tur için toplam skor geçerli</div>` : ''}
-      <canvas id="pitch" class="pitch"></canvas>
+      <canvas id="pitch" class="opch"></canvas>
       <div class="tlb"><i id="tlp"></i><div id="tlm"></div></div>
       <div class="momc" aria-label="${tt('Maçın baskı grafiği')}"><svg viewBox="0 0 90 20" preserveAspectRatio="none"><defs><clipPath id="mcu"><rect x="0" y="0" width="90" height="10"/></clipPath><clipPath id="mco"><rect x="0" y="10" width="90" height="10"/></clipPath></defs><line x1="0" y1="10" x2="90" y2="10"/><path id="mau" clip-path="url(#mcu)"/><path id="mao" clip-path="url(#mco)"/><path id="mal"/><line id="mnow" x1="0" y1="0" x2="0" y2="20"/></svg><div class="mcl"><span>${tt('Senin baskın ↑')}</span><span>${tt('Rakibin baskısı ↓')}</span></div></div>
       ${M.tac ? tt`<div class="tacs">${ic('whistle', 16)}<b id="tcn">${TACT[M.tac].n}</b><div id="tks">${taskChips()}</div></div>` : ''}
@@ -1538,7 +1632,7 @@ async function mgrMatchFlow(f, first) {
   MM = { M, pause: 0, sp: 1, busy: 0, live: coachR };
   app.innerHTML = tt`<div class="match mgrm${euCls(f)}"><div class="m-h">${f.eu ? tt`<span class="eut">${euLogo(f.eu, 26)}${esc(lbl)}</span>` : tag(lbl, f.cup ? 'ye' : '')}<span class="where">${coachR ? tt('kenar') : tt('loca')}</span></div>
     <div class="sb"><div class="tm">${crest(home ? s.clubId : f.opp, 50)}<span>${esc(home ? usN : opN)}</span></div><div class="scr"><b id="sc">0 - 0</b><small id="mn">0'</small></div><div class="tm">${crest(home ? f.opp : s.clubId, 50)}<span>${esc(home ? opN : usN)}</span></div></div>
-    <canvas id="pitch" class="pitch"></canvas><div class="tlb"><i id="tlp"></i><div id="tlm"></div></div>
+    <canvas id="pitch" class="opch"></canvas><div class="tlb"><i id="tlp"></i><div id="tlm"></div></div>
     ${coachR ? `<div class="mcbar"><button class="mcb" data-a="mc" data-v="p" id="mcp">${ic('clock', 18)}<span>${tt('Durdur')}</span></button><button class="mcb" data-a="mc" data-v="sp" id="mcs">${ic('right', 18)}<span>${SPD[1][0]}</span></button><button class="mcb" data-a="mc" data-v="sub" id="mcu">${ic('swap', 18)}<span>${tt('Değişiklik')} <em>${M.subs}</em></span></button><button class="mcb" data-a="mc" data-v="tac">${ic('whistle', 18)}<span>${tt('Taktik')}</span></button><button class="mcb" data-a="mc" data-v="sh">${ic('mic', 18)}<span>${tt('Talimat')}</span></button></div>
     <div class="mst"><span id="mmt">${G.MENT[M.ment][0]}</span> · <span id="mst">${TACT[M.st].n}</span> · <span id="msh">${tt`şut ${0}-${0}`}</span></div><div id="feed" class="feed"></div><div id="mlu" class="mlu">${mluHTML(M)}</div>` : `<div class="tacs">${ic('whistle', 16)}<b>${TACT[G.coach().st].n}</b><div></div></div><div id="feed" class="feed"></div>`}</div>`;
   feed = $('#feed'); sc = $('#sc'); mn = $('#mn'); tlb = $('#tlm'); sfx.ambOn(); if (f.eu) sfx.anthem(); else sfx.whistle(1);
@@ -1769,7 +1863,7 @@ async function bizStep() {
     if (G.S) G.save();
   } finally {
     busy = false;
-    if (G.S) { V.scr = 'hub'; V.tab = 'ev'; render(); if (!AUTO) window.scrollTo(0, 0); }
+    if (G.S) { V.scr = 'hub'; V.tab = goDesk ? 'kar' : 'ev'; if (goDesk) V.kv = 'tr'; goDesk = false; render(); if (!AUTO) window.scrollTo(0, 0); }
   }
 }
 // Yeni sayfa: görevi bırakınca açılan yollar. true: yeni işe başlandı
@@ -2007,12 +2101,12 @@ async function nextStep() {
       else if (rl === 'yok') { s.bench++; G.fx({ mo: -3 }); toast(tt('Kadroya alınmadın.'), 'x'); }
     }
     const r = G.endWeek(own, ...sideArgs(cf, ownCup)); G.save();
-    if (s.week === 20) await transferWindow('kis');
+    if (s.week === 18) await transferWindow('kis');
     if (r.over) await seasonFlow();
     if (G.S) G.save();
   } finally {
     busy = false; sfx.ambOff();
-    if (G.S) { V.scr = 'hub'; V.tab = 'ev'; render(); if (!AUTO) window.scrollTo(0, 0); }
+    if (G.S) { V.scr = 'hub'; V.tab = goDesk ? 'kar' : 'ev'; if (goDesk) V.kv = 'tr'; goDesk = false; render(); if (!AUTO) window.scrollTo(0, 0); }
   }
 }
 
@@ -2181,7 +2275,7 @@ async function replayFlow(M, fxt) {
   const opN = nat ? fxt.opp.n : G.club(fxt.opp).n;
   for (let gi = 0; gi < M.goals.length; gi++) {
     const g = M.goals[gi];
-    const p = dialog({ cls: 'ev', k: tt`${g.min}. dakika`, t: MOM[g.k].n, body: `<canvas id="rpl" class="pitch"></canvas><p class="note">${tt`Gol ${gi + 1}/${M.goals.length} · tekrar oynuyor`}</p>`, opts: [{ t: gi < M.goals.length - 1 ? tt('Sıradaki gol') : tt('Kapat') }, { t: tt('Gol kartını paylaş'), i: 'phone', c: 'ghost' }, ...(clipType() ? [{ t: tt('Klibi kaydet'), s: tt('5 saniyelik video: paylaş ya da indir'), i: 'down', c: 'ghost' }] : [])], auto: 0 });
+    const p = dialog({ cls: 'ev', k: tt`${g.min}. dakika`, t: MOM[g.k].n, body: `<canvas id="rpl" class="opch"></canvas><p class="note">${tt`Gol ${gi + 1}/${M.goals.length} · tekrar oynuyor`}</p>`, opts: [{ t: gi < M.goals.length - 1 ? tt('Sıradaki gol') : tt('Kapat') }, { t: tt('Gol kartını paylaş'), i: 'phone', c: 'ghost' }, ...(clipType() ? [{ t: tt('Klibi kaydet'), s: tt('5 saniyelik video: paylaş ya da indir'), i: 'down', c: 'ghost' }] : [])], auto: 0 });
     const cv = $('#rpl'); let pt = null;
     if (cv) {
       pt = new Pitch(cv, { cu, co, me: PSLOT[s.pos], flip: false });
@@ -2414,6 +2508,9 @@ async function scenStart() {
 const grab = () => { const nm = $('#nm'), nu = $('#nu'), nk = $('#nk'); if (nm) C.name = nm.value; if (nu) C.num = G.clamp(+nu.value || 9, 1, 99); if (nk) C.nick = nk.value.trim(); };
 const ACT = {
   dlg: v => { $modal.hidden = true; const r = dres; dres = null; if (r) r(+v); },
+  inbox: () => { V.tab = 'kar'; V.kv = 'tr'; render(); window.scrollTo(0, 0); },
+  offer: async v => { if (busy) return; const o = G.inbox()[+v]; if (!o) return; busy = true; try { await offerFlow(o); G.save(); } finally { busy = false; render(); } },
+  ocmp: () => dialog({ k: tt('Teklif masası'), t: tt('Karşılaştırma'), body: cmpTable(G.inbox()) + `<p class="note">${tt('Sarı: o satırda en iyisi.')}</p>`, opts: [{ t: tt('Kapat') }], auto: 0 }),
   daily: () => { const r = G.dailyClaim(); if (!r) return; G.save(); sfx.pop(); toast(tt`Günlük ödül · ${r.n}. gün: ` + r.out.join(' · '), 'star'); render(); },
   snd: () => { sfx.toggle(); render(); },
   cont: () => { if (G.load()) { V.scr = 'hub'; V.tab = 'ev'; render(); } },
