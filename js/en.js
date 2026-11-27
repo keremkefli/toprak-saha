@@ -2,6 +2,9 @@
 // d: işaretli metinler. v: kayıtta Türkçe duran adlar (ülke, kupa, tur); yalnızca gösterilirken çevrilir.
 // p: kayıtta Türkçe duran bileşik adlar için kalıplar [düzenli ifade, karşılık]; {1}, {2} yakalanan gruplardır ve ayrıca çevrilir.
 globalThis.__TS_EN = { d: {
+  "Maçın baskı grafiği": "Match momentum chart",
+  "Senin baskın ↑": "Your pressure ↑",
+  "Rakibin baskısı ↓": "Opponent's pressure ↓",
   "{0} hak kaldı": "{0} left",
   "mevkin için en önemli": "most important for your position",
   "potansiyele kalan": "room to potential",

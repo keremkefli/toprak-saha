@@ -880,6 +880,7 @@ async function runMatch(fxt, rl, mode) {
       ${sim ? '' : `<div class="myr" id="myr"><span>${M.on ? tt('Senin notun') : tt('Kulübedesin')}</span></div>`}${fxt.agg ? tt`<div class="aggb">${ic('swap', 14)}İlk maç ${fxt.agg[0]}-${fxt.agg[1]} · tur için toplam skor geçerli</div>` : ''}
       <canvas id="pitch" class="pitch"></canvas>
       <div class="tlb"><i id="tlp"></i><div id="tlm"></div></div>
+      <div class="momc" aria-label="${tt('Maçın baskı grafiği')}"><svg viewBox="0 0 90 20" preserveAspectRatio="none"><defs><clipPath id="mcu"><rect x="0" y="0" width="90" height="10"/></clipPath><clipPath id="mco"><rect x="0" y="10" width="90" height="10"/></clipPath></defs><line x1="0" y1="10" x2="90" y2="10"/><path id="mau" clip-path="url(#mcu)"/><path id="mao" clip-path="url(#mco)"/><path id="mal"/><line id="mnow" x1="0" y1="0" x2="0" y2="20"/></svg><div class="mcl"><span>${tt('Senin baskın ↑')}</span><span>${tt('Rakibin baskısı ↓')}</span></div></div>
       ${M.tac ? tt`<div class="tacs">${ic('whistle', 16)}<b id="tcn">${TACT[M.tac].n}</b><div id="tks">${taskChips()}</div></div>` : ''}
       ${sim ? '' : tt`<div class="mctl"><div class="stam">${ic('bolt', 18)}<div class="bar"><i id="stb" style="width:${M.stam}%"></i></div><b id="stv">${Math.round(M.stam)}</b></div>
         <div class="seg">${[['d', tt('Defansif'), 'shield'], ['n', tt('Dengeli'), 'target'], ['o', tt('Ofansif'), 'bolt']].map(([k, l, i]) => tt`<button class="${k === 'n' ? 'on' : ''}" data-a="mmode" data-v="${k}">${ic(i, 14)}${l}</button>`).join('')}</div>
@@ -916,10 +917,20 @@ async function runMatch(fxt, rl, mode) {
       put(min, tt`GOL İPTAL: ${v.why}.`, us ? 'b' : 'g', 'x'); if (!AUTO) { if (us) sfx.conceded(); else sfx.goal(); }
     } else put(min, tt('VAR kararı: gol geçerli.'), us ? 'g' : 'b', 'check');
   };
-  const put = (min, txt, cls = '', icon = '') => { if (feed) feed.insertAdjacentHTML('afterbegin', tt`<div class="fl ${cls}"><b>${min}'</b>${icon ? ic(icon, 18) : '<i></i>'}<span>${esc(txt)}</span></div>`); if (!sim && !AUTO && cls && cls !== 'var') spiker.say(txt, cls === 'g'); };
+  // Baskı (momentum): her olayda tabana doğru söner; gol ve iyi/kötü anlar itki verir
+  const mb = G.clamp((nat ? (fxt.usR || 70) - ((fxt.opp && fxt.opp.r) || 70) : (s.rt[s.clubId] || 50) - (s.rt[fxt.opp] || 50)) / 30, -.25, .25) + (home ? .05 : -.03), mpts = [0];
+  let mv = mb, mlast = 0;
+  const momDraw = min => {
+    for (let m = mlast + 1; m <= Math.min(120, min); m++) { mv += (mb - mv) * .06 + (Math.random() - .5) * .22; mpts[m] = G.clamp(mv, -1, 1); }
+    mlast = Math.max(mlast, Math.min(120, min)); const sx = 90 / Math.max(90, mlast);
+    const line = mpts.map((v, i) => `${(i * sx).toFixed(2)},${(10 - (v || 0) * 9).toFixed(2)}`).join(' L'), area = `M0,10 L${line} L${(mlast * sx).toFixed(2)},10 Z`;
+    const u = $('#mau'), o = $('#mao'), l = $('#mal'), n = $('#mnow'); if (!u) return;
+    u.setAttribute('d', area); o.setAttribute('d', area); l.setAttribute('d', 'M' + line); n.setAttribute('x1', (mlast * sx).toFixed(2)); n.setAttribute('x2', (mlast * sx).toFixed(2));
+  };
+  const put = (min, txt, cls = '', icon = '') => { if (cls === 'g') mv = G.clamp(mv + .55, -1, 1); else if (cls === 'b') mv = G.clamp(mv - .55, -1, 1); else if (icon === 'target') mv = G.clamp(mv + .25, -1, 1); else if (icon === 'alert' || icon === 'shield') mv = G.clamp(mv - .15, -1, 1); if (feed) feed.insertAdjacentHTML('afterbegin', tt`<div class="fl ${cls}"><b>${min}'</b>${icon ? ic(icon, 18) : '<i></i>'}<span>${esc(txt)}</span></div>`); if (!sim && !AUTO && cls && cls !== 'var') spiker.say(txt, cls === 'g'); };
   const mark = (min, cls) => { if (tlb) tlb.insertAdjacentHTML('beforeend', `<i class="${cls}" style="left:${Math.min(100, min / 90 * 100)}%"></i>`); };
   const upd = min => {
-    if (!sc) return; mn.textContent = min + "'"; sc.textContent = home ? `${M.usG} - ${M.oppG}` : `${M.oppG} - ${M.usG}`; $('#tlp').style.width = Math.min(100, min / 90 * 100) + '%';
+    if (!sc) return; momDraw(min); mn.textContent = min + "'"; sc.textContent = home ? `${M.usG} - ${M.oppG}` : `${M.oppG} - ${M.usG}`; $('#tlp').style.width = Math.min(100, min / 90 * 100) + '%';
     const my = $('#myr'); if (my && M.on) { const r = G.clamp(M.rt, 3, 10), k = M.mom > 0; my.innerHTML = `<span>${tt('Senin notun')}</span><b class="${k && r >= 7.5 ? 'hi' : k && r < 6 ? 'lo' : ''}">${k ? dec(r, 1) : '–'}</b><span>${tt`${M.pg} gol · ${M.ok}/${M.mom} an`}</span>`; }   // canlı maç notu
   };
   const bump = () => { if (sc) { sc.classList.remove('bump'); void sc.offsetWidth; sc.classList.add('bump'); } };
