@@ -974,3 +974,29 @@ main { min-width: 0; } main > * { min-width: 0; max-width: 100%; }
 .drc { display: grid; gap: 2px; padding: 8px; background: var(--p2); border-radius: 4px; border-left: 3px solid var(--ln); }
 .drc b { font: 900 20px/1 var(--fh); } .drc small { font-size: 12px; } .drc em { font-style: normal; color: var(--mu); font-size: 11px; }
 .drc.ok { border-left-color: var(--ye); } .drc.ok b { color: var(--ye); }
+
+/* v26: teklif masası */
+.inbx { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; width: 100%; margin-bottom: 14px; padding: 11px 12px; text-align: left; cursor: pointer; background: linear-gradient(160deg, color-mix(in srgb, var(--or) 14%, var(--p1)), var(--p1)); border: 1px solid color-mix(in srgb, var(--or) 40%, var(--ln)); border-radius: 6px; }
+.inbx > div { display: grid; gap: 3px; min-width: 0; } .inbx b { font: 800 17px/1.05 var(--fh); text-transform: uppercase; } .inbx small { color: var(--mu); font-size: 12px; }
+.inbx .ix { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--or); color: var(--on); }
+.inbx .ix em { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ye); color: var(--on); font: 900 12px/18px var(--fh); font-style: normal; text-align: center; }
+.inbx .crs { display: flex; } .inbx .crs > * { margin-left: -6px; }
+.inbx.pm { background: linear-gradient(160deg, color-mix(in srgb, var(--gr) 14%, var(--p1)), var(--p1)); border-color: color-mix(in srgb, var(--gr) 45%, var(--ln)); }
+.ofr { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; width: 100%; padding: 10px 0; text-align: left; background: none; border: 0; border-top: 1px solid var(--ln); cursor: pointer; }
+.ofr > div { display: grid; gap: 3px; min-width: 0; } .ofr b { font: 800 16px/1.05 var(--fh); text-transform: uppercase; } .ofr small { color: var(--mu); font-size: 12px; }
+.ofr em { font-style: normal; display: grid; justify-items: center; min-width: 44px; padding: 5px 4px; border-radius: 4px; background: var(--p2); }
+.ofr em b { font-size: 20px; line-height: 1; } .ofr em small { font-size: 10.5px; } .ofr em.lo { background: color-mix(in srgb, var(--rd) 22%, var(--p2)); color: var(--rd); }
+.ofr.nw b { color: var(--ye); }
+.och { display: flex; flex-wrap: wrap; gap: 4px; }
+.och i { font-style: normal; font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 3px; background: var(--p2); color: var(--mu); }
+.och i.nw { background: var(--ye); color: var(--on); } .och i.up { color: var(--gr); } .och i.lo { color: var(--rd); } .och i.pt { color: var(--ye); }
+.opch { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 9px 10px; border: 1px dashed var(--ln); border-radius: 5px; }
+.opch .aic { color: var(--mu); } .opch b { display: block; font-size: 14px; } .opch small { color: var(--mu); font-size: 12px; }
+.opch.on { border-style: solid; border-color: color-mix(in srgb, var(--gr) 50%, var(--ln)); } .opch.on .aic { color: var(--gr); }
+.olog { display: grid; gap: 5px; } .olog p { display: grid; grid-template-columns: auto 1fr; gap: 7px; align-items: start; font-size: 12.5px; color: var(--mu); }
+.odl { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; padding: 8px 10px; background: var(--p2); border-radius: 5px; font-size: 13px; }
+.odl.lo { color: var(--rd); background: color-mix(in srgb, var(--rd) 14%, var(--p2)); }
+.oct { overflow-x: auto; margin: 0 -4px; } .oct table { border-collapse: collapse; width: 100%; min-width: 300px; font-size: 12.5px; }
+.oct th { text-align: left; color: var(--mu); font-weight: 600; padding: 7px 6px; white-space: nowrap; } .oct td { padding: 7px 6px; border-top: 1px solid var(--ln); text-align: center; white-space: nowrap; }
+.oct td.oh { border-top: 0; vertical-align: bottom; } .oct td.oh b { display: block; font: 800 13px/1.05 var(--fh); text-transform: uppercase; margin-top: 4px; white-space: normal; }
+.oct td.bst { color: var(--ye); font-weight: 800; }
