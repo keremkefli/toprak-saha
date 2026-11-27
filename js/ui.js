@@ -29,13 +29,14 @@ const euCls = f => (f && f.eu ? ' eu-' + f.eu : '');
 const cl = (id, inner, cls = '') => tt`<button class="cl ${cls}" data-a="club" data-v="${id}">${inner}</button>`;   // tıklanınca kulüp profili
 function toast(s, icon = 'check') { $toast.innerHTML = ic(icon, 18) + tt`<span>${esc(s)}</span>`; $toast.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => $toast.classList.remove('on'), 2800); }
 
-function dialog({ art = '', k = '', t = '', body = '', opts, auto, cls = '', grid = false }) {
+function dialog({ art = '', k = '', t = '', body = '', opts, auto, cls = '', grid = false, timer = 0, tdef = 0 }) {
   if (AUTO) { const en = opts.map((o, i) => o.dis ? -1 : i).filter(i => i >= 0); return Promise.resolve(auto != null ? auto : en[Math.floor(Math.random() * en.length)]); }
   return new Promise(res => {
     dres = res; sfx.pop();
-    $modal.innerHTML = tt`<div class="sheet ${cls}">${art}<div class="sh-in">${k ? tag(k) : ''}${t ? tt`<h3>${esc(t)}</h3>` : ''}<div class="mbody">${body}</div>
+    $modal.innerHTML = tt`<div class="sheet ${cls}">${art}<div class="sh-in">${k ? tag(k) : ''}${t ? tt`<h3>${esc(t)}</h3>` : ''}<div class="mbody">${body}</div>${timer ? `<div class="tmr" style="--t:${timer}s"><i></i></div>` : ''}
       <div class="opts ${grid ? 'grid' : ''}">${opts.map((o, i) => tt`<button class="opt ${o.c || ''}" data-a="dlg" data-v="${i}" ${o.dis ? 'disabled' : ''}>${o.i ? ic(o.i, 20) : ''}<span><b>${esc(o.t)}</b>${o.s ? tt`<small>${esc(o.s)}</small>` : ''}</span></button>`).join('')}</div></div></div>`;
     $modal.hidden = false; $modal.scrollTop = 0;
+    if (timer) setTimeout(() => { if (dres === res) { $modal.hidden = true; dres = null; res(tdef); } }, timer * 1000);   // süre dolunca varsayılan seçenek
   });
 }
 const info = (t, text, k = '', art = '') => dialog({ art, k, t, body: tt`<p>${esc(text)}</p>`, opts: [{ t: tt('Tamam') }], auto: 0 });
@@ -319,7 +320,7 @@ function vHome() {
   const news = s.news.slice(0, 4).map(n => tt`<li><span class="nic">${ic(n.ic || 'news', 18)}</span><div>${esc(n.s)}<small>${n.w}</small></div></li>`).join('');
   const play = (fxt || cf) && G.canPlay() && !s.fl.skip;
   return tt`${hero(false, `<div class="hbars">${sbar(s.en, tt('Enerji'), 'en')}${sbar(s.mo, tt('Moral'), 'mo')}${sbar(s.rel.hoca, tt('Hoca'), 'ho')}${sbar(s.rel.taraf, tt('Taraftar'), 'ta')}</div>`)}
-    <section class="wkact"><div class="sh"><h4>Bu hafta</h4><div class="dots">${dots}</div></div><div class="acts">${acts}</div></section>
+    ${dailyCard()}<section class="wkact"><div class="sh"><h4>Bu hafta</h4><div class="dots">${dots}</div></div><div class="acts">${acts}</div></section>
     ${s.quest ? tt`<div class="quest ${s.quest.p >= s.quest.n ? 'ok' : ''}">${ic(s.quest.p >= s.quest.n ? 'check' : 'target', 18)}<span>Haftanın görevi: ${s.quest.t}</span><b>${Math.min(s.quest.p, s.quest.n)}/${s.quest.n}</b></div>` : ''}
     ${cf ? fixCard(cf, true) : ''}
     ${fxt ? fixCard(fxt) : cf ? '' : tt`<section class="vsc off">${ic('cal', 26)}<div><b>Maçsız hafta</b><small>${s.inj > 0 || s.ban > 0 ? roleText() : tt('Bir eylem hakkın fazla.')}</small></div></section>`}
@@ -367,9 +368,33 @@ function perkCard0() {
     ${tier === 2 ? tt`<p class="mut sm lockn">${ic('lock', 14)} Usta yetenekleri tamamlanınca ustalık açılır.</p>` : ''}
     ${tier === 3 ? tt`<div class="sub">${ic('up', 16)}Ustalık · ${bc} puana +1</div><div class="chips">${keys.map(k => tt`<button class="chip sm" data-a="boost" data-v="${k}" ${s.pp < bc || s.at[k] >= mx ? 'disabled' : ''}>${ATTR[k]} ${Math.round(s.at[k])}</button>`).join('')}</div><p class="mut sm">Her üç ustalıkta bedel bir puan artar. Üst sınır ${mx}.</p>` : ''}</section>`;
 }
+// Rozet duvarı: açılanlar önde, hangi sezon açıldığı altında; kilitliler sönük
 function achCard() {
-  const s = G.S;
-  return tt`<section class="card">${tag(tt('Başarımlar'), 'ye')}<div class="achs">${ACH.map(([id, n, i]) => tt`<div class="ach ${s.ach[id] ? 'on' : ''}">${ic(i, 20)}<small>${n}</small></div>`).join('')}</div></section>`;
+  const s = G.S, on = ACH.filter(([id]) => s.ach[id]), off = ACH.filter(([id]) => !s.ach[id]), pc = on.length / ACH.length * 100;
+  return tt`<section class="card">${tag(tt('Rozet duvarı'), 'ye')}<div class="kv">${ic('star', 16)}<span>${on.length}/${ACH.length} rozet</span><b>%${Math.round(pc)}</b></div>${bar(pc, 'hot')}
+    <div class="achs">${on.map(([id, n, i]) => `<div class="ach on">${ic(i, 22)}<small>${n}</small>${typeof s.ach[id] === 'string' ? `<em>${esc(s.ach[id])}</em>` : ''}</div>`).join('')}${off.map(([, n]) => `<div class="ach">${ic('lock', 16)}<small>${n}</small></div>`).join('')}</div></section>`;
+}
+// Günlük ödül: 7 günlük şerit, bugünkü ödül tek dokunuşla alınır
+function dailyCard() {
+  const D = G.daily(); if (!D || !D.ok) return '';
+  const icn = r => r.para ? 'coin' : r.mo ? 'heart' : r.en ? 'bolt' : r.fol ? 'phone' : 'star';
+  const lbl = r => r.para ? G.fmt(r.para) : r.mo ? tt`Moral +${r.mo}` : r.en ? tt`Enerji +${r.en}` : r.fol ? tt`+${r.fol} takipçi` : tt('+1 yetenek puanı');
+  return tt`<section class="dly"><div class="sh"><h4>Günlük ödül</h4><small>${D.n > 1 ? tt`${D.n}. gün serisi` : tt('Her gün gel, seri büyüsün')}</small></div>
+    <div class="dlyr">${D.all.map((r, j) => `<div class="dd ${j < D.i ? 'got' : j === D.i ? 'now' : ''}">${ic(j < D.i ? 'check' : icn(r), 15)}<small>${j + 1}</small></div>`).join('')}</div>
+    <button class="btn dlyb" data-a="daily">${ic(icn(D.rew), 18)}<span>${tt('Al')} · ${lbl(D.rew)}</span></button></section>`;
+}
+// Kuşak rakibiyle karne: genel güç, son sezon ve kariyer toplamı yan yana
+function rivCard() {
+  const s = G.S, r = s.rival; if (!r) return '';
+  const H = r.h || [], mh = s.hist, sum = (L, k) => L.reduce((t, x) => t + (x[k] || 0), 0), lm = mh[mh.length - 1], lr = H[H.length - 1], kl = s.pos === 'KL';
+  const rows = [[tt('Genel'), G.OVR(), r.ovr]];
+  if (lm && lr) rows.push([tt('Son sezon maç'), lm.apps, lr.apps], ...(kl ? [] : [[tt('Son sezon gol'), lm.g, lr.g]]), [tt('Son sezon ort.'), lm.avg, lr.avg]);
+  if (H.length) rows.push(...(kl ? [] : [[tt('Kariyer golü'), sum(mh, 'g'), sum(H, 'g')]]), [tt('Kariyer asisti'), sum(mh, 'a'), sum(H, 'a')]);
+  const v = x => (typeof x === 'number' && x % 1 ? dec(x) : x);
+  const row = ([l, a, b]) => { const p = a + b > 0 ? a / (a + b) * 100 : 50; return `<div class="rvr"><b class="${a > b ? 'up' : ''}">${v(a)}</b><div><small>${l}</small><div class="rvb"><i style="width:${p}%"></i></div></div><b class="${b > a ? 'up' : ''}">${v(b)}</b></div>`; };
+  const lead = rows.filter(([, a, b]) => a > b).length, lose = rows.filter(([, a, b]) => b > a).length;
+  return tt`<section class="card rv">${tag(tt('Kuşak rakibin'))}<div class="rvh">${me('sm')}<div><b>${tt('Sen')}</b><small>${esc(G.club(s.clubId).n)}</small></div><em>VS</em><div class="r"><b>${esc(r.n)}</b><small>${esc(r.c)}</small></div><div class="avw sm">${persona('rakip', null, G.KW)}</div></div>
+    ${rows.map(row).join('')}<p class="note">${!H.length ? tt('İlk sezon bitince karne burada yan yana gelir.') : lead > lose ? tt('Kıyasta öndesin; o da seni izliyor.') : lead < lose ? tt('Şimdilik o önde. Sezon uzun.') : tt('Başa baş gidiyorsunuz.')}</p></section>`;
 }
 
 // Piyasa profili: kulüpler seni nasıl görüyor, kimler isteyebilir
@@ -445,7 +470,7 @@ function vCareer() {
     ${achCard()}
     <section class="card">${tag(tt('Kulüp efsaneleri'), 'ye')}<div class="kv">${crest(s.clubId, 22)}<span>${esc(G.club(s.clubId).n)} · tüm zamanların golcüleri</span></div>${legHTML(s.clubId)}</section>
     ${hist ? tt`<section class="card">${tag(tt('Geçmiş'))}<table class="tb hist"><tr><th>Sezon</th><th>Kulüp</th><th>M</th><th>G</th><th>A</th><th>Ort.</th></tr>${hist}</table></section>` : tt('<p class="mut sm pad">İlk sezonun bitince burada görünür.</p>')}
-    <section class="card rv">${tag(tt('Kuşak rakibin'))}<div class="wt"><div class="avw sm">${persona('rakip', null, G.KW)}</div><div><b>${esc(s.rival.n)}</b><small>${esc(s.rival.c)} · Genel ${s.rival.ovr}</small></div></div></section>`;
+    ${rivCard()}`;
   return tt`${hero(true)}${seg}
     <section class="card">${tag(tt('Özellikler'))}<div class="rad">${radar(keys.map(k => ({ l: ATTR[k].slice(0, 3).toLocaleUpperCase(LC), v: s.at[k] / Math.max(50, Math.max(...keys.map(x => s.at[x])) + 8) * 99 })))}<div class="ats">${attrs}</div></div>
       <p class="mut sm">${ic('star', 14)} Potansiyel: ${G.potText()} · ${ORIGINS[s.origin].n} · ${TRAITS[s.trait].n}</p></section>
@@ -1135,7 +1160,8 @@ async function ivFlow(kind, fxt, M) {
   const ttl = kind === 'pre' ? tt('Maç önü röportajı') : kind === 'imza' ? tt('İmza töreni') : tt('Maç sonu röportajı');
   for (let n = 0; n < qs.length; n++) {
     const q = qs[n];
-    const j = await dialog({ art: ivArt(), k: qs.length > 1 ? `${ttl} · ${n + 1}/${qs.length}` : ttl, t: q.q, opts: [...q.a.map(a => ({ t: a.t })), ...(n === 0 && kind !== 'imza' ? [{ t: tt('Konuşmadan geç'), s: tt('Basın bunu not eder'), c: 'ghost' }] : [])], cls: 'ev' });
+    const j = await dialog({ art: ivArt(), k: qs.length > 1 ? `${ttl} · ${n + 1}/${qs.length}` : ttl, t: q.q, opts: [...q.a.map(a => ({ t: a.t })), ...(n === 0 && kind !== 'imza' ? [{ t: tt('Konuşmadan geç'), s: tt('Basın bunu not eder'), c: 'ghost' }] : [])], cls: 'ev',
+      ...(n === 0 && kind !== 'imza' ? { timer: 12, tdef: q.a.length } : {}) });   // mikrofon 12 sn bekler, cevap gelmezse geçilir
     if (j >= q.a.length) { all.push(...G.fx({ basin: -4 })); break; }
     all.push(...G.ivAnswer(q.id, j, fxt));
   }
@@ -1793,7 +1819,12 @@ function healthWarn() {
 function recCard() {
   const s = G.S; if (s.mgr) return '';
   const R = G.records();
-  return `<section class="card recs">${tag(tt('Rekorlar'), 'ye')}<div class="kv">${crest(s.clubId, 20)}<span>${esc(G.club(s.clubId).n)} · ${tt('kulüp ve lig tarihi')}</span></div>${R.map(x => `<div class="recr ${x.broke ? 'ok' : ''}"><span class="aic">${ic(x.broke ? 'trophy' : x.lig ? 'chart' : 'target', 20)}</span><div><b>${x.t}</b><small>${x.broke ? tt('Rekor artık senin') : `${esc(x.n)} · ${x.y}`}</small></div><em><b>${x.broke ? x.me : x.v}</b><small>${x.broke ? tt`eski ${x.v}` : tt`sen ${x.me || '–'}`}</small></em></div>`).join('')}<p class="note">${tt('Rekor kırınca haber olur, itibarın ve taraftar sevgisi artar, sezon belgeseline girer.')}</p></section>`;
+  return `<section class="card recs">${tag(tt('Rekorlar'), 'ye')}<div class="kv">${crest(s.clubId, 20)}<span>${esc(G.club(s.clubId).n)} · ${tt('kulüp ve lig tarihi')}</span></div>${R.map(x => `<div class="recr ${x.broke ? 'ok' : ''}"><span class="aic">${ic(x.broke ? 'trophy' : x.lig ? 'chart' : 'target', 20)}</span><div><b>${x.t}</b><small>${x.broke ? tt('Rekor artık senin') : `${esc(x.n)} · ${x.y}`}</small></div><em><b>${x.broke ? x.me : x.v}</b><small>${x.broke ? tt`eski ${x.v}` : tt`sen ${x.me || '–'}`}</small></em></div>`).join('')}${drillRecs()}<p class="note">${tt('Rekor kırınca haber olur, itibarın ve taraftar sevgisi artar, sezon belgeseline girer.')}</p></section>`;
+}
+// Antrenman serileri: her çalışmanın en iyi isabeti ve kaç kez yapıldığı
+function drillRecs() {
+  const D = Object.entries(G.S.drill || {}).map(([id, r]) => [TRAIN.find(t => t.id === id), r]).filter(([T, r]) => T && r.n);
+  return D.length ? tt`<div class="sub">${ic('whistle', 16)}Antrenman serileri</div><div class="drl">${D.map(([T, r]) => tt`<div class="drc ${r.b >= 3 ? 'ok' : ''}"><b>${r.b}/3</b><small>${esc(T.n)}</small><em>${r.n} seri</em></div>`).join('')}</div>` : '';
 }
 async function docFlow(r) {
   if (AUTO || !r.doc || r.doc.length < 2) return;
@@ -2381,6 +2412,7 @@ async function scenStart() {
 const grab = () => { const nm = $('#nm'), nu = $('#nu'), nk = $('#nk'); if (nm) C.name = nm.value; if (nu) C.num = G.clamp(+nu.value || 9, 1, 99); if (nk) C.nick = nk.value.trim(); };
 const ACT = {
   dlg: v => { $modal.hidden = true; const r = dres; dres = null; if (r) r(+v); },
+  daily: () => { const r = G.dailyClaim(); if (!r) return; G.save(); sfx.pop(); toast(tt`Günlük ödül · ${r.n}. gün: ` + r.out.join(' · '), 'star'); render(); },
   snd: () => { sfx.toggle(); render(); },
   cont: () => { if (G.load()) { V.scr = 'hub'; V.tab = 'ev'; render(); } },
   title: () => { V.scr = 'title'; render(); },

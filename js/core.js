@@ -508,6 +508,12 @@ export function endWeek(own, ownCup, ownEuro, ownX) {
 // ---------- sezon sonu ----------
 function rivalStep(lines) {
   const r = S.rival; if (!r) return;
+  // sezon karnesi: rakibin sezonu senin sezonunla yan yana konur (eski güçle oynadığı sezon)
+  const gr = { KL: 0, DF: .03, OS: .12, KN: .2, FV: .42 }[S.pos] ?? .15, apps = ri(18, 34), q = clamp((r.ovr - 40) / 50, .2, 1.3);
+  const g = Math.round(apps * gr * q * rnd(.7, 1.3)), a = Math.round(apps * (gr * .5 + .08) * q * rnd(.6, 1.3));
+  const avg = +clamp(6.2 + (r.ovr - 60) * .03 + rnd(-.3, .3), 5.6, 8.4).toFixed(2);
+  (r.h || (r.h = [])).push({ y: S.hist.length ? S.hist[S.hist.length - 1].y : '', c: r.c, apps, g, a, avg, o: r.ovr });
+  lines.push(S.pos === 'KL' ? tt`Rakibin ${r.n}: ${apps} maç, ort. ${avg.toFixed(1).replace('.', DSEP)}.` : tt`Rakibin ${r.n}: ${g} gol, ${a} asist, ort. ${avg.toFixed(1).replace('.', DSEP)}.`);
   r.ovr = Math.min(r.pot, Math.round(r.ovr + rnd(4, 8) * (S.age <= 22 ? 1 : .35)));
   const c = [];
   for (const lid in S.lg) for (const id of S.lg[lid].t) if (id !== S.clubId && Math.abs(S.rt[id] - (r.ovr - 1)) <= 3) c.push(id);
@@ -2826,6 +2832,26 @@ export function switchPos(p) {
   genRival(); if (!S.mgr) newGoals();
   addNews(tt`Artık ${POS[p].n.toLocaleLowerCase(LC)} oynuyorsun. Hoca seni yeni yerinde deneyecek.`, 'swap');
   return true;
+}
+
+// ---------- günlük giriş ödülü: gerçek takvim günü, 7 günlük döngü; bir gün atlanırsa seri baştan ----------
+const dKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+export const DREW = ['coin', 'mo', 'coin', 'en', 'fol', 'coin', 'pp'];
+const drew = i => { const k = DREW[i], n50 = v => Math.max(50, Math.round(v / 50) * 50);
+  return k === 'coin' ? { para: n50(wref() * [.5, 0, 1, 0, 0, 1.5][i]) } : k === 'mo' ? { mo: 6 } : k === 'en' ? { en: 12 } : k === 'fol' ? { fol: Math.max(40, Math.round(S.fol * .03)) } : { pp: 1 }; };
+export function daily() {
+  if (!S || S.mgr || S.over) return null;
+  const d = S.dly || (S.dly = { last: '', n: 0, best: 0 }), now = new Date(), y = new Date(now); y.setDate(now.getDate() - 1);
+  const ok = d.last !== dKey(now), n = ok ? (d.last === dKey(y) ? d.n + 1 : 1) : d.n, i = (Math.max(n, 1) - 1) % 7;
+  return { ok, n, i, best: d.best, rew: drew(i), all: DREW.map((_, j) => drew(j)) };
+}
+export function dailyClaim() {
+  const D = daily(); if (!D || !D.ok) return null;
+  const d = S.dly; d.last = dKey(new Date()); d.n = D.n; d.best = Math.max(d.best, D.n);
+  const out = [];
+  if (D.rew.pp) { S.pp += 1; out.push(tt('+1 yetenek puanı')); } else out.push(...fx(D.rew));
+  if (D.n % 7 === 0) out.push(...fx({ taraf: 3 }));   // haftayı tamamlayana taraftar selamı
+  return { ...D, out };
 }
 
 // ---------- antrenman serisi: üç tekrar, isabet sayısı verimi belirler ----------
